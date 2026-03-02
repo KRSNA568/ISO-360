@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-white:         #FFFFFF;
+    --color-surface:       #F7F7F5;
+    --color-surface-raised:#FAFAF9;
+    --color-ink:           #0A0A0A;
+    --color-ink-secondary: #3D3D3D;
+    --color-ink-muted:     #7A7A7A;
+    --color-border:        #E5E5E3;
+    --color-border-strong: #C8C8C5;
+    --color-gold:          #C9A84C;
+    --color-gold-light:    #E8CB7A;
+    --color-gold-dark:     #9A7A30;
+    --color-gold-subtle:   #FBF4E3;
+    --color-success:       #1A7A4A;
+    --color-success-bg:    #EDF7F2;
+    --color-error:         #B91C1C;
+    --color-error-bg:      #FEF2F2;
+    --color-warning:       #B45309;
+    --color-warning-bg:    #FFFBEB;
+
+    --duration-fast:   150ms;
+    --duration-base:   250ms;
+    --duration-slow:   350ms;
+    --ease-out:        cubic-bezier(0.0, 0, 0.2, 1);
+    --ease-spring:     cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-white text-ink font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  /* Focus ring — gold */
+  *:focus-visible {
+    outline: 3px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-surface); }
+  ::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold transition-all duration-[150ms] ease-out rounded-md cursor-pointer select-none;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-white hover:bg-ink-secondary hover:shadow-gold active:scale-[0.98];
+  }
+  .btn-gold {
+    @apply btn bg-gold text-ink hover:bg-gold-light active:scale-[0.98];
+    box-shadow: 0 4px 20px rgba(201,168,76,0);
+    transition: box-shadow 200ms ease-out, background-color 150ms ease-out, transform 100ms ease-out;
+  }
+  .btn-gold:hover {
+    box-shadow: 0 4px 20px rgba(201,168,76,0.30);
+  }
+  .btn-outline {
+    @apply btn border border-ink text-ink bg-transparent hover:bg-surface active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply btn text-ink bg-transparent hover:bg-surface active:scale-[0.98];
+  }
+  .btn-sm  { @apply h-9 px-3 text-sm; }
+  .btn-md  { @apply h-11 px-4 text-base; }
+  .btn-lg  { @apply h-13 px-6 text-lg; }
+  .btn-xl  { @apply h-16 px-8 text-xl; }
+
+  /* Card */
+  .card {
+    @apply bg-white border border-border rounded-lg p-6 shadow-sm;
+    transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+  }
+  .card-hover {
+    @apply card cursor-pointer hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full h-13 px-4 bg-surface border border-border rounded-md text-base text-ink placeholder:text-ink-muted;
+    @apply focus:outline-none focus:border-gold;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .input:focus {
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+  }
+  .input-error {
+    @apply border-red-600 bg-red-50;
+  }
+
+  /* Badge */
+  .badge-verified {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide;
+    @apply bg-emerald-50 text-emerald-700;
+  }
+  .badge-pass { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700; }
+  .badge-fail { @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700; }
+  .badge-track { @apply inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-semibold tracking-widest uppercase bg-ink text-white; }
+
+  /* Gold accent line */
+  .gold-line {
+    @apply block w-10 h-0.5 bg-gold mb-4;
+  }
+
+  /* Section overline */
+  .overline {
+    @apply text-xs font-semibold tracking-widest uppercase text-gold;
+  }
+
+  /* Shimmer for CTA */
+  .btn-shimmer {
+    background: linear-gradient(90deg, #C9A84C 0%, #E8CB7A 50%, #C9A84C 100%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+}
+
+@layer utilities {
+  .h-13 { height: 3.25rem; }
+  .text-hero {
+    font-size: clamp(3rem, 2.5rem + 3vw, 5rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+  .text-display {
+    font-size: clamp(2.25rem, 1.8rem + 2vw, 2.75rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  /* Exam ink mode utility */
+  .exam-mode {
+    @apply bg-exam-bg text-surface;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
