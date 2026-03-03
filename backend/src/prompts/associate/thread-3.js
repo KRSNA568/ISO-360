@@ -9,16 +9,16 @@ const TRACK     = 'associate'
 const THREAD    = 3
 const ID_PREFIX = 'A'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Associate-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Associate-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
 TRACK: Associate (foundation-level practitioners and ISMS implementers)
 
-TOPICS TO COVER (spread across all 10 questions):
+TOPICS TO COVER (spread across all ${questionsCount} questions):
 - Clause 7.1: Resources (human resources, infrastructure, environment, monitoring and measurement resources needed for the ISMS)
 - Clause 7.2: Competence (determining required competence, providing competence through training/experience, evaluating effectiveness, retaining documented evidence of competence)
 - Clause 7.3: Awareness (what persons must be aware of: security policy, their contribution to ISMS effectiveness, implications of not conforming with requirements)
@@ -41,7 +41,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Common confusion: Clause 7.4 requires a communication PLAN (what/when/who/how) not just the act of communicating
 - Common confusion: 7.3 awareness applies to ALL persons working under the organization's control, including contractors
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

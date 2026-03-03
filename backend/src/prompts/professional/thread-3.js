@@ -9,10 +9,10 @@ const TRACK     = 'professional'
 const THREAD    = 3
 const ID_PREFIX = 'P'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Professional-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Professional-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
@@ -20,7 +20,7 @@ TRACK: Professional (experienced ISMS managers, lead implementers, and senior se
 
 DIFFICULTY EXPECTATION: Deep technical and operational knowledge. Questions test the ability to select, implement, evaluate, and audit Annex A.8 technological controls in complex, real-world organizational environments. Distractors require genuine technical understanding to eliminate.
 
-TOPICS TO COVER (spread across all 10 questions, drawing from Annex A.8's 34 controls):
+TOPICS TO COVER (spread across all ${questionsCount} questions, drawing from Annex A.8's 34 controls):
 - A.8.1: User endpoint devices (BYOD policies, MDM, endpoint encryption, lost/stolen device procedures)
 - A.8.2: Privileged access rights (PAM solutions, just-in-time access, least privilege principle, regular review of privileged accounts)
 - A.8.3: Information access restriction (role-based access control; need-to-know; database query restrictions)
@@ -52,7 +52,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Configuration management (A.8.9) is not the same as change management (A.8.32) — configuration = baseline state; change = managed deviation from baseline
 - Zero trust is not mandated by name but maps to multiple controls: A.8.2, A.8.5, A.8.20 — professionals must map architectural patterns to controls
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

@@ -9,10 +9,10 @@ const TRACK     = 'professional'
 const THREAD    = 1
 const ID_PREFIX = 'P'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Professional-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Professional-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
@@ -20,7 +20,7 @@ TRACK: Professional (experienced ISMS managers, lead implementers, and senior se
 
 DIFFICULTY EXPECTATION: Applied professional judgment. Scenarios test control selection rationale, implementation adequacy, Statement of Applicability (SoA) decisions, and auditing of organizational controls in complex environments.
 
-TOPICS TO COVER (spread across all 10 questions, drawing from Annex A.5's 37 controls):
+TOPICS TO COVER (spread across all ${questionsCount} questions, drawing from Annex A.5's 37 controls):
 - A.5.1: Policies for information security (top-level and topic-specific policies, policy review triggers, approval authority)
 - A.5.2: Information security roles and responsibilities (who owns what; RACI clarity; CISO vs. data owner vs. system owner)
 - A.5.3: Segregation of duties (conflict of interest scenarios; compensating controls where full segregation is not feasible)
@@ -47,7 +47,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Incident management controls (A.5.24–A.5.28) form a lifecycle — ensure candidates understand sequencing
 - SoA exclusions require justification — auditors must verify that excluded controls genuinely do not apply (not just inconvenient)
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

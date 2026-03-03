@@ -9,10 +9,10 @@ const TRACK     = 'professional'
 const THREAD    = 2
 const ID_PREFIX = 'P'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Professional-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Professional-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
@@ -20,7 +20,7 @@ TRACK: Professional (experienced ISMS managers, lead implementers, and senior se
 
 DIFFICULTY EXPECTATION: Applied professional judgment on people security lifecycle and physical environment protection. Scenarios test control design, residual risk judgments, and audit adequacy assessment in realistic organizational settings.
 
-PEOPLE CONTROLS — Annex A.6 (8 controls) TOPICS:
+PEOPLE CONTROLS — Annex A.6 (8 controls) TOPICS (spread across all ${questionsCount} questions proportionally):
 - A.6.1: Screening (pre-employment background verification — what is proportionate; legal constraints vary by country; high-risk roles; contractors and third parties)
 - A.6.2: Terms and conditions of employment (information security responsibilities in contracts; non-disclosure; acceptable use obligations; consequences of breach)
 - A.6.3: Information security awareness, education and training (programme design, role-based training, effectiveness measurement — NOTE: distinct from Clause 7.2/7.3 which cover planning; A.6.3 covers programme content and delivery)
@@ -54,7 +54,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Secure disposal (A.7.14) requires verified data destruction, not just physical disposal — deleting files is insufficient
 - Screening (A.6.1) applies proportionately — not all roles require the same depth; professionals must assess whether the level of screening is proportionate to the sensitivity of the role
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

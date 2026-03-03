@@ -1,15 +1,31 @@
 /**
  * @file promptBuilder.js
  * Shared prompt construction utilities for all AI generation threads.
- * Used by GenerationService to build OpenAI messages arrays.
+ * Uses Groq (OpenAI-compatible API) with llama-3.3-70b-versatile — free tier.
+ * Used by GenerationService to build messages arrays and create the AI client.
  */
-const { DIFFICULTY_DISTRIBUTION, AI_CONFIG } = require('@iso-audit360/shared/constants')
+const { AI_CONFIG } = require('@iso-audit360/shared/constants')
+
+/**
+ * Compute difficulty distribution proportionally for any question count.
+ * Ratio: 30% easy, 50% medium, 20% hard.
+ * @param {number} questionsCount
+ * @returns {{ easy: number, medium: number, hard: number }}
+ */
+function getDifficultyDistribution(questionsCount) {
+  const easy   = Math.floor(questionsCount * 0.3)
+  const hard   = Math.floor(questionsCount * 0.2)
+  const medium = questionsCount - easy - hard
+  return { easy, medium, hard }
+}
 
 /**
  * Build the system prompt that establishes the AI persona.
+ * @param {number} [questionsCount=10]
  * @returns {string}
  */
-function buildSystemPrompt() {
+function buildSystemPrompt(questionsCount = 10) {
+  const dist = getDifficultyDistribution(questionsCount)
   return `You are a senior ISO 27001:2022 Lead Auditor Examination Designer with 15+ years of experience designing professional certification assessments. Your questions are used in high-stakes certification exams administered to GRC professionals and ISMS consultants.
 
 Your role is strictly as an examination designer — not as a tutor or explainer. You write questions that assess genuine auditor judgment and applied knowledge, not rote memorization.
@@ -21,7 +37,7 @@ CRITICAL RULES YOU MUST FOLLOW:
 4. Do NOT include tricks, wordplay, double negatives, or "which of the following is NOT" constructions.
 5. Each question must be self-contained and answerable without reference to other questions.
 6. Ensure the explanation clearly states WHY the correct answer is correct and WHY each distractor is wrong.
-7. Difficulty distribution: ${DIFFICULTY_DISTRIBUTION.easy} easy, ${DIFFICULTY_DISTRIBUTION.medium} medium, ${DIFFICULTY_DISTRIBUTION.hard} hard per set of 10.
+7. Difficulty distribution: ${dist.easy} easy, ${dist.medium} medium, ${dist.hard} hard across the ${questionsCount} questions.
 8. You MUST return ONLY valid JSON conforming to the specified schema — no prose, no markdown, no apologies.`
 }
 
@@ -31,9 +47,10 @@ CRITICAL RULES YOU MUST FOLLOW:
  * @param {number} thread - 1–5
  * @param {string} idPrefix - e.g. 'A' or 'P'
  * @param {number} startSeq - starting sequence number for IDs
+ * @param {number} [questionsCount=10] - exact number of questions to generate
  * @returns {string}
  */
-function buildSchemaInstruction(track, thread, idPrefix, startSeq = 1) {
+function buildSchemaInstruction(track, thread, idPrefix, startSeq = 1, questionsCount = 10) {
   return `
 Return your response as a JSON object with this exact structure:
 {
@@ -52,6 +69,7 @@ Return your response as a JSON object with this exact structure:
   ]
 }
 
+Generate exactly ${questionsCount} question objects in the "questions" array.
 Rules for IDs: Use sequential IDs starting from ${idPrefix}-T${thread}-${String(startSeq).padStart(4, '0')}.
 Rules for options: All 4 options must be plausible. One must be clearly correct when you know the standard. Distractors should represent common auditor misconceptions.
 Rules for explanations: Must be at least 2 sentences. Must reference the clause. Must explain why each wrong option falls short.`
@@ -74,16 +92,37 @@ function buildMessages({ systemPrompt, userPrompt }) {
 /**
  * Standard OpenAI call config for all threads.
  */
-const OPENAI_CALL_CONFIG = {
+/**
+ * Standard AI call config for Groq (OpenAI-compatible).
+ * Use with: new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: AI_CONFIG.BASE_URL })
+ */
+const AI_CALL_CONFIG = {
   model:           AI_CONFIG.MODEL,
   temperature:     AI_CONFIG.TEMPERATURE,
   max_tokens:      AI_CONFIG.MAX_TOKENS_PER_THREAD,
   response_format: { type: 'json_object' },
 }
 
+/**
+ * Create and return a Groq client (OpenAI-compatible).
+ * Uses the openai package pointed at Groq's API endpoint — no extra dependencies.
+ * @returns {import('openai').OpenAI}
+ */
+function createAIClient() {
+  const { OpenAI } = require('openai')
+  return new OpenAI({
+    apiKey:  process.env.GROQ_API_KEY,
+    baseURL: AI_CONFIG.BASE_URL,
+  })
+}
+
 module.exports = {
   buildSystemPrompt,
   buildSchemaInstruction,
   buildMessages,
-  OPENAI_CALL_CONFIG,
+  getDifficultyDistribution,
+  createAIClient,
+  AI_CALL_CONFIG,
+  // legacy alias so any existing code referencing OPENAI_CALL_CONFIG still works
+  OPENAI_CALL_CONFIG: undefined,
 }

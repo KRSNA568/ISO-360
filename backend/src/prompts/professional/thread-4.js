@@ -9,10 +9,10 @@ const TRACK     = 'professional'
 const THREAD    = 4
 const ID_PREFIX = 'P'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Professional-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Professional-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
@@ -20,7 +20,7 @@ TRACK: Professional (experienced ISMS managers, lead implementers, and senior se
 
 DIFFICULTY EXPECTATION: These are applied case-study questions. Each presents a realistic audit scenario with multiple findings or ambiguous evidence. Candidates must correctly identify nonconformities, classify their severity (major vs. minor), reference the correct clause or Annex A control, and determine audit implications. Distractors are technically plausible misclassifications.
 
-CASE STUDY SCENARIO TYPES (each question should be a self-contained scenario with 4 plausible answer options):
+CASE STUDY SCENARIO TYPES (each question should be a self-contained scenario with 4 plausible answer options, spread across all ${questionsCount} questions):
 1. Identify the nonconformity — given a set of audit observations, which specific requirement is not met?
 2. Classify the severity — is this a major nonconformity, minor nonconformity, or an observation/OFI?
 3. Determine the correct clause/control reference — which clause or Annex A control applies?
@@ -48,7 +48,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Audit adjustments based on new evidence presented at closing meeting: lead auditor may accept, reject, or defer — not automatically required to revise
 - Lack of documented evidence ≠ lack of compliance, but absence of required documented information IS a nonconformity
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

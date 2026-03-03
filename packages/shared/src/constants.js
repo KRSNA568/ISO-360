@@ -36,15 +36,24 @@ const ROLES = Object.freeze({
   ADMIN: 'admin',
 })
 
-// ── Exam Configuration ───────────────────────────────────────────────────────
+// ── Exam Configuration (per track) ─────────────────────────────────────────
 const EXAM_CONFIG = Object.freeze({
-  TOTAL_QUESTIONS:       50,    // total questions per exam
-  QUESTIONS_PER_THREAD:  10,    // questions per AI thread
-  TOTAL_THREADS:         5,     // parallel AI generation threads
-  EXAM_DURATION_SECONDS: 600,   // 10 minutes total
-  PER_QUESTION_LIMIT_S:  15,    // soft per-question guide (not hard-enforced client-side)
-  PASS_THRESHOLD:        40,    // min correct answers to pass (80%)
-  PASS_THRESHOLD_PCT:    80,    // percentage
+  associate: Object.freeze({
+    TOTAL_QUESTIONS:       50,     // 5 threads × 10 questions
+    QUESTIONS_PER_THREAD:  10,
+    TOTAL_THREADS:         5,
+    EXAM_DURATION_SECONDS: 900,    // 15 minutes
+    PASS_THRESHOLD:        40,     // 80% of 50
+    PASS_THRESHOLD_PCT:    80,
+  }),
+  professional: Object.freeze({
+    TOTAL_QUESTIONS:       100,    // 5 threads × 20 questions
+    QUESTIONS_PER_THREAD:  20,
+    TOTAL_THREADS:         5,
+    EXAM_DURATION_SECONDS: 1800,   // 30 minutes
+    PASS_THRESHOLD:        80,     // 80% of 100
+    PASS_THRESHOLD_PCT:    80,
+  }),
 })
 
 // ── Retake Policy ────────────────────────────────────────────────────────────
@@ -53,19 +62,21 @@ const RETAKE_POLICY = Object.freeze({
   COOLDOWN_HOURS:           24,
 })
 
-// ── AI Generation ────────────────────────────────────────────────────────────
+// ── AI Generation (Groq — free tier, OpenAI-compatible) ─────────────────────
 const AI_CONFIG = Object.freeze({
-  THREAD_TIMEOUT_MS:    45000,  // 45 seconds per thread
-  RETRY_BACKOFF_MS:     5000,   // delay before retry
+  THREAD_TIMEOUT_MS:    60000,  // 60 seconds per thread
+  RETRY_BACKOFF_MS:     3000,   // delay before retry
   MAX_FAILED_THREADS:   2,      // abort session if > 2 threads fail
-  TEMPERATURE:          0.8,
-  MAX_TOKENS_PER_THREAD:4000,
-  MODEL:                'gpt-4o',
+  TEMPERATURE:          0.7,
+  MAX_TOKENS_PER_THREAD:8000,   // enough for 20-question professional threads
+  MODEL:                'llama-3.3-70b-versatile',
+  BASE_URL:             'https://api.groq.com/openai/v1',
 })
 
-// ── Difficulty Distribution per thread ──────────────────────────────────────
+// ── Difficulty Distribution (base: per 10 questions — scales proportionally) ─
+// Computed dynamically in promptBuilder via getDifficultyDistribution(n).
 const DIFFICULTY_DISTRIBUTION = Object.freeze({
-  easy:   3,  // 30% of 10 questions
+  easy:   3,  // 30%
   medium: 5,  // 50%
   hard:   2,  // 20%
 })
@@ -75,16 +86,16 @@ const THREAD_DOMAINS = Object.freeze({
   associate: {
     1: 'Context of the Organization & Scope (Clauses 4–5)',
     2: 'Planning & Risk Assessment (Clause 6)',
-    3: 'Support, Operation & Controls (Clauses 7–8)',
-    4: 'Performance Evaluation & Audit (Clause 9)',
-    5: 'Improvement, Incident & Continual Review (Clause 10 + Annex A)',
+    3: 'Support — Competence, Awareness & Communication (Clause 7)',
+    4: 'Operational Planning & Control (Clause 8)',
+    5: 'Performance Evaluation, Internal Audit & Improvement (Clauses 9–10)',
   },
   professional: {
-    1: 'Advanced Risk Management & Treatment (ISO 27005)',
-    2: 'Lead Auditor Competency & Audit Program Management',
-    3: 'Evidence-based Audit Techniques & Nonconformity Handling',
-    4: 'Information Security Controls Deep-Dive (Annex A 8–9)',
-    5: 'Regulatory, Legal & Supplier Chain Compliance',
+    1: 'Annex A.5 — Organizational Controls',
+    2: 'Annex A.6 — People Controls & Annex A.7 — Physical Controls',
+    3: 'Annex A.8 — Technological Controls',
+    4: 'Nonconformity Scenario Auditing — Applied Case Studies',
+    5: 'ISO 19011 Audit Principles — Conducting & Reporting ISO 27001 Audits',
   },
 })
 
@@ -101,9 +112,9 @@ const CERT_ID_PREFIX = 'ISO27-2026-'
 
 // ── Suspicious Session Thresholds ────────────────────────────────────────────
 const INTEGRITY_THRESHOLDS = Object.freeze({
-  SUSPICIOUS_AVG_SECONDS_PER_Q: 4,    // avg < 4s → suspicious
+  SUSPICIOUS_AVG_SECONDS_PER_Q: 4,    // avg < 4s/question → suspicious
   SUSPICIOUS_TAB_VIOLATIONS:    3,    // tab violations ≥ 3 → suspicious
-  SUSPICIOUS_TOTAL_SECONDS:     180,  // completed in < 3 min → suspicious
+  SUSPICIOUS_TOTAL_SECONDS:     300,  // completed in < 5 min (any exam) → suspicious
 })
 
 module.exports = {

@@ -9,10 +9,10 @@ const TRACK     = 'professional'
 const THREAD    = 5
 const ID_PREFIX = 'P'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Professional-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Professional-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
@@ -20,7 +20,7 @@ TRACK: Professional (experienced ISMS managers, lead implementers, and senior se
 
 DIFFICULTY EXPECTATION: Scenario-heavy questions demand mastery of ISO 19011:2018 audit methodology as applied to ISO 27001 certification and surveillance audits. Questions test audit planning decisions, evidence collection judgment, conduct during audit execution, closing meeting management, and report writing quality — all at the professional practitioner level.
 
-TOPICS TO COVER (spread across all 10 questions):
+TOPICS TO COVER (spread across all ${questionsCount} questions):
 
 ISO 19011:2018 Audit Principles:
 - Integrity: honesty and responsibility in all aspects of audit work
@@ -70,7 +70,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Opening meeting purpose: confirm logistics and scope — it is NOT the time to collect evidence or raise preliminary findings
 - Corrective action timelines: auditors verify adequacy and implementation, not prescribe HOW to fix — this would compromise independence
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

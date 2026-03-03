@@ -9,16 +9,16 @@ const TRACK     = 'associate'
 const THREAD    = 4
 const ID_PREFIX = 'A'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Associate-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Associate-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
 TRACK: Associate (foundation-level practitioners and ISMS implementers)
 
-TOPICS TO COVER (spread across all 10 questions):
+TOPICS TO COVER (spread across all ${questionsCount} questions):
 - Clause 8.1: Operational planning and control — planning processes to meet ISMS requirements, implementing plans, controlling planned changes, managing unintended changes, ensuring outsourced processes are controlled
 - Clause 8.2: Information security risk assessment — executing the risk assessment process defined in Clause 6.1.2 at planned intervals or when significant changes occur; retaining documented results
 - Clause 8.3: Information security risk treatment — executing the risk treatment plan defined in Clause 6.1.3; retaining documented results of risk treatment
@@ -41,7 +41,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Common confusion: change management trigger for re-assessment — ISO 27001 says "at planned intervals AND when significant changes occur" — both conditions exist
 - Common confusion: Clause 8.3 requires implementing the treatment plan AND retaining results — simply having a plan is insufficient
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }

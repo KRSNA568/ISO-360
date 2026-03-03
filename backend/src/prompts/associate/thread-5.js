@@ -9,16 +9,16 @@ const TRACK     = 'associate'
 const THREAD    = 5
 const ID_PREFIX = 'A'
 
-function buildPrompt(startSeq = 1) {
-  const systemPrompt = buildSystemPrompt()
+function buildPrompt(startSeq = 1, questionsCount = 10) {
+  const systemPrompt = buildSystemPrompt(questionsCount)
 
-  const userPrompt = `Generate exactly 10 ISO 27001:2022 Associate-level examination questions for the following domain:
+  const userPrompt = `Generate exactly ${questionsCount} ISO 27001:2022 Associate-level examination questions for the following domain:
 
 DOMAIN: ${DOMAIN}
 THREAD: ${THREAD} of 5
 TRACK: Associate (foundation-level practitioners and ISMS implementers)
 
-TOPICS TO COVER (spread across all 10 questions):
+TOPICS TO COVER (spread across all ${questionsCount} questions):
 - Clause 9.1: Monitoring, measurement, analysis and evaluation — what to monitor, how to measure, when to analyse, who is responsible, when results are evaluated; retaining documented evidence
 - Clause 9.2: Internal audit — audit programme requirements, audit criteria and scope, auditor independence (cannot audit own work), reporting results to management, retaining documented information
 - Clause 9.3: Management review — mandatory inputs (9.3.2: status of previous actions, changes to issues/needs, performance data, nonconformities, audit results, opportunities for improvement), mandatory outputs (decisions, resources, continual improvement actions)
@@ -43,7 +43,7 @@ DISTRACTOR DESIGN GUIDANCE:
 - Common confusion: continual improvement (10.2) is proactive ISMS-level improvement, not fixing individual incidents
 - Common confusion: after a nonconformity, both documented evidence of the nonconformity AND of the corrective action taken must be retained
 
-${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq)}`
+${buildSchemaInstruction(TRACK, THREAD, ID_PREFIX, startSeq, questionsCount)}`
 
   return { systemPrompt, userPrompt }
 }
