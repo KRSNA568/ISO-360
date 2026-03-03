@@ -1,0 +1,1376 @@
+openapi: 3.1.0
+info:
+  title: ISO-Audit360 API
+  version: 1.0.0
+  description: |
+    Backend API for ISO-Audit360.com — ISO 27001:2022 AI-Certification Portal.
+    All protected endpoints require a JWT Bearer token unless marked as public.
+  contact:
+    name: ISO-Audit360 Platform
+    url: https://iso-audit360.com
+
+servers:
+  - url: https://api.iso-audit360.com
+    description: Production (Fly.io)
+  - url: https://api-staging.iso-audit360.com
+    description: Staging (Fly.io)
+  - url: http://localhost:5000
+    description: Local development
+
+# ────────────────────────────────────────────────────────────
+#  SECURITY SCHEMES
+# ────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ── SHARED SCHEMAS ─────────────────────────────────────────
+  schemas:
+
+    # ── Domain Objects ─────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:            { type: string, format: uuid }
+        full_name:     { type: string }
+        email:         { type: string, format: email }
+        company:       { type: string, nullable: true }
+        job_role:      { type: string, nullable: true }
+        country:       { type: string, nullable: true }
+        email_verified:{ type: boolean }
+        role:          { type: string, enum: [user, admin] }
+        created_at:    { type: string, format: date-time }
+
+    Question:
+      type: object
+      required: [id, thread, domain, stem, options, correct_option, explanation, clause_ref, difficulty]
+      properties:
+        id:
+          type: string
+          pattern: '^[AP]-T[1-5]-[0-9]{4}$'
+          example: "A-T1-0023"
+        thread:
+          type: integer
+          minimum: 1
+          maximum: 5
+        domain:
+          type: string
+          example: "Context of the Organization"
+        stem:
+          type: string
+          minLength: 20
+        options:
+          type: array
+          items: { type: string }
+          minItems: 4
+          maxItems: 4
+        correct_option:
+          type: string
+          enum: [A, B, C, D]
+        explanation:
+          type: string
+          minLength: 30
+        clause_ref:
+          type: string
+          example: "ISO 27001:2022 Clause 4.1"
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+
+    Answer:
+      type: object
+      required: [q_id, answer, time_taken_ms]
+      properties:
+        q_id:          { type: string }
+        answer:        { type: string, enum: [A, B, C, D] }
+        time_taken_ms: { type: integer, minimum: 0 }
+
+    ExamSession:
+      type: object
+      properties:
+        id:            { type: string, format: uuid }
+        user_id:       { type: string, format: uuid }
+        track:         { type: string, enum: [associate, professional] }
+        status:
+          type: string
+          enum: [generating, ready, active, completed, expired, aborted]
+        score:         { type: integer, nullable: true }
+        passed:        { type: boolean, nullable: true }
+        tab_violations:{ type: integer }
+        started_at:    { type: string, format: date-time, nullable: true }
+        completed_at:  { type: string, format: date-time, nullable: true }
+        expires_at:    { type: string, format: date-time, nullable: true }
+        created_at:    { type: string, format: date-time }
+
+    Certificate:
+      type: object
+      properties:
+        id:               { type: string, format: uuid }
+        certificate_id:   { type: string, example: "ISO27-2026-A1B2C3D4" }
+        user_id:          { type: string, format: uuid }
+        exam_session_id:  { type: string, format: uuid }
+        track:            { type: string, enum: [associate, professional] }
+        full_name:        { type: string }
+        score:            { type: integer }
+        awarded_on:       { type: string, format: date-time }
+        r2_url_landscape: { type: string, format: uri, nullable: true }
+        r2_url_square:    { type: string, format: uri, nullable: true }
+        revoked:          { type: boolean }
+        revoked_reason:   { type: string, nullable: true }
+
+    DomainScore:
+      type: object
+      properties:
+        thread:  { type: integer }
+        domain:  { type: string }
+        correct: { type: integer }
+        total:   { type: integer }
+
+    ExamResult:
+      type: object
+      properties:
+        exam_session_id: { type: string, format: uuid }
+        track:           { type: string, enum: [associate, professional] }
+        score:           { type: integer }
+        passed:          { type: boolean }
+        pass_threshold:  { type: integer, example: 40 }
+        domain_scores:
+          type: array
+          items: { $ref: '#/components/schemas/DomainScore' }
+        answers:
+          type: array
+          items: { $ref: '#/components/schemas/Answer' }
+        certificate_id:  { type: string, nullable: true }
+        awarded_on:      { type: string, format: date-time, nullable: true }
+
+    # ── Error ──────────────────────────────────────────────
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:   { type: string }
+        message: { type: string }
+        code:    { type: string }
+
+    # ── Pagination ─────────────────────────────────────────
+    Pagination:
+      type: object
+      properties:
+        total: { type: integer }
+        page:  { type: integer }
+        pages: { type: integer }
+        limit: { type: integer }
+
+  # ── RESPONSES ──────────────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Insufficient role permissions
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Resource already exists or constraint violation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+# ────────────────────────────────────────────────────────────
+#  GLOBAL SECURITY (override per-route for public endpoints)
+# ────────────────────────────────────────────────────────────
+security:
+  - BearerAuth: []
+
+# ────────────────────────────────────────────────────────────
+#  PATHS
+# ────────────────────────────────────────────────────────────
+paths:
+
+  # ══════════════════════════════════════════
+  #  HEALTH
+  # ══════════════════════════════════════════
+  /api/health:
+    get:
+      summary: Health check
+      security: []
+      tags: [Health]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:    { type: string, example: ok }
+                  timestamp: { type: string, format: date-time }
+
+  # ══════════════════════════════════════════
+  #  AUTH
+  # ══════════════════════════════════════════
+  /api/auth/register:
+    post:
+      summary: Register a new user and send OTP
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name, email, password]
+              properties:
+                full_name: { type: string, minLength: 2, maxLength: 100 }
+                email:     { type: string, format: email }
+                password:  { type: string, minLength: 8 }
+                company:   { type: string, maxLength: 100 }
+                job_role:  { type: string, maxLength: 100 }
+                country:   { type: string, maxLength: 100 }
+      responses:
+        '201':
+          description: User created, OTP sent to email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:          { type: string }
+                  user_id:          { type: string, format: uuid }
+                  otp_expires_in_s: { type: integer, example: 600 }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/auth/verify-otp:
+    post:
+      summary: Verify OTP and receive JWT
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, code]
+              properties:
+                user_id: { type: string, format: uuid }
+                code:    { type: string, pattern: '^[0-9]{6}$' }
+      responses:
+        '200':
+          description: OTP verified — returns JWT and refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:         { type: string }
+                  expires_in:    { type: string, example: "24h" }
+                  user:          { $ref: '#/components/schemas/User' }
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                description: HttpOnly refresh_token cookie (7d)
+        '400':
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/resend-otp:
+    post:
+      summary: Resend OTP (rate-limited 3/hr/email + 3/hr/IP)
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: OTP resent
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/auth/login:
+    post:
+      summary: Login with email + password
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:      { type: string }
+                  expires_in: { type: string }
+                  user:       { $ref: '#/components/schemas/User' }
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/auth/refresh:
+    post:
+      summary: Get new JWT using refresh token (HttpOnly cookie)
+      security: []
+      tags: [Auth]
+      responses:
+        '200':
+          description: New JWT issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:      { type: string }
+                  expires_in: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/forgot-password:
+    post:
+      summary: Send password reset link
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: Reset link sent (always returns 200 to prevent email enumeration)
+
+  /api/auth/reset-password:
+    post:
+      summary: Reset password using signed token
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:    { type: string }
+                password: { type: string, minLength: 8 }
+      responses:
+        '200':
+          description: Password reset successfully
+        '400':
+          description: Invalid or expired reset token
+
+  /api/auth/logout:
+    post:
+      summary: Revoke refresh token
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logged out, refresh token revoked
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════
+  #  USER
+  # ══════════════════════════════════════════
+  /api/user/me:
+    get:
+      summary: Get current user profile + attempt summary
+      tags: [User]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/User' }
+                  - type: object
+                    properties:
+                      attempts_associate:   { type: integer }
+                      attempts_professional:{ type: integer }
+                      last_attempt_at:      { type: string, format: date-time, nullable: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      summary: Update profile fields
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name: { type: string }
+                company:   { type: string }
+                job_role:  { type: string }
+                country:   { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      summary: Soft-delete account (GDPR)
+      tags: [User]
+      responses:
+        '200':
+          description: Account scheduled for deletion
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/user/attempts:
+    get:
+      summary: Get paginated list of past exam sessions
+      tags: [User]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10, maximum: 50 }
+        - in: query
+          name: track
+          schema: { type: string, enum: [associate, professional] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Pagination' }
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/ExamSession' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════
+  #  SESSION (Exam Generation + Exam Taking)
+  # ══════════════════════════════════════════
+  /api/session/create:
+    post:
+      summary: Create exam session and trigger AI generation
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [track]
+              properties:
+                track: { type: string, enum: [associate, professional] }
+      responses:
+        '202':
+          description: Generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:        { type: string, format: uuid }
+                  exam_session_token: { type: string }
+                  status:            { type: string, example: generating }
+        '429':
+          description: Retake limit or cooldown active
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Error' }
+                  - type: object
+                    properties:
+                      cooldown_remaining_s: { type: integer }
+                      attempts_used:       { type: integer }
+                      attempts_max:        { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/session/{sessionId}/status:
+    get:
+      summary: Poll generation progress
+      tags: [Session]
+      security: []
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [generating, ready, active, completed, expired, aborted]
+                  progress:    { type: integer, minimum: 0, maximum: 100 }
+                  error:       { type: string, nullable: true }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/session/{sessionId}/start:
+    post:
+      summary: Start the exam — starts the server-side timer
+      tags: [Session]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exam_session_token]
+              properties:
+                exam_session_token: { type: string }
+      responses:
+        '200':
+          description: Exam started — returns questions (options only, no correct_option)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:  { type: string, format: uuid }
+                  questions:
+                    type: array
+                    items: { $ref: '#/components/schemas/Question' }
+                  expires_at:  { type: string, format: date-time }
+                  server_time: { type: string, format: date-time }
+        '400':
+          description: Session not in ready state or invalid token
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/session/{sessionId}/answer:
+    post:
+      summary: Submit a single answer (called per question)
+      tags: [Session]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [q_id, answer, time_taken_ms, exam_session_token]
+              properties:
+                q_id:               { type: string }
+                answer:             { type: string, enum: [A, B, C, D] }
+                time_taken_ms:      { type: integer, minimum: 0 }
+                exam_session_token: { type: string }
+      responses:
+        '200':
+          description: Answer recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted: { type: boolean }
+        '400':
+          description: Session expired or invalid question ID
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/session/{sessionId}/heartbeat:
+    post:
+      summary: Keep session alive and sync timer state
+      tags: [Session]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exam_session_token]
+              properties:
+                exam_session_token: { type: string }
+                tab_violations:     { type: integer }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  time_remaining_s: { type: integer }
+                  server_time:      { type: string, format: date-time }
+                  status:           { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/session/{sessionId}/complete:
+    post:
+      summary: Submit exam (all answers) and trigger scoring
+      tags: [Session]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [exam_session_token]
+              properties:
+                exam_session_token: { type: string }
+      responses:
+        '200':
+          description: Exam scored — results available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  score:          { type: integer }
+                  passed:         { type: boolean }
+                  certificate_id: { type: string, nullable: true }
+        '400':
+          description: Session already completed or expired
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════
+  #  RESULTS
+  # ══════════════════════════════════════════
+  /api/results/{sessionId}:
+    get:
+      summary: Get exam result summary
+      tags: [Results]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExamResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/results/{sessionId}/review:
+    get:
+      summary: Get full question-by-question review
+      tags: [Results]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      allOf:
+                        - { $ref: '#/components/schemas/Question' }
+                        - type: object
+                          properties:
+                            user_answer:   { type: string, enum: [A, B, C, D], nullable: true }
+                            is_correct:    { type: boolean }
+                            time_taken_ms: { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/results/{sessionId}/flag-question:
+    post:
+      summary: Flag a question as inaccurate (from results screen)
+      tags: [Results]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question_id, flag_reason]
+              properties:
+                question_id:  { type: string }
+                flag_reason:  { type: string, maxLength: 500 }
+      responses:
+        '201':
+          description: Flag recorded
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ══════════════════════════════════════════
+  #  CERTIFICATES
+  # ══════════════════════════════════════════
+  /api/certificates/{certId}:
+    get:
+      summary: Get certificate (owner only)
+      tags: [Certificates]
+      parameters:
+        - in: path
+          name: certId
+          required: true
+          schema: { type: string }
+          description: Certificate ID (ISO27-2026-XXXXXXXX) or UUID
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Certificate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/certificates/verify/{certId}:
+    get:
+      summary: Public certificate verification (no auth required)
+      security: []
+      tags: [Certificates]
+      parameters:
+        - in: path
+          name: certId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:        { type: boolean }
+                  certificate:
+                    type: object
+                    properties:
+                      certificate_id: { type: string }
+                      full_name:      { type: string }
+                      track:          { type: string }
+                      score:          { type: integer }
+                      awarded_on:     { type: string, format: date-time }
+                      revoked:        { type: boolean }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ══════════════════════════════════════════
+  #  ADMIN — all require role=admin
+  # ══════════════════════════════════════════
+  /api/admin/stats:
+    get:
+      summary: Overview KPI stats
+      tags: [Admin]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_users:            { type: integer }
+                  verified_users:         { type: integer }
+                  exams_today:            { type: integer }
+                  pass_rate_all_time:     { type: number }
+                  active_sessions_now:    { type: integer }
+                  certificates_issued:    { type: integer }
+                  unreviewed_flags:       { type: integer }
+                  suspicious_sessions:    { type: integer }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/stats/timeseries:
+    get:
+      summary: Registrations and exams over time
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: days
+          schema: { type: integer, default: 30 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dates:         { type: array, items: { type: string } }
+                  registrations: { type: array, items: { type: integer } }
+                  exams:         { type: array, items: { type: integer } }
+
+  /api/admin/users:
+    get:
+      summary: List users with search/filter/pagination
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 25 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [all, verified, unverified, blocked] }
+        - in: query
+          name: country
+          schema: { type: string }
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Pagination' }
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/User' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/users/{userId}/verify:
+    patch:
+      summary: Manually verify a user's email
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/users/{userId}/block:
+    patch:
+      summary: Block a user account
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/users/{userId}/unblock:
+    patch:
+      summary: Unblock a user account
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/users/{userId}:
+    delete:
+      summary: GDPR soft-delete a user (anonymizes PII)
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/sessions:
+    get:
+      summary: List exam sessions
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 25 }
+        - in: query
+          name: status
+          schema: { type: string, enum: [generating, ready, active, completed, expired, aborted] }
+        - in: query
+          name: track
+          schema: { type: string, enum: [associate, professional] }
+        - in: query
+          name: suspicious
+          schema: { type: boolean }
+        - in: query
+          name: search
+          schema: { type: string, description: "User email or session UUID" }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Pagination' }
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/ExamSession' } }
+
+  /api/admin/sessions/{sessionId}/abort:
+    patch:
+      summary: Force-abort a live exam session
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/sessions/{sessionId}/flag-suspicious:
+    patch:
+      summary: Mark session as suspicious for review
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/certificates:
+    get:
+      summary: List certificates
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [active, revoked] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: '#/components/schemas/Pagination' }
+                  - type: object
+                    properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Certificate' } }
+
+  /api/admin/certificates/{certId}/revoke:
+    patch:
+      summary: Revoke a certificate
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: certId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/certificates/{certId}/reinstate:
+    patch:
+      summary: Reinstate a revoked certificate
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: certId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/flags:
+    get:
+      summary: List question flags (grouped by question_id)
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, default: open, enum: [open, reviewed, dismissed, escalated] }
+        - in: query
+          name: track
+          schema: { type: string, enum: [associate, professional] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        question_id:   { type: string }
+                        question_stem: { type: string }
+                        flag_count:    { type: integer }
+                        track:         { type: string }
+                        thread:        { type: integer }
+                        status:        { type: string }
+                        last_flagged:  { type: string, format: date-time }
+
+  /api/admin/flags/{questionId}/review:
+    patch:
+      summary: Mark flag as reviewed
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/flags/{questionId}/escalate:
+    patch:
+      summary: Escalate flag for prompt tuning
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/flags/{questionId}/blocklist:
+    post:
+      summary: Add question to blocklist
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+  /api/admin/buffer-pool:
+    get:
+      summary: List buffer pool questions
+      tags: [Admin]
+      parameters:
+        - in: query
+          name: track
+          required: true
+          schema: { type: string, enum: [associate, professional] }
+        - in: query
+          name: thread
+          schema: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:        { type: array, items: { $ref: '#/components/schemas/Question' } }
+                  total:       { type: integer }
+                  track_total: { type: integer }
+    post:
+      summary: Add a single buffer question
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Question' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:     { type: boolean }
+                  question_id: { type: string }
+
+  /api/admin/buffer-pool/import:
+    post:
+      summary: Bulk import questions (up to 500)
+      tags: [Admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questions]
+              properties:
+                questions:
+                  type: array
+                  items: { $ref: '#/components/schemas/Question' }
+                  maxItems: 500
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imported: { type: integer }
+                  skipped:  { type: integer }
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        row:   { type: integer }
+                        error: { type: string }
+
+  /api/admin/buffer-pool/{questionId}:
+    put:
+      summary: Update a buffer question
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Question' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+    delete:
+      summary: Delete a buffer question
+      tags: [Admin]
+      parameters:
+        - in: path
+          name: questionId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+
+# ────────────────────────────────────────────────────────────
+#  TAGS
+# ────────────────────────────────────────────────────────────
+tags:
+  - name: Health
+    description: Service health check
+  - name: Auth
+    description: Registration, OTP verification, login, token management
+  - name: User
+    description: User profile and attempt history
+  - name: Session
+    description: Exam session creation, AI generation, exam taking
+  - name: Results
+    description: Exam results, review, and question reporting
+  - name: Certificates
+    description: Certificate retrieval and public verification
+  - name: Admin
+    description: Admin panel operations (requires role=admin)

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import Dashboard from '@/pages/Dashboard'
+import ProfilePage from '@/pages/ProfilePage'
 import GenerationPage from '@/pages/GenerationPage'
 import ExamPage from '@/pages/ExamPage'
 import ResultsPage from '@/pages/ResultsPage'
@@ -24,6 +25,7 @@ export default function App() {
           {/* Protected */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/generate/:track" element={<GenerationPage />} />
             <Route path="/exam/:sessionId" element={<ExamPage />} />
             <Route path="/results/:sessionId" element={<ResultsPage />} />

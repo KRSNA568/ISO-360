@@ -1,0 +1,7 @@
+# robots.txt — prevent indexing of admin and internal routes
+User-agent: *
+Disallow: /admin
+Disallow: /admin/
+Allow: /
+
+Sitemap: https://iso-audit360.com/sitemap.xml

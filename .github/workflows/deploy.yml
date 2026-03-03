@@ -1,0 +1,159 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main        # → production
+      - develop     # → staging
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false   # never cancel an in-flight deploy
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  # Determine environment (staging vs. production)
+  # ─────────────────────────────────────────────────────────
+  set-env:
+    name: Resolve Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      api_url: ${{ steps.resolve.outputs.api_url }}
+      cf_project: ${{ steps.resolve.outputs.cf_project }}
+    steps:
+      - id: resolve
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "environment=production"  >> $GITHUB_OUTPUT
+            echo "api_url=https://api.iso-audit360.com"   >> $GITHUB_OUTPUT
+            echo "cf_project=iso-audit360"                >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging"    >> $GITHUB_OUTPUT
+            echo "api_url=https://api.staging.iso-audit360.com" >> $GITHUB_OUTPUT
+            echo "cf_project=iso-audit360-staging"        >> $GITHUB_OUTPUT
+          fi
+
+  # ─────────────────────────────────────────────────────────
+  # 1. Deploy Backend to Fly.io
+  # ─────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend (Fly.io)
+    runs-on: ubuntu-latest
+    needs: set-env
+    environment: ${{ needs.set-env.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to Fly.io
+        run: |
+          cd backend
+          if [[ "${{ needs.set-env.outputs.environment }}" == "production" ]]; then
+            flyctl deploy --app iso-audit360-api --remote-only
+          else
+            flyctl deploy --app iso-audit360-api-staging --remote-only
+          fi
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────
+  # 2. Build Frontend
+  # ─────────────────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: set-env
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build --workspace=frontend
+        env:
+          VITE_API_BASE_URL: ${{ needs.set-env.outputs.api_url }}
+          VITE_ENVIRONMENT: ${{ needs.set-env.outputs.environment }}
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────
+  # 3. Deploy Frontend to Cloudflare Pages
+  # ─────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend (Cloudflare Pages)
+    runs-on: ubuntu-latest
+    needs: [set-env, build-frontend, deploy-backend]
+    environment: ${{ needs.set-env.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: frontend/dist/
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ needs.set-env.outputs.cf_project }}
+          directory: frontend/dist
+          branch: ${{ github.ref_name }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────
+  # 4. Post-deploy: smoke test API health endpoint
+  # ─────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: [set-env, deploy-backend]
+    steps:
+      - name: Wait for deployment to settle
+        run: sleep 20
+
+      - name: Health check
+        run: |
+          API_URL="${{ needs.set-env.outputs.api_url }}"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${API_URL}/api/health" --max-time 15)
+          if [[ "$STATUS" != "200" ]]; then
+            echo "Health check failed with status: $STATUS"
+            exit 1
+          fi
+          echo "Health check passed (HTTP $STATUS)"
+
+  # ─────────────────────────────────────────────────────────
+  # 5. Notify on failure (Slack / email — optional)
+  # ─────────────────────────────────────────────────────────
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-backend, deploy-frontend, smoke-test]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "Deployment to ${{ needs.set-env.outputs.environment }} FAILED on ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
+          # Extend this step with curl to Slack webhook or Resend email when ready
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"Deploy failed: ${{ github.repository }}@${{ github.sha }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}

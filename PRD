@@ -1,0 +1,84 @@
+
+Product Requirements Document (PRD): ISO 27001 AI-Certification Portal
+Project Name: ISO 27001:2022 Lead Auditor 
+Platform: ISO-Audit360.com
+Version: 2026.1.0
+1. Executive Summary
+The goal is to launch an industry-first, free certification portal that uses Just-In-Time (JIT) AI Generation to provide unique, high-integrity exams for ISO 27001:2022. By enforcing a strict 15-second per-question limit, we shift the assessment from "memorization" to "audit-ready instinct," providing users with a "2026 Premium" digital credential.
+
+2. Target Audience & Value Proposition
+The User: GRC professionals, aspiring lead auditors, and ISMS consultants.
+The Problem: Most free certifications are static, easily "Googleable," and lack professional prestige.
+The Solution: An exam that is impossible to cheat on due to randomized AI generation and hard-locked timers, resulting in a highly-valued LinkedIn-ready certificate.
+
+3. Comprehensive User Journey & Functional Specs
+3.1 Landing & Acquisition (/iso-27001)
+High-Fidelity UI: Dark-themed "Executive" aesthetic with gold accents.
+Trust Indicators: Clear breakdown of the 10-minute/50-question protocol.
+Call to Action: "Verify Identity & Start Audit."
+3.2 Registration & Verification (Security Layer)
+Fields: Full Name, Professional Email, Company, Role, Country.
+OTP Logic: Mandatory email verification to prevent sybil/bot account creation.
+Dashboard: Post-verification, the user lands on a "Readiness Dashboard" to choose between Associate (Clauses) or Professional (Annex A) tracks.
+
+
+3.3 The AI-Generation Engine (The "Wait" Phase)
+Upon the user selecting a track and clicking "Start Generation," the system initiates a 3-minute secure window. The backend identifies the track_id and triggers 5 parallel AI threads specifically tuned to that syllabus.
+A. Associate Track: ISMS Foundation (Clauses focus)
+Target: Mastery of the ISO 27001:2022 Management System framework.
+Thread 1 (Core Context): 10 Qs on Clause 4 (Context) and Clause 5 (Leadership).
+Thread 2 (Planning): 10 Qs on Clause 6 (Risk Assessment & Treatment).
+Thread 3 (Resources): 10 Qs on Clause 7 (Competence & Awareness).
+Thread 4 (Operations): 10 Qs on Clause 8 (Operational Planning & Control).
+Thread 5 (Evaluation): 10 Qs on Clause 9 (Internal Audit) and Clause 10 (Improvement).
+B. Professional Track: Lead Auditor (Annex A & 19011 focus)
+Target: Practical application, control validation, and audit management.
+Thread 1 (Organizational): 10 Qs on Annex A 5 (Organizational Controls).
+Thread 2 (People & Physical): 10 Qs on Annex A 6 (People) and Annex A 7 (Physical).
+Thread 3 (Technological): 10 Qs on Annex A 8 (Technological Controls).
+Thread 4 (Scenario Auditing): 10 Qs on Identifying Non-Conformities (NCs) in case studies.
+Thread 5 (Audit Governance): 10 Qs on ISO 19011 Principles (Opening meetings, evidence gathering, reporting).
+C. Generation UX & "Audit Wisdom" Logic
+To prevent user drop-off during the 3-minute generation, the UI will display a dynamic progress bar paired with track-specific content:
+Associate Track Loaders: Show "Clause Reminders" (e.g., “Did you know? Clause 6.1.2 is where the risk identification process is defined.”)
+Professional Track Loaders: Show "Auditor Ethics" (e.g., “A Lead Auditor must remain objective and evidence-based at all times.”)
+D. Validation & "Start" Trigger
+JSON Schema Check: Backend validates all 50 questions for correct format.
+Uniqueness Check: System compares generated IDs against the user's last 3 attempts (Overlap Rule).
+Active Start: Once validated, the "Generate" loader transforms into a High-Intensity "Enter Exam" Button, and the 10-minute global timer is prepped for the first user interaction.
+
+
+3.4 The Exam Interface (The "Pressure-Cooker")
+Dual-Timer Control:
+Total Exam Timer: 600s (10:00 mins) constant countdown.
+Per-Question Timer: 15s countdown.
+Non-Reversibility: Selecting an option immediately locks it. If the 15s expires, the server logs a "Fail" for that question and auto-pushes the next.
+Server-Side Sync: State is saved every 5 seconds to prevent loss during network flickers; however, the clock never pauses.
+
+Future scope: The "Audit Simulation" Case Study Module
+
+
+4. Result Analytics & Certification
+4.1 The "Audit Report" (Feedback Loop)
+Pass Threshold: 40/50 (80%).
+Gap Analysis: A radar chart visualizing performance across the 5 domains mentioned in Section 3.3.
+Corrective Actions: Lists incorrect answers with AI-generated explanations citing specific ISO 27001:2022 clauses.
+4.2 Certificate Issuance (.jpeg Generation)
+Format: 1920x1080 (Landscape) and 1080x1080 (Social Square).
+Features: Unique ID (TPRM-2026-XXXX), "2026 Premium" gold seal, and QR code for instant verification.
+Social Integration: Native LinkedIn/X sharing buttons with pre-filled hashtags.
+
+5. Technical Requirements & Security
+Stack: Next.js (Frontend), Fastify/Node.js (Backend), Redis (Timer State), Sharp (Image Rendering).
+Anti-Cheat: * Disabled right-click/copy-paste.
+Tab-focus monitoring (Automated submission if user leaves the tab > 3 times).
+AI-generated distractors (wrong options) designed to mimic common auditor mistakes.
+
+6. Success Metrics (KPIs)
+Lead Generation: Registration-to-Verified Email ratio (>85%).
+Viral Coefficient: % of users who share their certificate on LinkedIn.
+Integrity Score: Average time taken per question (aiming for 8-12 seconds).
+Content Quality: User-reported accuracy of AI-generated questions.
+
+
+

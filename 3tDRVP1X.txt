@@ -1,0 +1,290 @@
+Build an end-to-end web exam portal for the TPRM Course with user registration & verification, two timed certification exams (Beginner & Professional), a secure question-bank mechanism, automatic certificate generation (.jpeg) on pass, and share/download UX optimized for LinkedIn. The certificates must state the exam is free and be “2026 premium” design quality.
+
+Powered by: Learntprm.com
+
+1. Key user flows
+1.1 Registration → Verification → Login
+
+User provides: full_name, email, phone, city, company_name (optional), role (optional), country.
+
+On submit: send email OTP . Require email verification.
+
+After verification create account and show a “Take Exam” dashboard.
+
+1.2 Exam purchase/enrolment
+
+These are free exams. On exam page show exam details, passing score, time limit, sample question, and CTA “Enroll — Free”.
+
+Before enrollment show a one-line notice: “Passing marks: 40/50. This certification is free from Learntprm.com.”
+
+1.3 Take Exam
+
+Two exams available:
+
+Certified TPRM Warrior — Beginner (50 questions, 10 minutes total)
+
+Certified TPRM Warrior — Professional (50 questions, 10 minutes total)
+
+Per question rules:
+
+15-second per-question countdown. If no answer in 15s, automatically advance (mark as unanswered/wrong).
+
+Once an answer is selected it is final for that question (no going back).
+
+Selecting an option does NOT reset the 15s question timer nor the overall 10-minute exam timer.
+
+Show overall exam timer (10:00) and per-question timer (15s).
+
+After last question or timer expiry, submit and show result page.
+
+2. Question bank & exam generation logic (backend)
+2.1 Pools
+
+Beginner pool: 100 questions.
+
+Professional pool: 100 questions (sourced from interviews, prior exams, advanced materials).
+
+Each question object: ID, stem, options (A–D), single correct option, explanation for correct & why other options are wrong, tags, difficulty, last-updated timestamp, source citation.
+
+2.2 Selecting 50 questions per attempt
+
+Randomly sample 50 unique questions from the 100 pool for each attempt.
+
+Overlap rule (assumption / implementation suggestion): to reduce repeated exposure for the same user, ensure that for the same user’s consecutive attempts at the same level, no more than 3 identical questions are reused. (This requires storing the last attempt question IDs per user.)
+
+If you want global uniqueness between any two attempts by different users, that’s impractical; the proposed constraint applies per-user.
+
+Shuffle order of the chosen 50 questions for the attempt.
+
+2.3 Question rotation frequency
+
+Allow admins to set rotation/difficulty weights (for future). By default, rotate randomly; allow an audit endpoint to see how many times a question has been used.
+
+3. Timers & client behavior (important)
+
+Two timers: global_timer = 600s and question_timer = 15s.
+
+UI must show both prominently.
+
+Client must persist state every 5–10s to server (or at least cursor position + current question + remaining times) to support network failures.
+
+Prevent going back:
+
+Disable previous question buttons.
+
+On navigation away or refresh: show warning (“Your exam progress will be submitted”).
+
+On answer click:
+
+Record answer + timestamp (millisecond precision)
+
+Do not restart per-question timer; proceed as usual.
+
+If network disconnects: allow local caching of answers and auto-sync when network is back; but overall timers continue (no freeze).
+
+4. Scoring & result presentation
+
+Score: integer 0–50.
+
+Passing threshold: 40/50. This must be stated on exam landing BEFORE enrollment.
+
+Result page:
+
+Score (e.g., 43/50)
+
+Pass / Fail banner
+
+Breakdown: list of all incorrect questions with:
+
+Question text
+
+The user’s answer (if any)
+
+Correct answer
+
+Short explanation why correct & why wrong (from question object)
+
+Note: “This is a free certification from Learntprm.com” in results.
+
+If score >= 40: show “Download Certificate” button (see next section).
+
+5. Certificate generation (auto)
+Certificate content & format
+
+File format: .jpeg (high quality, 300 DPI recommended for printing but web optimized).
+
+Title/headline:
+
+For Begineer Exam use this : Beginner: Certified TPRM Warrior - Beginner
+
+For Professional Exam use this: Certified TPRM Warrior - Professional
+
+Include in certificate (exact text placeholders):
+
+Powered by Learntprm.com
+
+This certification is issued to: {{full_name}}
+
+One line congratulation: e.g., “Congratulations — {{full_name}} has successfully passed the {{exam_title}} certification.”
+
+Unique Certification ID: TPRM-YYYY-<random 8 chars> (e.g., TPRM-2026-A1B2C3D4)
+
+Awarded On: ISO timestamp YYYY-MM-DD HH:MM UTC+05:30 (use user locale/timezone)
+
+Design note: “2026 premium design, shareable style for LinkedIn” (visual spec below)
+
+Small footer: “This is a free certification from Learntprm.com”
+
+Provide a Download button under the generated image, and social share buttons (LinkedIn & Twitter) with prefilled text + link to verification page.
+
+Design & assets
+
+Deliverable size: 1920×1080 (landscape) and 1080×1080 (square) variants for LinkedIn sharing.
+
+Style: modern premium (flat + soft shadow, gold accent, embossed seal), left/right layout with badge/seal, professional fonts (e.g., Montserrat/Inter).
+
+Include space for signature image (either system signature or admin signature).
+
+Provide alt text for accessibility.
+
+Certificate verification page
+
+Each certificate ID resolves to a verification URL (e.g., learntprm.com/verify/TPRM-2026-A1B2C3D4) showing certificate details and confirming authenticity.
+
+6. Data models (sample JSON schemas)
+Registration
+{
+  "full_name":"Rahul Tyagi",
+  "email":"rahul@example.com",
+  "phone":"+91-98xxxx",
+  "city":"Noida",
+  "company_name":"Acme Ltd",
+  "role":"Risk Manager",
+  "country":"India"
+}
+Question object
+{
+  "id":"B-0001",
+  "level":"beginner",
+  "stem":"What is Third-Party Risk Management?",
+  "options":["A...","B...", "C...", "D..."],
+  "correct_option":"C",
+  "explanation":"Correct answer explanation and why other options are wrong (concise).",
+  "tags":["identification","assessment"],
+  "difficulty":"medium",
+  "source":"exam-archive-2025",
+  "last_updated":"2026-01-10"
+}
+Exam result
+{
+  "user_id":"u-123",
+  "exam_id":"attempt-456",
+  "exam_type":"beginner",
+  "score":42,
+  "answers":[{"q_id":"B-0001","answer":"A","time_taken_ms":12000}, ...],
+  "passed":true,
+  "certificate_id":"TPRM-2026-A1B2C3D4",
+  "awarded_on":"2026-02-22T15:34:00+05:30"
+}
+7. Admin & content management
+
+Admin dashboard to:
+
+Upload/edit questions with explanation, source, tags.
+
+Bulk import via CSV/Excel (validate duplicates).
+
+Review usage stats per question (times served, average correctness).
+
+Force-rotate questions or retire old ones.
+
+Audit logs: record every exam attempt, timestamps, IP, user agent for fraud detection.
+
+8. Security & anti-cheat recommendations
+
+Rate-limit attempts per user (e.g., max 3 attempts per 24 hours) — configurable.
+
+Detect suspicious patterns: extremely short total time with perfect score, same IP mass attempts, multiple accounts from same device.
+
+Device/browser fingerprinting and IP logging for fraud investigations.
+
+Proctoring options (optional): webcam snapshot at start + random snapshots (consent needed).
+
+Prevent copy/paste (UI level) and disable right-click on question page (defense in depth, not foolproof).
+
+9. Performance, accessibility, and mobile
+
+Page must be responsive (mobile-first). Per-question UI should be thumb-friendly.
+
+Accessibility: WCAG AA (contrast, alt text, keyboard navigation). Timers must be perceivable by screen readers.
+
+Offline/resume policy: if the user reloads, attempt to resume but continue timers (do not freeze). Save state server-side frequently.
+
+10. Notifications & email content (examples)
+
+Enrollment confirmation: “You are enrolled in TPRM Warrior — Beginner. Passing marks: 40/50. Exam length: 10 minutes.”
+
+Result email when passed: subject “Congratulations — Your TPRM Certificate is ready” with the certificate link & download.
+
+Reminder emails: 24-hour and 1-hour before a scheduled exam slot (if scheduling is used).
+
+11. Acceptance criteria & tests
+
+Registration + OTP verification works (email + SMS).
+
+Enroll → Start exam → answer 50 questions with 15s per question; after 10m exam auto-submits.
+
+Selecting an answer must be final (user cannot go back).
+
+Timers never reset on selection; recorded times correct.
+
+Result page lists incorrect answers with explanations.
+
+Certificate generated automatically for score ≥ 40, downloadable as JPEG, contains all required fields and unique ID, and verification URL works.
+
+Admin can view question pool and see rotation stats.
+
+12. Analytics & KPIs
+
+Conversion: registration → verified %.
+
+Enrollment rate for each exam page.
+
+Pass rate (per level).
+
+Average time per question.
+
+Top 10 most missed questions (for content improvement).
+
+Social shares and certificate downloads.
+
+13. Implementation suggestions & milestones (sprint-wise)
+
+Sprint 1: Authentication, registration, verification, dashboard, database schema.
+
+Sprint 2: Question pool CRUD, import, admin dashboard.
+
+Sprint 3: Exam engine (timers + client/server sync), offline caching.
+
+Sprint 4: Scoring, result page, explanations, certificate generation (image engine).
+
+Sprint 5: QA, anti-cheat features, analytics, social share, deployment.
+
+14. Copy/text snippets (ready to paste)
+
+Exam landing headline (Beginner):
+“TPRM Warrior — Beginner: 50 questions · 10 minutes · Passing mark 40/50 · Free certification by Learntprm.com”
+
+Before enrollment CTA:
+“Ready to prove your TPRM fundamentals? Enroll for free — passing score 40/50. You’ll get a shareable certificate if you pass.”
+
+Certificate congratulation line:
+“Congratulations — {{full_name}} has successfully passed the TPRM Warrior — Beginner certification.”
+
+Notes, assumptions & open points I took a best-effort decision on
+
+“Changed maximum three times in every attempt” was ambiguous — I implemented it as no more than 3 overlapping questions between consecutive attempts by the same user (prevents repetition for retakes). If you meant something else (e.g., global rotation rule), the team can adjust easily.
+
+I included email + SMS OTP for verification; if you want only email, remove SMS.
+
+Certificate design specifics (fonts, colors) will need a designer; include a design ticket to deliver PNG/JPEG templates.

@@ -1,53 +1,70 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import api from '@/lib/api'
 
 const AuthContext = createContext(null)
 
+const AT_KEY = 'token'   // must match api.js interceptor
+const RT_KEY = 'rf_token'
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(() => localStorage.getItem('token'))
+  const [user, setUser]     = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await api.get('/user/me')
+      setUser(res.data)
+    } catch {
+      _clearStorage()
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
-    if (token) {
-      // Validate token and fetch user profile
+    if (localStorage.getItem(AT_KEY)) {
       fetchProfile()
     } else {
       setLoading(false)
     }
-  }, [token])
+  }, [fetchProfile])
 
-  async function fetchProfile() {
-    try {
-      const res = await fetch('/api/user/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setUser(data.user)
-      } else {
-        logout()
-      }
-    } catch {
-      logout()
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function login(newToken, userData) {
-    localStorage.setItem('token', newToken)
-    setToken(newToken)
+  function login(accessToken, refreshToken, userData) {
+    localStorage.setItem(AT_KEY, accessToken)
+    if (refreshToken) localStorage.setItem(RT_KEY, refreshToken)
     setUser(userData)
   }
 
-  function logout() {
-    localStorage.removeItem('token')
-    setToken(null)
+  async function logout() {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // ignore — server might have expired token already
+    }
+    _clearStorage()
     setUser(null)
   }
 
+  function updateUser(partial) {
+    setUser(prev => (prev ? { ...prev, ...partial } : prev))
+  }
+
+  function _clearStorage() {
+    localStorage.removeItem(AT_KEY)
+    localStorage.removeItem(RT_KEY)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      isAuthenticated: !!user,
+      login,
+      logout,
+      updateUser,
+      fetchProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   )

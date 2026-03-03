@@ -1,0 +1,5 @@
+# Cloudflare Pages — SPA fallback routing
+# Redirects all non-asset 404s to index.html so React Router handles them
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+/*    /index.html   200

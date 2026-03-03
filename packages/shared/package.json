@@ -1,0 +1,14 @@
+{
+  "name": "@iso-audit360/shared",
+  "version": "1.0.0",
+  "description": "Shared constants, schemas and utilities for ISO-Audit360",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./constants": "./src/constants.js",
+    "./schemas": "./src/schemas.js",
+    "./utils": "./src/utils.js"
+  },
+  "private": true,
+  "license": "UNLICENSED"
+}
