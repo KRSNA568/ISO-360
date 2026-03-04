@@ -1,0 +1,544 @@
+# Product Requirements Document (PRD)
+## ISO 27001 AI-Certification Portal
+**Project Name:** ISO 27001:2022 Lead Auditor Certification
+**Platform:** ISO-Audit360.com
+**Version:** 2026.3.0
+**Status:** Scaffolding Complete — Phase 0 starts March 4, 2026
+**Last Updated:** March 3, 2026
+
+---
+
+## 0. Project Status Log
+
+| Date | Milestone | Status |
+|---|---|---|
+| March 3, 2026 | PRD v1 drafted, gaps identified | ✅ Done |
+| March 3, 2026 | PRD v2 authored with all gaps resolved | ✅ Done |
+| March 3, 2026 | DESIGN doc created (palette, typography, motion, 9-screen wireframes) | ✅ Done |
+| March 3, 2026 | PLAN doc created (7 phases, task-level breakdown, exit criteria) | ✅ Done |
+| March 3, 2026 | Tech stack finalized — React + Vite + Tailwind / Node + Express / npm workspaces | ✅ Done |
+| March 3, 2026 | Project scaffolded — all packages installed, dev servers verified | ✅ Done |
+| **March 4, 2026** | **Phase 0: Architecture & Foundation begins** | 🔜 Tomorrow |
+
+### What is scaffold-complete
+- Root monorepo with `npm workspaces` (`frontend/`, `backend/`), `concurrently` for parallel dev servers
+- **Frontend:** React 18 + Vite 5 + Tailwind CSS 3 + Framer Motion + Radix UI + React Router v6 + react-hook-form + Recharts + Axios — all packages installed; `npm run build` verified (396ms, 168KB JS / 10KB CSS)
+- **Backend:** Node.js 20 LTS + Express + JWT + bcryptjs + `pg` + `ioredis` + OpenAI SDK v4 + Sharp + Resend + AJV — all packages installed; `app.js` loads cleanly
+- Full Tailwind design system in `frontend/src/index.css` (color tokens, `btn`, `card`, `input`, `badge`, `timer`, `exam-mode` utilities)
+- 7 frontend page stubs (LandingPage, LoginPage, Dashboard, GenerationPage, ExamPage, ResultsPage, VerifyPage, NotFoundPage)
+- Auth infrastructure: `AuthContext`, `ProtectedRoute`, Axios JWT interceptors, typed API service layer
+- 6 backend route stubs (`/api/auth`, `/api/user`, `/api/session`, `/api/results`, `/api/certificates`, `/api/admin`) — all return `501 Not Implemented`
+- Middleware: `authenticate` (JWT verify), `requireAdmin` (role check), `errorHandler` (global)
+- Config modules: PostgreSQL pool (`pg`), Redis client (`ioredis`), OpenAI client
+- `.env.example` documenting all required environment variables; `.env` seeded with placeholders
+
+### What is NOT yet built (Phase 0 onwards)
+- External services provisioned (Supabase DB, Upstash Redis, Cloudflare R2, Resend domain)
+- Database migrations (full SQL schema from Section 4)
+- OpenAPI specification (formal contract)
+- AI prompt templates (10 domain threads)
+- Any business logic in routes (all return `501`)
+- Deployment pipelines (Cloudflare Pages CI, Fly.io)
+
+---
+
+## 1. Executive Summary
+
+The goal is to launch an industry-first, free certification portal that uses Just-In-Time (JIT) AI Generation to provide unique, high-integrity exams for ISO 27001:2022. By enforcing a strict 15-second per-question limit, we shift the assessment from "memorization" to "audit-ready instinct," providing users with a "2026 Premium" digital credential.
+
+---
+
+## 2. Target Audience & Value Proposition
+
+- **The User:** GRC professionals, aspiring lead auditors, and ISMS consultants.
+- **The Problem:** Most free certifications are static, easily "Googleable," and lack professional prestige.
+- **The Solution:** An exam that is impossible to cheat on due to randomized AI generation and hard-locked timers, resulting in a highly-valued LinkedIn-ready certificate.
+
+---
+
+## 3. System Architecture
+
+### 3.1 Technology Stack
+
+| Layer | Technology | Status |
+|---|---|---|
+| Frontend | React 18 + Vite 5 | ✅ Installed & build verified |
+| Styling | Tailwind CSS 3 + PostCSS | ✅ Installed, custom theme configured |
+| UI Primitives | Radix UI (Dialog, Toast, Accordion, Select, Tooltip) | ✅ Installed |
+| Animation | Framer Motion 11 | ✅ Installed |
+| Routing | React Router v6 | ✅ Installed, all routes wired |
+| Forms | react-hook-form + Zod + @hookform/resolvers | ✅ Installed |
+| Charts | Recharts | ✅ Installed |
+| HTTP Client | Axios | ✅ Installed, interceptors configured |
+| Icons | Lucide React | ✅ Installed |
+| Backend | Node.js 20 LTS + Express 4 | ✅ Installed & app loads cleanly |
+| Security | Helmet + CORS + express-rate-limit | ✅ Installed |
+| Auth | jsonwebtoken + bcryptjs | ✅ Installed |
+| Primary Database | PostgreSQL 16 via Supabase (`pg` pool) | ✅ Client installed — DB not yet provisioned |
+| Timer State | Redis 7 via Upstash (`ioredis`) | ✅ Client installed — Redis not yet provisioned |
+| AI Provider | OpenAI GPT-4o JSON mode (`openai` SDK) | ✅ SDK installed — API key not yet configured |
+| Email Delivery | Resend.com | ✅ SDK installed — domain not yet verified |
+| File Storage | Cloudflare R2 (via S3-compat AWS SDK) | 🔜 Phase 0 |
+| Image Rendering | Sharp 0.33+ | ✅ Installed |
+| Monorepo | npm workspaces + concurrently | ✅ Configured — root `npm run dev` runs both servers |
+| Validation | Zod (frontend) + AJV (backend JSON schema) | ✅ Installed |
+| Deployment | Cloudflare Pages (frontend) + Fly.io (backend) | 🔜 Phase 0 |
+| Error Tracking | Sentry | 🔜 Phase 6 |
+| Analytics | PostHog | 🔜 Phase 6 |
+
+### 3.2 Infrastructure Topology
+
+```
+User Browser
+    │
+    ├── Cloudflare Pages  (React 18 + Vite SPA)
+    │       ├── /iso-27001          (landing page)
+    │       ├── /dashboard          (readiness dashboard)
+    │       ├── /generate/:track    (generation loader)
+    │       ├── /exam/:session_id   (exam interface)
+    │       ├── /results/:session_id(audit report)
+    │       └── /verify/:cert_id    (public — no auth)
+    │             └── Cloudflare Worker injects OG meta
+    │                 tags for social sharing previews
+    │
+    └── Fly.io  (Node.js 20 + Express 4 API)
+            ├── /api/auth          (register, OTP, login)
+            ├── /api/user          (profile, attempts)
+            ├── /api/session       (create, status, start, answer, heartbeat)
+            ├── /api/results       (score, review, flag)
+            ├── /api/certificates  (get, verify — public)
+            ├── /api/admin         (users, sessions, flags, revoke, KPIs)
+            │
+            ├── OpenAI GPT-4o     (5-thread question generation)
+            ├── Upstash Redis     (authoritative timer state)
+            ├── Supabase PostgreSQL(primary data store)
+            └── Cloudflare R2     (certificate JPEG storage)
+```
+
+### 3.3 API Authentication Strategy
+
+- All protected routes require a **JWT Bearer token** (HS256, 24h expiry) verified by the `authenticate` Express middleware.
+- JWT payload: `{ user_id, email, role, iat, exp }`.
+- Exam session routes additionally require an **exam session token** (short-lived, 15-minute TTL) issued at session creation, binding the JWT user to the specific `exam_session_id`. This prevents answer injection from outside the exam UI.
+- Refresh token (7-day, stored in HttpOnly cookie) enables session continuity without re-login.
+- All API routes rate-limited via `express-rate-limit` middleware.
+- Admin-only routes additionally verified by `requireAdmin` middleware (`role === 'admin'` in JWT).
+- Global error handling via `errorHandler` middleware — returns structured JSON errors with stack trace in development only.
+
+---
+
+## 4. Data Models
+
+### 4.1 Canonical Schema (PostgreSQL)
+
+```sql
+-- users
+CREATE TABLE users (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name     TEXT NOT NULL,
+  email         TEXT UNIQUE NOT NULL,
+  company       TEXT,
+  role          TEXT,
+  country       TEXT,
+  email_verified BOOLEAN DEFAULT FALSE,
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at    TIMESTAMPTZ -- soft delete for GDPR right-to-erasure
+);
+
+-- otps
+CREATE TABLE otps (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID REFERENCES users(id) ON DELETE CASCADE,
+  code       CHAR(6) NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used       BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- exam_sessions
+CREATE TABLE exam_sessions (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               UUID REFERENCES users(id),
+  track                 TEXT NOT NULL CHECK (track IN ('associate', 'professional')),
+  status                TEXT NOT NULL DEFAULT 'generating'
+                        CHECK (status IN ('generating','ready','active','completed','expired','aborted')),
+  questions             JSONB NOT NULL DEFAULT '[]',  -- 50 question objects
+  answers               JSONB NOT NULL DEFAULT '[]',  -- submitted answers
+  score                 INTEGER,
+  passed                BOOLEAN,
+  tab_violations        INTEGER DEFAULT 0,
+  ip_address            TEXT,
+  user_agent            TEXT,
+  device_fingerprint    TEXT,
+  started_at            TIMESTAMPTZ,
+  completed_at          TIMESTAMPTZ,
+  expires_at            TIMESTAMPTZ,   -- started_at + 600s
+  created_at            TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- certificates
+CREATE TABLE certificates (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  certificate_id   TEXT UNIQUE NOT NULL, -- ISO27-2026-XXXXXXXX
+  user_id          UUID REFERENCES users(id),
+  exam_session_id  UUID REFERENCES exam_sessions(id),
+  track            TEXT NOT NULL,
+  full_name        TEXT NOT NULL,
+  awarded_on       TIMESTAMPTZ NOT NULL,
+  r2_url_landscape TEXT,   -- 1920x1080 JPEG
+  r2_url_square    TEXT,   -- 1080x1080 JPEG
+  revoked          BOOLEAN DEFAULT FALSE,
+  revoked_reason   TEXT,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- question_fingerprints (overlap rule enforcement)
+CREATE TABLE question_fingerprints (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id        UUID REFERENCES users(id),
+  track          TEXT NOT NULL,
+  stem_hash      TEXT NOT NULL,   -- SHA-256 of question stem
+  exam_session_id UUID REFERENCES exam_sessions(id),
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 4.2 Question Object (JSON Schema)
+
+```jsonc
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["id","thread","domain","stem","options","correct_option","explanation","clause_ref","difficulty"],
+  "properties": {
+    "id":             { "type": "string", "pattern": "^[AP]-T[1-5]-[0-9]{4}$" },
+    "thread":         { "type": "integer", "minimum": 1, "maximum": 5 },
+    "domain":         { "type": "string" },
+    "stem":           { "type": "string", "minLength": 20 },
+    "options":        { "type": "array", "items": { "type": "string" }, "minItems": 4, "maxItems": 4 },
+    "correct_option": { "type": "string", "enum": ["A", "B", "C", "D"] },
+    "explanation":    { "type": "string", "minLength": 30 },
+    "clause_ref":     { "type": "string" },
+    "difficulty":     { "type": "string", "enum": ["easy","medium","hard"] }
+  }
+}
+```
+
+### 4.3 Exam Result Object
+
+```jsonc
+{
+  "user_id": "uuid",
+  "exam_session_id": "uuid",
+  "track": "associate",
+  "score": 42,
+  "passed": true,
+  "answers": [
+    { "q_id": "A-T1-0001", "answer": "B", "correct": true, "time_taken_ms": 8200 }
+  ],
+  "domain_scores": {
+    "thread_1": { "correct": 8, "total": 10 },
+    "thread_2": { "correct": 9, "total": 10 },
+    "thread_3": { "correct": 8, "total": 10 },
+    "thread_4": { "correct": 9, "total": 10 },
+    "thread_5": { "correct": 8, "total": 10 }
+  },
+  "certificate_id": "ISO27-2026-A1B2C3D4",
+  "awarded_on": "2026-03-03T15:34:00+05:30"
+}
+```
+
+---
+
+## 5. Comprehensive User Journey & Functional Specifications
+
+### 5.1 Landing Page (`/iso-27001`)
+
+- Dark-themed "Executive" aesthetic with gold accents.
+- Clear breakdown of the 10-minute / 50-question / 15s-per-question protocol.
+- Pass threshold (40/50, 80%) displayed prominently before the enrollment CTA.
+- Trust indicators: certificate sample preview, domain breakdown, verification badge.
+- CTA: **"Verify Identity & Start Audit"** → triggers registration modal.
+
+### 5.2 Registration & Verification
+
+**Fields:** Full Name, Professional Email, Company, Role, Country.
+
+**OTP Flow:**
+1. User submits registration form → server creates `users` record (`email_verified = false`).
+2. Server generates a 6-digit OTP, stores in `otps` table with `expires_at = NOW() + 10 minutes`.
+3. OTP email sent via Resend.com.
+4. Rate limit: max 3 OTP requests per email per hour; max 3 OTP requests per IP per hour.
+5. On correct OTP entry: `email_verified = true`, JWT issued, user redirected to Readiness Dashboard.
+6. On OTP expiry: user must request a new OTP.
+
+**Error States:**
+- Invalid OTP → "Incorrect code. X attempts remaining." (max 5 attempts before lockout)
+- Expired OTP → "Code expired. Request a new one."
+- Rate limit hit → "Too many requests. Try again in [N] minutes."
+
+### 5.3 Readiness Dashboard (`/dashboard`)
+
+Displays after first login and on all subsequent logins.
+
+**Sections:**
+1. **Welcome header** — User's name, verification badge.
+2. **Track Selector** — Associate vs. Professional cards with syllabus breakdown and difficulty indication.
+3. **Attempt History Table** — Columns: Date, Track, Score, Status (Pass/Fail), Certificate link. Shows last 10 attempts.
+4. **Retake Policy Notice** — "You may attempt each track up to 3 times per 30 days. A 24-hour cooldown applies between attempts."
+5. **CTA** — "Start Generation" button (disabled if cooldown is active; shows countdown).
+
+**Retake Policy (Enforced Server-Side):**
+- Max 3 attempts per track per user per 30-day rolling window.
+- 24-hour cooldown between consecutive attempts on the same track.
+- Cooldown and attempt count are checked at the API level before session creation.
+
+### 5.4 The AI-Generation Engine (The "Wait" Phase)
+
+Upon selecting a track and clicking "Start Generation," the backend:
+
+1. Validates the user's retake eligibility (cooldown + attempt count). Returns 429 if ineligible.
+2. Creates an `exam_sessions` record with `status = 'generating'`.
+3. Issues a short-lived exam session token (15-min TTL) to the client.
+4. Fires **5 parallel AI threads** to OpenAI GPT-4o using JSON mode with the structured question schema.
+
+**Thread Timeout & Fallback Strategy:**
+- Each thread has an individual timeout of **45 seconds**.
+- On thread failure (timeout, API error, or schema validation failure):
+  - **Retry once** with a 5-second backoff.
+  - If retry fails: pull 10 replacement questions from the **Buffer Pool** (a pre-validated, admin-seeded set of 200 questions per track stored in PostgreSQL, flagged `is_buffer = true`).
+  - Buffer pool questions are randomly sampled with the same uniqueness/overlap rules applied.
+- If more than 2 threads fail simultaneously: abort session, return error to client, do NOT charge attempt count.
+
+**Uniqueness / Overlap Rule:**
+- After generation, each question stem is hashed with SHA-256.
+- Hashes are compared against the user's last 3 attempts' `question_fingerprints` records.
+- If ≥ 4 questions from the same thread overlap, that thread's questions are regenerated once.
+- All 50 question hashes are stored in `question_fingerprints` upon session activation.
+
+**Generation UX — "Audit Wisdom" Loader:**
+- Dynamic progress bar (polling `/api/session/[id]/status` every 3 seconds).
+- Associate Track: rotating "Clause Reminder" tips (e.g., "Clause 6.1.2 defines the risk identification process.").
+- Professional Track: rotating "Auditor Ethics" tips (e.g., "A Lead Auditor must remain objective and evidence-based.").
+- On success: loader transitions to a high-intensity **"Enter Exam"** CTA button.
+- On failure: clear error message with "Try Again" button; attempt count NOT incremented.
+
+**Track Syllabi:**
+
+**A. Associate Track (Clauses Focus):**
+- Thread 1: Clause 4 (Context) + Clause 5 (Leadership) — 10 Qs
+- Thread 2: Clause 6 (Risk Assessment & Treatment) — 10 Qs
+- Thread 3: Clause 7 (Competence, Awareness, Communication) — 10 Qs
+- Thread 4: Clause 8 (Operational Planning & Control) — 10 Qs
+- Thread 5: Clause 9 (Internal Audit) + Clause 10 (Improvement) — 10 Qs
+
+**B. Professional Track (Annex A & ISO 19011 Focus):**
+- Thread 1: Annex A 5 (Organizational Controls) — 10 Qs
+- Thread 2: Annex A 6 (People Controls) + Annex A 7 (Physical Controls) — 10 Qs
+- Thread 3: Annex A 8 (Technological Controls) — 10 Qs
+- Thread 4: Non-Conformity identification case studies — 10 Qs
+- Thread 5: ISO 19011 Principles (audit governance, evidence, reporting) — 10 Qs
+
+### 5.5 The Exam Interface (`/exam/[session_id]`)
+
+**Timer Architecture:**
+- On "Enter Exam" click, server sets in Redis:
+  - `exam:{session_id}:global_end = NOW() + 600` (Unix timestamp)
+  - `exam:{session_id}:q_end = NOW() + 15` (reset on each question advance)
+- Client displays timers derived from Redis values via a 5-second heartbeat sync.
+- **Timer authority is always Redis.** Client display is a visual approximation only.
+- Timers never pause under any circumstance (network drop, tab switch, device sleep).
+
+**Question Delivery:**
+- Server sends one question at a time. The next question is only issued after the current answer is received OR the 15s server-side timeout fires.
+- Answer submission endpoint: `POST /api/session/[id]/answer` with `{ q_id, answer, client_timestamp }`.
+- On 15s Redis TTL expiry: server auto-advances, logs `{ q_id, answer: null, time_taken_ms: 15000 }`.
+
+**Non-Reversibility:**
+- Selecting an option fires the answer submission immediately.
+- Once submitted, the option is locked (disabled). No back-navigation. Previous question controls are not rendered.
+
+**Server Sync Heartbeat:**
+- Every 5 seconds: `POST /api/session/[id]/heartbeat` returns `{ global_remaining_ms, q_remaining_ms, current_q_index }`.
+- On reconnect after network drop: client calls heartbeat immediately to re-sync state.
+- If Redis key is missing on reconnect (server restart): server reconstructs timer state from `exam_sessions.started_at` and `exam_sessions.expires_at`.
+
+**Tab-focus Monitoring:**
+- Browser `visibilitychange` and `blur` events tracked with server-side logging via heartbeat payload.
+- 1st infraction: warning toast ("Return to exam or your session will be submitted.").
+- 2nd infraction: second warning.
+- 3rd infraction: automatic exam submission with all current answers; `status = 'aborted'`; score calculated normally.
+- Tab violation count stored in `exam_sessions.tab_violations`.
+
+**Anti-Cheat:**
+- Right-click and context menu disabled on exam route.
+- Copy-paste (Ctrl+C, Ctrl+V, Cmd+C, Cmd+V) disabled via `keydown` event prevention.
+- Developer tools detection (window resize heuristic) logs a flag but does not auto-submit.
+
+**Global Timer Expiry:**
+- When Redis `global_end` timestamp is reached, server fires an expiry event (via Redis keyspace notification).
+- Server auto-submits all answers received so far; marks unanswered questions as failed.
+- Client receives a WebSocket push or detects on next heartbeat and redirects to `/results/[session_id]`.
+
+**Error States:**
+- Session not found / expired: full-page error with "Return to Dashboard."
+- Answer submission 5xx: client retries up to 3 times with exponential backoff; if all fail, question is auto-failed after timer expires.
+- Total network loss > 30s: client shows "Connection lost — timers continue on server" banner.
+
+### 5.6 Results & Audit Report (`/results/[session_id]`)
+
+- Score calculated **server-side only**. Client receives a signed result payload.
+- **Pass Threshold: 40/50 (80%)**
+- **Components:**
+  1. Pass/Fail verdict (with animated reveal).
+  2. Score display (e.g., "42 / 50 — PASSED").
+  3. Radar chart (5 domains × percentage score) via Recharts.
+  4. Per-question review table: question stem, user's answer, correct answer, AI-generated explanation with clause citation.
+  5. Download Certificate button (if passed).
+  6. "Retake in 24 hours" CTA (if failed).
+
+### 5.7 Certificate Generation & Verification
+
+**Certificate ID Format:** `ISO27-2026-[8 random alphanumeric chars]`
+(e.g., `ISO27-2026-A1B2C3D4`)
+
+**Sharp Pipeline:**
+- Input: candidate full_name, track title, certificate_id, awarded_on (UTC+05:30), QR code SVG.
+- Output 1: 1920×1080 JPEG (landscape) at 300 DPI.
+- Output 2: 1080×1080 JPEG (social square) at 300 DPI.
+- Design elements: dark executive background, gold "2026 Premium" seal, ISO-Audit360.com branding, QR code positioned bottom-right.
+- Both files stored in Cloudflare R2 under `certificates/{certificate_id}/landscape.jpg` and `certificates/{certificate_id}/square.jpg`.
+- Signed URLs generated with 1-year TTL for sharing.
+
+**QR Code:** Encodes `https://iso-audit360.com/verify/{certificate_id}`.
+
+**Verification Page (`/verify/[certificate_id]`):**
+- Publicly accessible, no authentication required.
+- Displays: Candidate Name, Track Certified, Certificate ID, Date Awarded, Status (Valid / Revoked).
+- Open Graph meta tags set for LinkedIn/Twitter link previews (certificate square image as OG image).
+- Shows warning banner if certificate is revoked.
+
+**Social Sharing:**
+- LinkedIn button: opens `https://www.linkedin.com/sharing/share-offsite/?url=...` with pre-filled text.
+- Twitter/X button: pre-fills "Proud to share my ISO 27001:2022 [Track] certification! Verify at iso-audit360.com/verify/[id] #ISO27001 #GRC #LeadAuditor".
+- "Copy Link" button copies the verification URL to clipboard.
+
+---
+
+## 6. Account Management
+
+### 6.1 Password Reset
+1. "Forgot Password" on login → email entry form.
+2. Server sends a password reset link (signed JWT, 30-minute expiry).
+3. Link opens `/reset-password/[token]` → new password form.
+4. Password hashed with bcrypt (cost factor 12) before storage.
+
+### 6.2 Profile Management
+- Users can update: Full Name, Company, Role, Country.
+- Email is immutable post-verification (to prevent identity gaming).
+
+### 6.3 Account Deletion (GDPR Right to Erasure)
+- User can request deletion from profile settings.
+- Soft-delete: `users.deleted_at = NOW()`, all PII fields nulled within 30 days via scheduled job.
+- Certificates retain `certificate_id` and pass/fail status for public verification integrity, but PII (name) is replaced with "Redacted."
+- User informed via email that deletion is scheduled.
+
+---
+
+## 7. Security & Legal
+
+### 7.1 API Security
+- All endpoints require JWT Bearer token (except `/verify/[id]`, registration, OTP, and public landing).
+- Exam answer endpoints additionally require the exam session token.
+- Rate limits:
+  - OTP generation: 3/hour/email, 3/hour/IP
+  - Exam session creation: 3/day/user (enforced + logged)
+  - Answer submission: 120/minute/session (well above normal; bot detection only)
+  - General API: 300 requests/minute/IP
+
+### 7.2 Data Retention Policy
+- Active user data: retained while account exists.
+- Exam session data (questions, answers): retained for 2 years.
+- Certificates: retained indefinitely (public verification requires it).
+- OTP records: deleted after 24 hours.
+- Deleted accounts: PII purged within 30 days; anonymized exam records retained.
+- All retention policies to be reflected in Privacy Policy.
+
+### 7.3 ISO IP Compliance
+- AI prompts must instruct GPT-4o to **paraphrase** ISO 27001:2022 clause intent — never to reproduce verbatim clause text.
+- Question `clause_ref` field cites the clause/annex for reference (educational attribution), not reproduction.
+- Terms of Service disclaims that ISO-Audit360.com is not affiliated with ISO, BSI, or any accreditation body.
+
+### 7.4 Privacy Policy (Required at Launch)
+Must cover:
+- Data collected (registration fields, IP, device fingerprint, exam responses).
+- Purpose of collection (exam delivery, fraud prevention, certificate issuance).
+- Data retention periods (per Section 7.2).
+- User rights (access, correction, erasure, portability — GDPR Articles 15–20).
+- Third-party processors: OpenAI (data processing), Resend (email), Supabase (data storage), Cloudflare R2 (file storage), Fly.io (compute).
+- Contact email for DPO/privacy requests.
+
+### 7.5 Terms of Service (Required at Launch)
+Must cover:
+- Exam integrity rules and consequences of violation.
+- Certificate validity and limitations (not an ISO-accredited certification).
+- IP disclaimer (ISO 27001:2022 is a trademark of ISO/BSI).
+- Limitation of liability.
+- Account termination rights.
+
+### 7.6 Fraud Detection
+- Log IP address, user agent, and device fingerprint per exam attempt in `exam_sessions`.
+- Flag: perfect score (50/50) with average time-per-question < 4 seconds → admin review queue.
+- Flag: > 5 exam attempts from the same IP within 24 hours → temporary IP block.
+- Admin can manually revoke certificates from the admin panel.
+
+---
+
+## 8. Admin Panel (`/admin`)
+
+Access restricted to users with `role = 'admin'` in JWT.
+
+**Features:**
+1. **User Management:** Search by email, view attempt history, manually verify/block accounts.
+2. **Exam Session Monitor:** Live list of active sessions (count, track distribution, error rate).
+3. **Certificate Management:** Search by certificate ID, view/revoke with reason logging.
+4. **Question Quality:** Review flagged questions. Users can flag a question during the results screen ("Report inaccuracy"). Admin sees flag count + content.
+5. **Buffer Pool Management:** Upload / review / approve buffer pool questions per track.
+6. **KPI Dashboard:** Registration→verified conversion rate, daily active exams, pass rate, certificate shares.
+
+---
+
+## 9. AI Prompt Design Principles
+
+- Prompts must specify: question format (4-option MCQ), difficulty distribution (30% easy, 50% medium, 20% hard per thread), target domain, and output JSON schema.
+- Prompts must explicitly instruct: "Do NOT reproduce any text verbatim from the ISO 27001:2022 standard. Paraphrase all clause concepts."
+- Each prompt includes 2-3 "distractor design instructions" to ensure wrong options represent plausible auditor mistakes (e.g., confusing Clause 6.1.2 with 6.1.3).
+- System prompt establishes the AI as an "ISO 27001:2022 examination designer" persona.
+- Temperature: 0.8 (controlled creativity without hallucination risk).
+- Max tokens per thread: 4000 (sufficient for 10 well-formed questions).
+
+---
+
+## 10. Success Metrics (KPIs)
+
+| KPI | Target | Measurement |
+|---|---|---|
+| Registration → Verified Email | > 85% | PostHog funnel |
+| Generation Success Rate | > 97% | Sentry + custom event |
+| Exam Completion Rate | > 75% | PostHog |
+| Pass Rate | 30–60% | DB aggregate |
+| Certificate Share Rate (LinkedIn) | > 40% of passers | PostHog click event |
+| Average Time Per Question | 8–12 seconds | `time_taken_ms` aggregate |
+| AI Question Accuracy Flag Rate | < 3% | Admin panel |
+| Verification Page Views per Certificate | > 2 | PostHog |
+
+---
+
+## 11. Out of Scope (This Version)
+
+- The "Audit Simulation" Case Study Module (future sprint)
+- Mobile native app
+- Team / enterprise bulk registration
+- Paid certification tier
+- Integration with LMS platforms (SCORM)
+

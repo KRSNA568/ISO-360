@@ -138,6 +138,7 @@ router.get('/attempts', async (req, res, next) => {
     const { rows: sessions } = await pool.query(
       `SELECT
          id, track, status, score, passed,
+         jsonb_array_length(questions) AS total_questions,
          tab_violations, suspicious,
          started_at, completed_at, expires_at, created_at
        FROM exam_sessions

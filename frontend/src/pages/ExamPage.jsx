@@ -1,9 +1,436 @@
-// TODO: Phase 3 — Exam interface with dual-timer, question cards, anti-cheat
-// NOTE: This page activates exam-mode (dark background) via body class
-export default function ExamPage() {
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams }                   from 'react-router-dom'
+import api                                          from '@/lib/api'
+
+// ── Browser fingerprint (privacy-safe: no external lib) ──────────────────
+async function getBrowserFingerprint() {
+  const raw = [
+    navigator.userAgent,
+    `${screen.width}x${screen.height}`,
+    screen.colorDepth,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.language,
+    navigator.hardwareConcurrency ?? '',
+    navigator.platform ?? '',
+  ].join('|')
+  try {
+    const buf  = new TextEncoder().encode(raw)
+    const hash = await crypto.subtle.digest('SHA-256', buf)
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('')
+  } catch {
+    return btoa(raw).slice(0, 40)
+  }
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function formatTime(secs) {
+  const m = Math.floor(Math.max(0, secs) / 60)
+  const s = Math.max(0, secs) % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+function OptionButton({ letter, text, selected, onClick }) {
   return (
-    <div className="min-h-screen exam-mode flex items-center justify-center">
-      <p className="text-surface">Exam interface coming soon</p>
+    <button
+      onClick={onClick}
+      className={[
+        'w-full text-left flex items-start gap-4 px-5 py-4 rounded-lg border transition-all duration-150',
+        selected
+          ? 'border-gold bg-gold/10 text-white'
+          : 'border-exam-border bg-exam-surface text-ink-muted hover:border-gold/40 hover:text-white',
+      ].join(' ')}
+    >
+      <span className={[
+        'flex-shrink-0 w-7 h-7 rounded-full border flex items-center justify-center text-xs font-bold mt-0.5',
+        selected ? 'border-gold bg-gold text-ink' : 'border-exam-border text-ink-muted',
+      ].join(' ')}>
+        {letter}
+      </span>
+      <span className="text-sm leading-relaxed">{text}</span>
+    </button>
+  )
+}
+
+function NavDot({ index, current, answered }) {
+  const n = index + 1
+  let cls = 'w-8 h-8 rounded-md text-xs font-semibold select-none '
+  if (index === current)   cls += 'bg-gold text-ink'
+  else if (answered)       cls += 'bg-gold/20 text-gold border border-gold/30'
+  else                     cls += 'bg-exam-surface border border-exam-border text-ink-muted'
+  return (
+    <div className={cls + ' flex items-center justify-center'} title={`Question ${n}`}>
+      {n}
+    </div>
+  )
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+export default function ExamPage() {
+  const { sessionId } = useParams()
+  const navigate      = useNavigate()
+
+  const [phase,      setPhase]      = useState('loading')  // loading | exam | submitting | error
+  const [questions,  setQuestions]  = useState([])
+  const [answers,    setAnswers]    = useState({})          // { questionId: 'A'|'B'|'C'|'D' }
+  const [current,    setCurrent]    = useState(0)
+  const [remaining,  setRemaining]  = useState(0)
+  const [track,      setTrack]      = useState('')
+  const [confirmBox, setConfirmBox] = useState(false)
+  const [errorMsg,   setErrorMsg]   = useState('')
+
+  const tickRef      = useRef(null)
+  const answersRef   = useRef({})   // always-fresh ref used in submit closure
+  const submittedRef = useRef(false)
+
+  // Keep answersRef in sync
+  useEffect(() => { answersRef.current = answers }, [answers])
+
+  // ── Load exam on mount ─────────────────────────────────────────────────────
+  useEffect(() => {
+    startExam()
+    return () => clearInterval(tickRef.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
+
+  // ── Tab-switch detection ───────────────────────────────────────────────────
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden' && phase === 'exam') {
+        api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [phase, sessionId])
+
+  async function startExam() {
+    try {
+      const fingerprint = await getBrowserFingerprint()
+      const res = await api.post(`/session/${sessionId}/start`, { device_fingerprint: fingerprint })
+      const { questions: qs, remaining: rem, track: t, savedAnswers } = res.data
+
+      setQuestions(qs)
+      setRemaining(rem)
+      setTrack(t)
+      setAnswers(savedAnswers || {})
+      setPhase('exam')
+      beginCountdown(rem)
+    } catch (err) {
+      const data = err.response?.data
+      // Already completed — go straight to results
+      if (err.response?.status === 400 && data?.redirect) {
+        navigate(data.redirect, { replace: true })
+        return
+      }
+      setErrorMsg(data?.error || 'Could not load exam. Please try again.')
+      setPhase('error')
+    }
+  }
+
+  function beginCountdown(startSecs) {
+    let secs = startSecs
+    clearInterval(tickRef.current)
+    tickRef.current = setInterval(() => {
+      secs -= 1
+      setRemaining(secs)
+      if (secs <= 0) {
+        clearInterval(tickRef.current)
+        submitExam(true)
+      }
+    }, 1000)
+  }
+
+  // ── Answer selection — can change or deselect on current question ──────
+  function selectAnswer(questionId, option) {
+    const existing = answers[questionId]
+    const newOption = existing === option ? null : option   // same click = deselect
+
+    setAnswers((prev) => {
+      const next = { ...prev }
+      if (newOption === null) delete next[questionId]
+      else next[questionId] = newOption
+      return next
+    })
+
+    // Sync to server: null removes answer, A-D upserts it
+    api.post(`/session/${sessionId}/answer`, { questionId, selectedOption: newOption }).catch(() => {})
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  const submitExam = useCallback(async (autoSubmit = false) => {
+    if (submittedRef.current) return
+    submittedRef.current = true
+    clearInterval(tickRef.current)
+    setPhase('submitting')
+    setConfirmBox(false)
+
+    try {
+      await api.post(`/session/${sessionId}/submit`)
+      navigate(`/results/${sessionId}`, { replace: true })
+    } catch (err) {
+      const data = err.response?.data
+      if (data?.alreadyScored) {
+        navigate(`/results/${sessionId}`, { replace: true })
+        return
+      }
+      setErrorMsg(data?.error || 'Submit failed. Please try again.')
+      setPhase('error')
+      submittedRef.current = false
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, navigate])
+  // ── Prevent copy / paste / right-click on exam page ────────────────────────
+  useEffect(() => {
+    if (phase !== 'exam') return
+    const block = (e) => e.preventDefault()
+    document.addEventListener('copy',         block)
+    document.addEventListener('cut',          block)
+    document.addEventListener('paste',        block)
+    document.addEventListener('contextmenu',  block)
+    return () => {
+      document.removeEventListener('copy',        block)
+      document.removeEventListener('cut',         block)
+      document.removeEventListener('paste',       block)
+      document.removeEventListener('contextmenu', block)
+    }
+  }, [phase])
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const q             = questions[current] || null
+  const answeredCount = Object.keys(answers).length
+  const totalQ        = questions.length
+  const timerRed      = remaining <= 60
+  const progressPct   = totalQ > 0 ? Math.round((answeredCount / totalQ) * 100) : 0
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (phase === 'loading') {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="w-3 h-3 rounded-full bg-gold animate-ping" />
+          <span className="text-ink-muted text-sm">Loading exam…</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Error ──────────────────────────────────────────────────────────────────
+  if (phase === 'error') {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <p className="text-white font-semibold mb-2">Something went wrong</p>
+          <p className="text-ink-muted text-sm mb-6">{errorMsg}</p>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="px-6 py-2 bg-gold text-ink font-semibold rounded-lg hover:bg-gold-light transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Submitting spinner ─────────────────────────────────────────────────────
+  if (phase === 'submitting') {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="w-3 h-3 rounded-full bg-gold animate-ping" />
+          <span className="text-ink-muted text-sm">Submitting exam…</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Confirm submit dialog ──────────────────────────────────────────────────
+  const unanswered = totalQ - answeredCount
+
+  return (
+    <div className="min-h-screen bg-ink flex flex-col">
+
+      {/* ── Top bar: timer + progress ── */}
+      <div className="sticky top-0 z-30 bg-ink border-b border-exam-border px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+        {/* Track label */}
+        <span className="text-gold text-xs font-semibold tracking-widest uppercase hidden sm:block">
+          ISO 27001 · {track === 'professional' ? 'Professional' : 'Associate'}
+        </span>
+
+        {/* Timer */}
+        <div className={[
+          'flex items-center gap-2 font-mono text-2xl font-bold tabular-nums',
+          timerRed ? 'text-red-400' : 'text-white',
+        ].join(' ')}>
+          {timerRed && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />}
+          {formatTime(remaining)}
+        </div>
+
+        {/* Progress + submit */}
+        <div className="flex items-center gap-4">
+          <span className="text-ink-muted text-xs hidden sm:block">
+            {answeredCount}/{totalQ} answered
+          </span>
+          <button
+            onClick={() => setConfirmBox(true)}
+            className="px-4 py-1.5 bg-gold text-ink text-xs font-bold rounded-lg hover:bg-gold-light transition-colors"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+
+      {/* ── Progress bar ── */}
+      <div className="h-0.5 bg-exam-border">
+        <div
+          className="h-full bg-gold transition-all duration-500"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
+      {/* ── Main layout ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── Question navigator sidebar (desktop) ── */}
+        <aside className="hidden lg:flex flex-col w-52 border-r border-exam-border bg-exam-surface p-4 gap-3 overflow-y-auto">
+          <p className="text-ink-muted text-xs font-semibold tracking-wider uppercase mb-1">
+            Questions
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {questions.map((q, i) => (
+              <NavDot
+                key={q.id}
+                index={i}
+                current={current}
+                answered={!!answers[q.id]}
+              />
+            ))}
+          </div>
+          <div className="mt-auto pt-4 border-t border-exam-border space-y-1.5 text-xs text-ink-muted">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded bg-gold" /> Current
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded bg-gold/20 border border-gold/30" /> Answered
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded bg-exam-surface border border-exam-border" /> Unanswered
+            </div>
+          </div>
+        </aside>
+
+        {/* ── Question panel ── */}
+        <main className="flex-1 overflow-y-auto px-4 md:px-10 py-8">
+          {q && (
+            <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+
+              {/* Question header */}
+              <div className="flex items-center justify-between">
+                <span className="text-gold text-xs font-semibold tracking-widest uppercase">
+                  Question {current + 1} of {totalQ}
+                </span>
+                <span className={[
+                  'text-xs px-2 py-0.5 rounded-full border font-medium',
+                  q.difficulty === 'easy'   ? 'border-green-700/40 text-green-400'  :
+                  q.difficulty === 'hard'   ? 'border-red-700/40   text-red-400'    :
+                                              'border-yellow-700/40 text-yellow-400',
+                ].join(' ')}>
+                  {q.difficulty}
+                </span>
+              </div>
+
+              {/* Clause ref */}
+              {q.clause_ref && (
+                <p className="text-xs text-ink-muted font-mono">{q.clause_ref}</p>
+              )}
+
+              {/* Stem */}
+              <p className="text-white text-base leading-relaxed font-medium">
+                {q.stem}
+              </p>
+
+              {/* Options */}
+              <div className="space-y-3">
+                {['A', 'B', 'C', 'D'].map((letter, idx) => (
+                  <OptionButton
+                    key={letter}
+                    letter={letter}
+                    text={q.options[idx]}
+                    selected={answers[q.id] === letter}
+                    onClick={() => selectAnswer(q.id, letter)}
+                  />
+                ))}
+              </div>
+
+              {/* Next only — no back navigation, no jumping ahead */}
+              <div className="flex justify-end pt-4">
+                {current < totalQ - 1 ? (
+                  <button
+                    onClick={() => setCurrent((i) => i + 1)}
+                    className="px-5 py-2 rounded-lg bg-exam-surface border border-exam-border text-white text-sm hover:border-gold/50 transition-all"
+                  >
+                    Next →
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setConfirmBox(true)}
+                    className="px-5 py-2 rounded-lg bg-gold text-ink text-sm font-bold hover:bg-gold-light transition-colors"
+                  >
+                    Finish & Submit
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* ── Mobile question navigator (horizontal scroll bar) ── */}
+        <div className="lg:hidden fixed bottom-0 inset-x-0 bg-exam-surface border-t border-exam-border px-4 py-2 overflow-x-auto">
+          <div className="flex gap-1.5 min-w-max">
+            {questions.map((q, i) => (
+              <NavDot
+                key={q.id}
+                index={i}
+                current={current}
+                answered={!!answers[q.id]}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Confirm submit modal ── */}
+      {confirmBox && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
+          <div className="bg-exam-surface border border-exam-border rounded-xl p-8 max-w-sm w-full shadow-xl">
+            <h2 className="text-white font-semibold text-lg mb-2">Submit Exam?</h2>
+            {unanswered > 0 ? (
+              <p className="text-ink-muted text-sm mb-6">
+                You have <span className="text-yellow-400 font-semibold">{unanswered} unanswered question{unanswered > 1 ? 's' : ''}</span>.
+                Unanswered questions count as incorrect.
+              </p>
+            ) : (
+              <p className="text-ink-muted text-sm mb-6">
+                All {totalQ} questions answered. Ready to submit?
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmBox(false)}
+                className="flex-1 py-2.5 rounded-lg border border-exam-border text-ink-muted text-sm hover:border-gold/40 hover:text-white transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => submitExam(false)}
+                className="flex-1 py-2.5 rounded-lg bg-gold text-ink text-sm font-bold hover:bg-gold-light transition-colors"
+              >
+                Submit Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

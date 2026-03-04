@@ -270,6 +270,32 @@ router.post('/resend-otp', otpIpLimiter, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+// ── Per-account brute-force guard (Redis-backed, fail-open) ──────────────────
+const LOGIN_MAX_FAILURES  = 10   // lock after 10 wrong passwords
+const LOGIN_LOCKOUT_SECS  = 900  // 15-minute lockout
+
+async function checkLoginBruteForce(userId) {
+  try {
+    const key   = `login_fail:${userId}`
+    const count = await redis.incr(key)
+    if (count === 1) await redis.expire(key, LOGIN_LOCKOUT_SECS)
+    if (count > LOGIN_MAX_FAILURES) {
+      const ttl = await redis.ttl(key)
+      const err = new Error(`Too many failed login attempts. Try again in ${Math.ceil(ttl / 60)} minutes.`)
+      err.status = 429
+      throw err
+    }
+  } catch (err) {
+    if (err.status === 429) throw err
+    // Redis unavailable — fail open, IP-level rate limit still protects
+    console.warn('[auth] Redis unavailable for brute-force check, failing open:', err.message)
+  }
+}
+
+async function clearLoginBruteForce(userId) {
+  try { await redis.del(`login_fail:${userId}`) } catch { /* fail-open */ }
+}
+
 // ── 1.4  POST /login ──────────────────────────────────────────────────────────
 
 router.post('/login', authLimiter, async (req, res, next) => {
@@ -290,10 +316,16 @@ router.post('/login', authLimiter, async (req, res, next) => {
     if (!user.password_hash) return res.status(401).json({ error: INVALID })
 
     const match = await bcrypt.compare(data.password, user.password_hash)
-    if (!match) return res.status(401).json({ error: INVALID })
+    if (!match) {
+      await checkLoginBruteForce(user.id).catch(() => {})
+      return res.status(401).json({ error: INVALID })
+    }
+
+    // Successful password match — clear any brute-force counter
+    await clearLoginBruteForce(user.id)
 
     if (!user.email_verified) {
-      // Auto-resend OTP on login attempt with unverified account
+      // Auto-resend verification OTP on login attempt with unverified account
       try {
         await checkEmailOtpLimit(user.email)
         await pool.query(

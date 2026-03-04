@@ -8,8 +8,13 @@
  */
 const rateLimit = require('express-rate-limit')
 
+// In the test environment skip all rate limiting so the integration
+// test suite can run multiple times without hitting the in-memory counter.
+const IS_TEST = process.env.NODE_ENV === 'test'
+const noLimit = (_req, _res, next) => next()
+
 // ── General auth rate limit (login, register) — 20 req / 15 min per IP ───────
-const authLimiter = rateLimit({
+const authLimiter = IS_TEST ? noLimit : rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   standardHeaders: true,
@@ -19,7 +24,7 @@ const authLimiter = rateLimit({
 })
 
 // ── OTP send rate limit — 10 req / 15 min per IP ─────────────────────────────
-const otpIpLimiter = rateLimit({
+const otpIpLimiter = IS_TEST ? noLimit : rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
@@ -28,8 +33,8 @@ const otpIpLimiter = rateLimit({
   keyGenerator: (req) => req.ip,
 })
 
-// ── Password reset rate limit — 5 req / 60 min per IP ────────────────────────
-const resetLimiter = rateLimit({
+// ── Password reset rate limit — 5 req / 60 min per IP ─────────────────────────
+const resetLimiter = IS_TEST ? noLimit : rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
   standardHeaders: true,

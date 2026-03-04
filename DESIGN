@@ -1,0 +1,1031 @@
+# Design Document: ISO-Audit360.com
+## ISO 27001:2022 Certification Portal — UI/UX Specification
+**Version:** 2026.2.0
+**Date:** March 3, 2026
+**Design Philosophy:** "Precision White" — Clean authority, not cold sterility
+
+---
+
+## 1. Design Philosophy
+
+ISO-Audit360.com targets senior GRC professionals and auditors — people who trust precision, credibility, and clarity over flair. The design must communicate:
+
+- **Institutional authority** — feels like it belongs next to BSI, ISO.org, and PECB
+- **Technological edge** — the adaptive question engine is a differentiator; the UI must hint at intelligence
+- **Earned prestige** — the certificate must feel like something worth sharing on LinkedIn
+
+**Core Tension:** Approachable enough for first-timers, rigorous enough for lead auditors.
+
+**Resolution:** White-dominant surfaces with black typographic precision, gold as the single luxury signal, and motion that feels deliberate — never decorative.
+
+---
+
+## 2. Color Palette
+
+### 2.1 Primary Palette
+
+| Token | Hex | Usage |
+|---|---|---|
+| `--color-white` | `#FFFFFF` | Primary background, card surfaces |
+| `--color-surface` | `#F7F7F5` | Off-white page background, input fills |
+| `--color-surface-raised` | `#FAFAF9` | Elevated card backgrounds, modals |
+| `--color-ink` | `#0A0A0A` | Primary body text, headings |
+| `--color-ink-secondary` | `#3D3D3D` | Secondary labels, captions |
+| `--color-ink-muted` | `#7A7A7A` | Placeholder text, disabled labels |
+| `--color-border` | `#E5E5E3` | Dividers, input borders, card outlines |
+| `--color-border-strong` | `#C8C8C5` | Hover borders, focused outlines |
+
+### 2.2 Accent Palette — Gold
+
+| Token | Hex | Usage |
+|---|---|---|
+| `--color-gold` | `#C9A84C` | Primary brand accent, CTAs, seals |
+| `--color-gold-light` | `#E8CB7A` | Hover states, backgrounds on gold elements |
+| `--color-gold-dark` | `#9A7A30` | Active/pressed states, deep borders |
+| `--color-gold-subtle` | `#FBF4E3` | Subtle background tints, selected states |
+
+### 2.3 Functional Palette
+
+| Token | Hex | Usage |
+|---|---|---|
+| `--color-success` | `#1A7A4A` | Pass verdict, correct answers, verified badge |
+| `--color-success-bg` | `#EDF7F2` | Pass result background |
+| `--color-error` | `#B91C1C` | Fail verdict, incorrect answers, error states |
+| `--color-error-bg` | `#FEF2F2` | Fail result background, error field fills |
+| `--color-warning` | `#B45309` | Tab violation warnings, caution indicators |
+| `--color-warning-bg` | `#FFFBEB` | Warning banner backgrounds |
+| `--color-info` | `#1D4ED8` | Informational tooltips, links |
+
+### 2.4 Exam Mode Overrides
+
+During the active exam (`/exam/:session_id`), the interface shifts to a focused **Ink Mode**:
+
+| Token Override | Value | Reason |
+|---|---|---|
+| Page background | `#0A0A0A` | Eliminate distraction, signal "you are in the exam" |
+| Surface | `#141414` | Card backgrounds in exam |
+| Primary text | `#F7F7F5` | On dark background |
+| Gold unchanged | `#C9A84C` | Timers, selected option highlight |
+| Border in exam | `#2A2A2A` | Subtle separation on dark |
+
+This deliberate mode-switch creates a "crossing the threshold" feeling when entering and leaving the exam.
+
+---
+
+## 3. Typography
+
+### 3.1 Type Scale
+
+**Primary Typeface:** `Inter` (Google Fonts — weights: 400, 500, 600, 700)
+- Rationale: Highest legibility at all sizes; the de-facto standard for professional SaaS; pairs well with the precision aesthetic.
+
+**Accent Typeface:** `Playfair Display` (Google Fonts — weights: 400, 700)
+- Used exclusively for: certificate candidate name, hero headline on landing page, section-level "pull quotes."
+- Rationale: Introduces editorial prestige without going decorative.
+
+**Monospace:** `JetBrains Mono` (Google Fonts — weights: 400, 600)
+- Used for: certificate ID display, question IDs, domain labels, timer numbers.
+- Rationale: Technical precision signal; extremely legible for countdown numbers.
+
+```css
+/* Type Scale — using fluid clamp() sizing */
+--text-xs:   clamp(0.688rem, 0.65rem + 0.18vw, 0.75rem);    /* 11–12px */
+--text-sm:   clamp(0.813rem, 0.78rem + 0.18vw, 0.875rem);   /* 13–14px */
+--text-base: clamp(0.938rem, 0.9rem + 0.2vw, 1rem);         /* 15–16px */
+--text-lg:   clamp(1.063rem, 1rem + 0.3vw, 1.125rem);       /* 17–18px */
+--text-xl:   clamp(1.188rem, 1.1rem + 0.4vw, 1.25rem);      /* 19–20px */
+--text-2xl:  clamp(1.375rem, 1.25rem + 0.6vw, 1.5rem);      /* 22–24px */
+--text-3xl:  clamp(1.75rem, 1.5rem + 1.2vw, 2rem);          /* 28–32px */
+--text-4xl:  clamp(2.25rem, 1.8rem + 2vw, 2.75rem);         /* 36–44px */
+--text-5xl:  clamp(2.75rem, 2rem + 3vw, 3.75rem);           /* 44–60px */
+--text-hero: clamp(3.25rem, 2.5rem + 4vw, 5rem);            /* 52–80px */
+```
+
+### 3.2 Line Heights & Letter Spacing
+
+```css
+--leading-tight:  1.15;   /* Headlines, display text */
+--leading-snug:   1.35;   /* Subheadings */
+--leading-normal: 1.55;   /* Body copy */
+--leading-relaxed: 1.7;   /* Long-form, question stems */
+
+--tracking-tight:  -0.03em;  /* Large display headings */
+--tracking-normal:  0em;
+--tracking-wide:    0.04em;  /* ALL CAPS labels, badge text */
+--tracking-widest:  0.12em;  /* Section overlines: "ASSOCIATE TRACK" */
+```
+
+---
+
+## 4. Spacing & Layout System
+
+```css
+/* 4px base grid */
+--space-1:  4px;
+--space-2:  8px;
+--space-3:  12px;
+--space-4:  16px;
+--space-5:  20px;
+--space-6:  24px;
+--space-8:  32px;
+--space-10: 40px;
+--space-12: 48px;
+--space-16: 64px;
+--space-20: 80px;
+--space-24: 96px;
+--space-32: 128px;
+
+/* Container widths */
+--container-xs:  480px;
+--container-sm:  640px;
+--container-md:  768px;
+--container-lg:  1024px;
+--container-xl:  1280px;
+--container-2xl: 1440px;
+
+/* Responsive page max-width: 1440px, content well: 1280px */
+```
+
+---
+
+## 5. Elevation & Shadow System
+
+```css
+/* White-surface elevation via shadows, not color */
+--shadow-xs:  0 1px 2px rgba(10,10,10,0.05);
+--shadow-sm:  0 2px 4px rgba(10,10,10,0.06), 0 1px 2px rgba(10,10,10,0.04);
+--shadow-md:  0 4px 12px rgba(10,10,10,0.08), 0 2px 4px rgba(10,10,10,0.04);
+--shadow-lg:  0 8px 24px rgba(10,10,10,0.10), 0 2px 8px rgba(10,10,10,0.06);
+--shadow-xl:  0 16px 48px rgba(10,10,10,0.12), 0 4px 16px rgba(10,10,10,0.06);
+--shadow-gold: 0 4px 20px rgba(201,168,76,0.25);   /* Gold glow — CTA hover */
+```
+
+---
+
+## 6. Border Radius
+
+```css
+--radius-sm:   4px;    /* Input fields, small tags */
+--radius-md:   8px;    /* Cards, modals, buttons */
+--radius-lg:   12px;   /* Large cards, panels */
+--radius-xl:   16px;   /* Feature tiles */
+--radius-2xl:  24px;   /* Hero cards, certification blocks */
+--radius-full: 9999px; /* Pills, avatar badges, progress bars */
+```
+
+---
+
+## 7. Motion & Animation System
+
+### 7.1 Core Principles
+
+1. **Physics-based** — Motion follows natural deceleration curves, never linear.
+2. **Purposeful** — Every animation communicates state change, not decoration.
+3. **Fast** — Micro-interactions: 120–200ms. Component transitions: 250–350ms. Page transitions: 400ms.
+4. **Respectful** — All animations honor `prefers-reduced-motion`.
+
+```css
+/* Easing tokens */
+--ease-out:      cubic-bezier(0.0, 0, 0.2, 1);   /* Most UI transitions */
+--ease-in:       cubic-bezier(0.4, 0, 1, 1);      /* Dismiss/exit only */
+--ease-in-out:   cubic-bezier(0.4, 0, 0.2, 1);   /* Balanced movement */
+--ease-spring:   cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy reveals */
+--ease-smooth:   cubic-bezier(0.25, 0.46, 0.45, 0.94);    /* Silky scrolls */
+
+/* Duration tokens */
+--duration-instant: 80ms;
+--duration-fast:    150ms;
+--duration-base:    250ms;
+--duration-slow:    350ms;
+--duration-slower:  500ms;
+--duration-page:    400ms;
+```
+
+### 7.2 Motion Catalogue
+
+**Landing Page:**
+
+| Trigger | Element | Animation | Duration | Easing |
+|---|---|---|---|---|
+| Page load | Hero headline | Fade up (y: 24px → 0) + opacity (0 → 1) | 600ms | `ease-out` |
+| Page load | Hero subheadline | Same, staggered +120ms | 600ms | `ease-out` |
+| Page load | CTA button | Scale (0.96 → 1) + opacity | 400ms | `ease-spring` |
+| Page load | Hero image | Fade in (0 → 1) right-to-left reveal via clip-path | 800ms | `ease-out` |
+| Scroll | Stat counters | Animated count-up from 0 when in view | 1200ms | `ease-out` |
+| Scroll | Feature cards | Cascade fade-up (stagger 80ms per card) | 500ms | `ease-out` |
+| Scroll | Certificate preview | Parallax float (y shifts slower than scroll) | Continuous | — |
+| Hover | CTA button | Background ripple + subtle scale (1 → 1.02) + gold glow shadow | 200ms | `ease-out` |
+| Hover | Feature cards | y: 0 → -4px + shadow intensify | 200ms | `ease-out` |
+| Hover | Nav links | Gold underline slides in from left (width: 0 → 100%) | 200ms | `ease-out` |
+
+**Registration & OTP:**
+
+| Trigger | Element | Animation | Duration |
+|---|---|---|---|
+| Form open | Modal | Scale (0.95 → 1) + opacity + backdrop blur-in | 300ms |
+| Input focus | Field border | Color transition to `--color-gold` + subtle label lift | 150ms |
+| OTP input | Each digit cell | Scale pop (1 → 1.1 → 1) when digit entered | 120ms |
+| OTP success | All cells | Green fill ripple left-to-right (stagger 60ms) | 360ms |
+| OTP error | All cells | Horizontal shake (±4px, 3 cycles) | 300ms |
+| Form submit | Button | Content swaps to spinner; button width locks | 150ms |
+
+**Generation Loader:**
+
+| Element | Animation | Notes |
+|---|---|---|
+| Progress bar fill | Smooth width transition driven by polling data | Eased, never jumps |
+| Thread status dots (5) | Fade in + pulse ring when thread is active | Each dot activates in sequence |
+| Thread completion | dot: pulse → solid green checkmark scale-in | Per thread |
+| "Audit Wisdom" tip card | Crossfade (fade out old, fade in new) every 8s | Text swap, not slide |
+| "Enter Exam" button reveal | Scale (0.9 → 1) + gold glow + subtle bounce | Post-generation |
+
+**Exam Interface:**
+
+| Element | Animation | Notes |
+|---|---|---|
+| Question card enter | Slide in from right (x: 30px → 0) + opacity | 250ms, direction reverses on auto-advance |
+| Question card exit | Slide out left (x: 0 → -30px) + opacity fade | Simultaneous with enter |
+| Option select | Immediate: background fill sweeps left-to-right | 150ms — fast, deliberate feel |
+| Option lock | Selection fades to locked gold, others fade to disabled grey | 150ms |
+| Per-question timer ring | SVG stroke-dashoffset countdown animation | Continuous, synchronized to Redis |
+| Timer warning (≤5s) | Ring color: gold → orange → red (step transitions) | State-based, not animated |
+| Timer at 0 | Ring pulses 3× red + question fades out | 300ms |
+| Global timer <60s | Timer text color shifts to `--color-error`, gentle pulse | CSS animation |
+| Tab violation toast | Slide in from top (y: -60px → 0) + shake on 2nd | 300ms |
+| Auto-submit | Question dims, "Submitting exam..." overlay fades in | 400ms |
+
+**Results Page:**
+
+| Element | Animation | Notes |
+|---|---|---|
+| Verdict reveal | Score number counts up from 0 to final value | 1500ms, ease-out |
+| Pass/Fail badge | Scale (0.5 → 1.05 → 1.0) + opacity | 400ms, ease-spring |
+| Radar chart | Each axis draws out from center sequentially | 800ms total, staggered |
+| Correct answer indicator | Green checkmark draws (SVG stroke-dashoffset) | 200ms per item, as user scrolls |
+| Incorrect answer indicator | Red X draws | 200ms |
+| Certificate reveal | Fold-unfold motion (scaleY: 0 → 1 from center) + shadow | 600ms |
+
+**Certificate Download Button:**
+
+| State | Animation |
+|---|---|
+| Idle | Subtle gold shimmer sweep across button (4s loop) |
+| Hover | Background gradient shifts + scale 1 → 1.02 + shadow |
+| Click | Brief scale press (1 → 0.97) + download icon spins 180° |
+
+---
+
+## 8. Image & Visual Strategy
+
+### 8.1 Photography Direction
+
+All photography uses **Unsplash / Pexels** (CC0 licensed) with a consistent art direction:
+
+**Landing page — hero section:**
+- Scene: Modern open-plan corporate office, floor-to-ceiling windows, overcast natural light
+- Subject: Person at a laptop, slightly blurred, white desk, minimal clutter
+- Color treatment: Desaturate 20%, slightly cool white balance → harmonizes with white/black palette
+- Overlay: Soft white gradient from left edge (to ensure hero text legibility)
+
+**Recommended search terms:** `"professional workspace white desk"`, `"corporate audit meeting"`, `"cybersecurity professional office"`
+
+**Trust / Social proof section:**
+- Headshots (avatars) of 3–4 fictional testimonials: professional, diverse, corporate attire
+- Cropped circular, 80×80px, with thin gold ring border
+
+**Certificate preview:**
+- Actual generated certificate JPEG displayed in the feature section (populated with a demo entry)
+- Displayed at a slight 2° clockwise tilt, with a realistic drop shadow underneath
+
+### 8.2 Illustration & Graphics
+
+**Hero graphic (right side of landing hero):**
+- Abstract representation of a shield composed of fine grid lines / circuit traces
+- Black lines on a white background, with select nodes highlighted in gold
+- Conveys: security, precision, intelligence
+- File: SVG (animated — lines draw in on page load via `stroke-dashoffset` animation)
+
+**Track selection cards (dashboard):**
+- Associate Track: Illustrated as stacked document pages / checklist icon in black + gold
+- Professional Track: Illustrated as a magnifying glass over a process flowchart
+
+**Empty state illustrations:**
+- "No attempts yet" on dashboard: Light line-art illustration of an open exam booklet
+
+**Loading states:**
+- 5-thread generation dots: minimalist SVG animated circles (see Section 7.2)
+
+### 8.3 Image Technical Requirements
+
+```
+Hero image:   1440×900 WebP, 85% quality, lazy: false (above fold)
+Feature imgs: 800×600 WebP, 80% quality, lazy: true
+Avatars:      160×160 WebP, 90% quality
+OG image:     1200×630 JPEG (per certificate for social sharing)
+Favicon:      32×32 + 180×180 (Apple touch) + SVG favicon
+```
+
+---
+
+## 9. Page-by-Page UI Specifications
+
+---
+
+### 9.1 Landing Page (`/iso-27001`)
+
+**Layout:** Single-page scroll. Sticky navigation. 7 sections.
+
+#### Navigation (Sticky, top)
+```
+[ISO-Audit360 logo + wordmark]          [How It Works] [Tracks] [Certificate]     [Start Free →]
+```
+- Background: White with `border-bottom: 1px solid var(--color-border)` on scroll
+- Backdrop blur: `backdrop-filter: blur(12px)` with `background: rgba(255,255,255,0.85)`
+- "Start Free →" button: Black fill, white text, rounded-full, transitions to gold on hover
+- Mobile: Hamburger → full-height slide-in drawer from right
+
+#### Section 1 — Hero
+```
+┌────────────────────────────────────────────────────────────────┐
+│  OVERLINE: "ISO 27001:2022 · FREE CERTIFICATION · 2026"       │  ← gold, tracking-widest, text-xs
+│                                                                │
+│  The ISO 27001:2022                                           │  ← Playfair Display, text-hero
+│  Lead Auditor Exam                                            │
+│  You Can't Cheat.                                             │
+│                                                               │
+│  50 unique questions. 10 minutes. 15 seconds each.           │  ← Inter, text-xl, ink-secondary
+│  Pass at 80% — earn a verifiable digital credential.          │
+│                                                               │
+│  [Verify Identity & Start Audit →]  [See sample certificate]  │
+│                                                               │
+│                         ░░░░░░░░░░░░░░░░░░░░                  │  ← Right: office photo (clip-path reveal)
+└────────────────────────────────────────────────────────────────┘
+```
+- Left column: 55% width. Right column: 45% (image), overlapping hero card slightly.
+- Primary CTA: Black background, gold text, 56px height, 24px horizontal padding, `border-radius: var(--radius-md)`.
+- Secondary CTA: Outlined black border, black text.
+- Below CTAs: Small trust line — `🔒 Free forever · No payment required · Verified by email`
+
+#### Section 2 — Exam Protocol Stats
+```
+┌────────────┬────────────┬────────────┬────────────┐
+│    50      │    10      │    15s     │    80%     │
+│ Questions  │  Minutes   │ Per Question│ Pass Threshold│
+└────────────┴────────────┴────────────┴────────────┘
+```
+- 4-column grid. White cards with `--shadow-sm`, `--radius-lg`.
+- Statistics animate count-up on scroll-into-view (Intersection Observer).
+- Gold accent line above each stat number (2px × 40px).
+- Section background: `--color-surface` (off-white), full bleed.
+
+#### Section 3 — How It Works (3-step process)
+```
+Step 1: Register & Verify   →   Step 2: AI Generates Your Exam   →   Step 3: Earn Your Certificate
+   [Icon: Shield check]              [Icon: CPU / neural net]              [Icon: Award ribbon]
+   Verify your professional          3 minutes. 50 unique questions,       Pass at 80%. Receive a
+   identity via email.               generated just for you.               verifiable digital cert.
+```
+- Horizontal stepper on desktop, vertical on mobile.
+- Step connector: Dashed gold line between steps.
+- Step numbers: Large `01`, `02`, `03` in Playfair Display, light grey behind card (`opacity: 0.06`, large).
+
+#### Section 4 — Two Tracks
+```
+┌───────────────────────────────────┐   ┌───────────────────────────────────┐
+│  ASSOCIATE                        │   │  PROFESSIONAL                     │
+│  ISMS Foundation                  │   │  Lead Auditor                     │
+│                                   │   │                                   │
+│  Clauses 4–10 mastery             │   │  Annex A + ISO 19011              │
+│  Recommended: GRC Beginners       │   │  Recommended: Practicing Auditors  │
+│                                   │   │                                   │
+│  Domain breakdown (5 threads):    │   │  Domain breakdown (5 threads):    │
+│  · Context & Leadership           │   │  · Organizational Controls        │
+│  · Risk Assessment                │   │  · People & Physical              │
+│  · Resources                      │   │  · Technological Controls         │
+│  · Operations                     │   │  · NC Identification              │
+│  · Evaluation & Improvement       │   │  · Audit Governance               │
+│                                   │   │                                   │
+│  [Start Associate Track →]        │   │  [Start Professional Track →]     │
+└───────────────────────────────────┘   └───────────────────────────────────┘
+```
+- 2-column cards side-by-side. Left (Associate): white bg, black border. Right (Professional): black bg, white text, gold accents — creates a deliberate contrast.
+- Hover: Both cards lift (`--shadow-lg`), subtle gold border on hover.
+
+#### Section 5 — Certificate Preview
+```
+Full-width section, off-white background.
+
+Left: Certificate mockup image (actual 1920×1080 cert at 60% scale)
+      - Slight 2° tilt
+      - Realistic drop shadow
+      - Hover: straightens to 0° (smooth transition)
+
+Right: "Earn a credential worth sharing."
+       - Certificate ID: ISO27-2026-XXXXXXXX
+       - Gold "2026 Premium" seal description
+       - QR verification callout
+       - [ View Sample Certificate ]  [ See Verification Page ]
+```
+
+#### Section 6 — Social Proof / Testimonials
+```
+3 testimonial cards in a row:
+
+"The 15-second timer is brutal — in the best way. 
+This tested real audit instinct, not Google speed."
+— Priya S., Lead Auditor, Bangalore
+
+[Avatar]  Name, Title, Company
+```
+- Card bg: White. Thin border. Quote in Playfair italic. Attribution in Inter small caps.
+- Gold quotation mark (`"`) above each card, 64px, decorative.
+
+#### Section 7 — FAQ + Final CTA
+- Accordion FAQ (8 questions). Smooth expand/collapse animation.
+- Final CTA block: Full-width black background section.
+  ```
+  Ready to prove your ISO 27001 instinct?
+  [Verify Identity & Start Audit →]
+  Free · Takes 15 minutes total · Certificate issued instantly
+  ```
+
+#### Footer
+```
+[Logo]          [How It Works]  [Certificate]  [Privacy Policy]  [Terms of Service]
+© 2026 ISO-Audit360.com · Not affiliated with ISO or BSI · Every exam is uniquely generated
+```
+
+---
+
+### 9.2 Registration Modal
+
+- **Trigger:** Clicking any "Start" or "Verify Identity" CTA.
+- **Presentation:** Centered modal, max-width 480px, white bg, `--radius-2xl`, `--shadow-xl`.
+- **Backdrop:** `rgba(10,10,10,0.4)` + `backdrop-filter: blur(8px)` (subtle, doesn't kill the landing page context).
+
+```
+┌──────────────────────────────────┐
+│  ✕ (close)                       │
+│                                   │
+│  Create your free account         │  ← Inter Semibold, text-2xl
+│  Verify your identity to begin    │  ← ink-secondary, text-sm
+│                                   │
+│  [Full Name          ]            │
+│  [Professional Email ]            │
+│  [Company            ]            │
+│  [Role               ] [Country▼] │
+│                                   │
+│  ☐ I agree to Terms & Privacy Policy  │
+│                                   │
+│  [Continue →                    ] │  ← Full-width, black, text-white
+│                                   │
+│  Already have an account? Log in  │
+└──────────────────────────────────┘
+```
+
+**Input field spec:**
+```
+Background:    --color-surface
+Border:        1px solid --color-border
+Border-radius: --radius-md
+Height:        52px
+Padding:       0 16px
+Font:          text-base, Inter
+Focus:         border-color: --color-gold; box-shadow: 0 0 0 3px rgba(201,168,76,0.15)
+Error:         border-color: --color-error; background: --color-error-bg
+```
+
+---
+
+### 9.3 OTP Verification Screen
+
+- Replaces modal content (in-place transition, no new modal).
+```
+  Back arrow
+
+  Check your email                       ← text-2xl
+  We sent a 6-digit code to
+  priya@company.com                      ← gold, semibold
+
+  ┌──┐ ┌──┐ ┌──┐  ┌──┐ ┌──┐ ┌──┐
+  │  │ │  │ │  │  │  │ │  │ │  │       ← OTP cells, 56×72px each, gap-3
+  └──┘ └──┘ └──┘  └──┘ └──┘ └──┘
+         (gap between 3+3 indicates grouping)
+
+  Didn't receive it? Resend (59s)        ← countdown timer, muted, becomes link when 0
+
+  [Verify & Enter Dashboard →]          ← disabled until 6 digits entered
+```
+
+---
+
+### 9.4 Readiness Dashboard (`/dashboard`)
+
+**Layout:** Sidebar (240px, white, border-right) + Main content area.
+
+**Sidebar:**
+```
+[ISO-Audit360 logo]
+
+[Avatar initials circle]
+Priya Sharma
+Lead GRC Analyst
+[Verified ✓ badge — green]
+
+─────────────────
+◦ Dashboard        ← active: gold left-border + gold text
+◦ My Certificates
+◦ Profile
+◦ Help
+
+[Log out]          ← bottom of sidebar
+```
+
+**Main area:**
+```
+Good morning, Priya 👋
+
+┌─────────────────────────────────────────────────────────────────┐
+│  Choose Your Track                                              │
+│                                                                 │
+│  ┌──────────────────────────┐  ┌──────────────────────────┐   │
+│  │  ASSOCIATE               │  │  PROFESSIONAL             │   │
+│  │  ISMS Foundation         │  │  Lead Auditor             │   │
+│  │                          │  │                           │   │
+│  │  ● Clauses 4–10          │  │  ● Annex A 5/6/7/8       │   │
+│  │  ● 50 questions          │  │  ● ISO 19011              │   │
+│  │  ● 10 minutes            │  │  ● NC Case Studies        │   │
+│  │                          │  │                           │   │
+│  │  Last attempt: 38/50     │  │  Never attempted          │   │
+│  │  [Start Generation →]    │  │  [Start Generation →]     │   │
+│  └──────────────────────────┘  └──────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+
+Attempt History
+──────────────────────────────────────────────────────────────────
+Date          Track          Score    Status    Certificate
+Mar 2, 2026   Associate      38/50    FAILED    —
+Feb 28, 2026  Associate      42/50    PASSED    [Download]
+──────────────────────────────────────────────────────────────────
+```
+
+**Retake cooldown state:** "Start Generation" button replaced with:
+```
+🕐 Available in 18h 34m
+[______________________]   ← disabled, grey, shows countdown
+```
+
+---
+
+### 9.5 Generation Loader Screen
+
+Full-page takeover (white, centered).
+
+```
+                                                    ← Back to dashboard (top-left)
+
+  Generating your ISO 27001:2022
+  Associate Track Exam                              ← text-3xl, Playfair
+  
+  This takes about 3 minutes                        ← text-sm, muted
+
+  ╔══════════════════════════════════════╗
+  ║    Thread 1 · Context & Leadership   ║  ●──────── (running)
+  ║    Thread 2 · Risk Assessment        ║  ●──────── (running)
+  ║    Thread 3 · Resources              ║  ✓  Done
+  ║    Thread 4 · Operations             ║  ○  Waiting
+  ║    Thread 5 · Evaluation             ║  ○  Waiting
+  ╚══════════════════════════════════════╝
+
+  ████████████████████░░░░░░░░░  64%     ← gold progress bar on white track
+
+  ┌──────────────────────────────────────┐
+  │  💡 Clause Reminder                  │
+  │  Clause 6.1.2 defines the risk       │  ← rotates every 8s, crossfade
+  │  identification process within the   │
+  │  ISMS. Risk owners must be assigned. │
+  └──────────────────────────────────────┘
+```
+
+Tip card: White bg, light gold left-border (4px), `--shadow-sm`, `--radius-md`.
+
+**On generation complete:**
+Progress bar fills gold → all 5 thread dots turn to checkmarks → tip card fades out → button reveals:
+
+```
+  ┌──────────────────────────────────────────────────────┐
+  │  ✓ 50 questions generated. Exam is ready.            │
+  │                                                      │
+  │  ████████████████████████████████████  100%          │
+  │                                                      │
+  │  [         Enter Exam →           ]                  │  ← Black, full-width, 64px tall, gold shimmer
+  └──────────────────────────────────────────────────────┘
+```
+
+---
+
+### 9.6 Exam Interface (`/exam/:session_id`)
+
+**Ink Mode active.** Background: `#0A0A0A`.
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  ISO-Audit360                    Associate Track    [09:47]         │  ← Global timer, JetBrains Mono, gold
+│                                                    Question 12 / 50 │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│                    ╭─────────────────╮                              │
+│                    │  ⬤ 11s          │  ← Per-question ring timer  │
+│                    │                 │     SVG stroke, gold         │
+│                    ╰─────────────────╯                              │
+│                                                                     │
+│   According to ISO 27001:2022 Clause 6.1.2, which of the          │
+│   following best describes the purpose of the Statement of        │  ← question stem, white, text-lg, leading-relaxed
+│   Applicability (SoA)?                                            │
+│                                                                     │
+│   ┌────────────────────────────────────────────────────────────┐  │
+│   │  A  It documents which Annex A controls are applicable     │  │  ← option card, #141414 bg, white text
+│   └────────────────────────────────────────────────────────────┘  │
+│   ┌────────────────────────────────────────────────────────────┐  │
+│   │  B  It lists all identified risks and their owners         │  │
+│   └────────────────────────────────────────────────────────────┘  │
+│   ┌────────────────────────────────────────────────────────────┐  │
+│   │  C  It defines the ISMS scope boundary                     │  │
+│   └────────────────────────────────────────────────────────────┘  │
+│   ┌────────────────────────────────────────────────────────────┐  │
+│   │  D  It provides a summary of the internal audit findings   │  │
+│   └────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│   Clause 5.3 · Organizational Controls · Thread 1                 │  ← metadata, muted, text-xs
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**Option card states:**
+```
+Default:   bg #141414, border #2A2A2A, text white
+Hover:     border --color-gold (opacity 0.5), bg #1E1A10
+Selected:  bg --color-gold-subtle (dark: #2A2107), border --color-gold, text gold — LOCKED
+Others after select: opacity 0.4, pointer-events: none
+Timer expired (null): All options fade to 0.3 opacity, card dims, auto-advance
+```
+
+**Tab violation toast (slides from top):**
+```
+⚠  Warning 2/3: Return to this tab. Third infraction will auto-submit your exam.   [×]
+```
+Background: `--color-warning-bg`, border-left: 4px solid `--color-warning`.
+
+---
+
+### 9.7 Results Page (`/results/:session_id`)
+
+Back to white mode.
+
+**Pass state:**
+```
+┌────────────────────────────────────────────────────────┐
+│                                                        │
+│              ✓                                         │
+│           PASSED                                       │  ← text-5xl, --color-success
+│                                                        │
+│              42 / 50                                   │  ← count-up animation
+│          84% · Associate Track                         │
+│                                                        │
+│  ISO27-2026-A1B2C3D4  [Copy ID]                       │  ← JetBrains Mono
+│  Issued: March 3, 2026                                 │
+└────────────────────────────────────────────────────────┘
+
+Domain Performance ──────────────────────────────────────
+
+         [Radar chart — 5 axes, gold fill, semi-transparent]
+              Context & Leadership: 90%
+              Risk Assessment: 80%
+              Resources: 70%
+              Operations: 90%
+              Evaluation: 80%
+
+Certificate ─────────────────────────────────────────────
+
+[Certificate landscape JPEG preview — 60% scale, shadow, slight tilt]
+
+[↓ Download Certificate (1920×1080)]  [↓ Download Square (1080×1080)]
+
+[  Share on LinkedIn  ]  [  Share on X  ]  [  Copy Verification Link  ]
+
+Detailed Review ─────────────────────────────────────────
+
+Q1  ✓  [Question stem truncated...]
+       Your answer: A — Correct      Clause: 6.1.2
+
+Q4  ✗  [Question stem truncated...]
+       Your answer: B  |  Correct: D
+       [Explanation: The Statement of Applicability...] ← expand on click
+
+[Flag inaccuracy]  ← small ghost button per question
+```
+
+**Fail state:** Same layout, verdict block uses `--color-error`. Certificate section replaced with:
+```
+┌────────────────────────────────────────────────────────┐
+│  Keep going — you're closer than you think.            │
+│  Next attempt available in: 23:47:12                   │
+│  [← Return to Dashboard]                              │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 9.8 Certificate (Generated JPEG)
+
+**Landscape (1920×1080):**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│ ▌▌▌▌▌▌▌▌ ISO-Audit360.com                                                         │
+│                                                                                    │
+│                     CERTIFICATE OF ACHIEVEMENT                                    │  ← Inter, tracking-widest, text-sm
+│                                                                                    │
+│                    ──────── 2026 PREMIUM ────────                                 │  ← gold separator
+│                                                                                    │
+│                         This certifies that                                       │  ← Inter Regular, text-xl
+│                                                                                    │
+│                        Priya Sharma                                               │  ← Playfair Display Bold, 72px
+│                                                                                    │
+│   has successfully demonstrated competence in the                                 │
+│   ISO 27001:2022 Information Security Management System                            │
+│                                                                                    │
+│              ┌─────────────────────────────────────┐                             │
+│              │  ASSOCIATE TRACK · ISMS FOUNDATION  │                             │  ← gold-bordered badge
+│              └─────────────────────────────────────┘                             │
+│                                                                                    │
+│   Scored 84% (42/50)    Issued: March 3, 2026    ISO27-2026-A1B2C3D4              │
+│                                                                                    │
+│ ████████████████████ (gold seal watermark, right side)         [QR code, 120×120] │
+└────────────────────────────────────────────────────────────────────────────────────┘
+
+Background: White (#FFFFFF) with a very subtle ISO grid-line watermark (#F2F2F2)
+Left edge: 8px solid gold accent bar (full height)
+Typography: Black ink on white — clean, printable
+```
+
+---
+
+### 9.9 Public Verification Page (`/verify/:id`)
+
+Minimal. Maximum trust.
+
+```
+Navigation: ISO-Audit360 logo only (no auth links)
+
+┌──────────────────────────────────────────────────────┐
+│                                                      │
+│   🔒 Certificate Verified                            │  ← --color-success, --radius-md badge
+│                                                      │
+│   Priya Sharma                                       │  ← Playfair, text-4xl
+│   Associate Track · ISMS Foundation                  │
+│                                                      │
+│   Score: 84% (42/50)                                 │
+│   Issued: March 3, 2026                              │
+│   Certificate ID: ISO27-2026-A1B2C3D4               │
+│                                                      │
+│   [Certificate thumbnail preview — click to enlarge]│
+│                                                      │
+│   ─────────────────────────────────────────────────  │
+│   This certificate was issued by ISO-Audit360.com.   │
+│   ISO-Audit360 is not affiliated with ISO or BSI.    │
+└──────────────────────────────────────────────────────┘
+```
+
+**Revoked certificate state:** Red `⚠ Certificate Revoked` badge replaces verified badge. All fields show but struck-through.
+
+---
+
+## 10. Component Library
+
+### 10.1 Button System
+
+```
+Variant: primary
+  Background: --color-ink (#0A0A0A)
+  Text:       white
+  Hover:      background #2A2A2A + --shadow-gold
+  Active:     scale(0.98), background #000
+
+Variant: primary-gold
+  Background: --color-gold (#C9A84C)
+  Text:       --color-ink
+  Hover:      --color-gold-light + --shadow-gold
+  Use:        "Enter Exam" button, certificate download
+
+Variant: secondary (outlined)
+  Background: transparent
+  Border:     1.5px solid --color-ink
+  Text:       --color-ink
+  Hover:      background --color-surface
+
+Variant: ghost
+  Background: transparent
+  Text:       --color-ink
+  Hover:      background --color-surface
+  Use:        Tertiary actions, "flag inaccuracy"
+
+Variant: destructive
+  Background: --color-error
+  Text:       white
+
+Sizes:
+  sm:  height 36px, padding 0 12px, text-sm
+  md:  height 44px, padding 0 16px, text-base   ← default
+  lg:  height 52px, padding 0 24px, text-lg
+  xl:  height 64px, padding 0 32px, text-xl     ← hero CTAs only
+```
+
+### 10.2 Cards
+
+```
+Base card:
+  background: white
+  border: 1px solid --color-border
+  border-radius: --radius-lg
+  padding: --space-6
+  box-shadow: --shadow-sm
+  transition: box-shadow 200ms ease-out, transform 200ms ease-out
+
+Hover card (interactive):
+  box-shadow: --shadow-lg
+  transform: translateY(-4px)
+
+Feature card (track selector):
+  padding: --space-8
+  border-radius: --radius-xl
+  border: 1.5px solid --color-border
+```
+
+### 10.3 Badges & Tags
+
+```
+Verified:    green bg (--color-success-bg), green text, ✓ icon, text-xs, tracking-wide, rounded-full
+Pass:        same as Verified
+Fail:        --color-error-bg, --color-error text
+Track:       black bg, white text, text-xs, tracking-widest, rounded-sm
+Difficulty:  Easy → gold-subtle/gold-ink. Medium → grey. Hard → black.
+```
+
+### 10.4 Timer Components
+
+**Global timer:**
+```css
+font-family: var(--font-mono); /* JetBrains Mono */
+font-size:   var(--text-2xl);
+color:       var(--color-ink);     /* White in exam mode */
+font-weight: 600;
+
+/* Warning state: < 60s */
+color: var(--color-warning);
+
+/* Critical state: < 30s */
+color: var(--color-error);
+animation: pulse 1s ease-in-out infinite;
+```
+
+**Per-question ring (SVG):**
+```
+Outer circle: stroke #E5E5E3 (track), stroke-width 4, r 24
+Inner circle: stroke --color-gold (progress), stroke-width 4, r 24
+             stroke-dasharray: 150.8 (2πr)
+             stroke-dashoffset: animated from 0 to 150.8 over 15s
+             stroke-linecap: round
+
+Center text:  JetBrains Mono, 16px, gold
+
+Warning ≤5s:  stroke transitions to --color-error
+```
+
+### 10.5 Progress Bar
+
+```
+Track:   height 8px, background --color-border, --radius-full
+Fill:    background --color-gold, --radius-full
+         transition: width 400ms ease-out (driven by polling)
+Striped animated variant (generation): background-size animation
+```
+
+---
+
+## 11. Responsive Breakpoints
+
+```css
+/* Mobile-first */
+--bp-sm:  640px;   /* Small devices */
+--bp-md:  768px;   /* Tablets */
+--bp-lg:  1024px;  /* Laptops */
+--bp-xl:  1280px;  /* Desktops */
+--bp-2xl: 1536px;  /* Large monitors */
+```
+
+**per-page responsive rules:**
+
+| Screen | Landing Hero | Stats | Tracks | Dashboard | Exam |
+|---|---|---|---|---|---|
+| Mobile (<768) | Single col, image hidden | 2×2 grid | Stacked cards | No sidebar: bottom nav | Full-screen question, timer top-right |
+| Tablet (768–1024) | Split 50/50, image shown | 4-col row | Side-by-side | Collapsible sidebar | Same as mobile |
+| Desktop (>1024) | Split 55/45 | 4-col row | Side-by-side with hover | Fixed sidebar | Max-width 760px, centered |
+
+**Exam on mobile — critical spec:**
+- Question card: full-width, no padding margin beyond 16px.
+- Option buttons: full-width, 60px tall minimum (touch target).
+- Per-question timer: top-right corner, 48px ring.
+- Global timer: always visible in a sticky top bar.
+- Anti-cheat: right-click disable still applies; copy-paste disable applies.
+
+---
+
+## 12. Design Tooling & Handoff
+
+| Tool | Purpose |
+|---|---|
+| Figma | Primary design file. Components in Auto Layout. Dark/light mode via variable modes. |
+| Storybook | Component library documentation and visual regression testing |
+| Tailwind CSS v3 | Implementation; custom theme extends default with all tokens above |
+| Radix UI Primitives | Accessible base for: Modal, Select, Accordion, Toast, Tooltip — unstyled, composed with Tailwind |
+| Framer Motion | All animation implementations (React) |
+| Recharts | Radar chart on results page |
+| react-circular-progressbar | Per-question timer ring (or custom SVG) |
+
+### Tailwind Config (custom theme excerpt)
+
+```js
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        ink:     { DEFAULT: '#0A0A0A', secondary: '#3D3D3D', muted: '#7A7A7A' },
+        surface: { DEFAULT: '#F7F7F5', raised: '#FAFAF9' },
+        gold:    { DEFAULT: '#C9A84C', light: '#E8CB7A', dark: '#9A7A30', subtle: '#FBF4E3' },
+        border:  { DEFAULT: '#E5E5E3', strong: '#C8C8C5' },
+      },
+      fontFamily: {
+        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
+        mono:  ['JetBrains Mono', 'Menlo', 'monospace'],
+      },
+      boxShadow: {
+        xs:   '0 1px 2px rgba(10,10,10,0.05)',
+        sm:   '0 2px 4px rgba(10,10,10,0.06), 0 1px 2px rgba(10,10,10,0.04)',
+        md:   '0 4px 12px rgba(10,10,10,0.08), 0 2px 4px rgba(10,10,10,0.04)',
+        lg:   '0 8px 24px rgba(10,10,10,0.10), 0 2px 8px rgba(10,10,10,0.06)',
+        xl:   '0 16px 48px rgba(10,10,10,0.12), 0 4px 16px rgba(10,10,10,0.06)',
+        gold: '0 4px 20px rgba(201,168,76,0.25)',
+      },
+      borderRadius: {
+        sm:   '4px',   md:  '8px',  lg:  '12px',
+        xl:   '16px',  '2xl': '24px',
+      },
+      animation: {
+        'fade-up':    'fadeUp 0.6s cubic-bezier(0,0,0.2,1) forwards',
+        'count-up':   'countUp 1.2s cubic-bezier(0,0,0.2,1) forwards',
+        'shimmer':    'shimmer 2.5s linear infinite',
+        'pulse-ring': 'pulseRing 1s ease-in-out infinite',
+        'shake':      'shake 0.3s ease-in-out',
+      },
+      keyframes: {
+        fadeUp:    { '0%': { opacity:0, transform:'translateY(24px)' }, '100%': { opacity:1, transform:'translateY(0)' }},
+        shimmer:   { '0%': { backgroundPosition:'-200% 0' }, '100%': { backgroundPosition:'200% 0' }},
+        pulseRing: { '0%,100%': { opacity:1 }, '50%': { opacity:0.5 }},
+        shake:     { '0%,100%': { transform:'translateX(0)' }, '25%': { transform:'translateX(-4px)' }, '75%': { transform:'translateX(4px)' }},
+      },
+    },
+  },
+};
+```
+
+---
+
+## 13. Accessibility (WCAG 2.1 AA)
+
+| Requirement | Implementation |
+|---|---|
+| Color contrast ≥ 4.5:1 (text) | `#0A0A0A` on `#FFFFFF` = 19.1:1 ✓; gold `#C9A84C` on black = 7.2:1 ✓ |
+| Focus indicators | 3px offset gold ring `outline: 3px solid #C9A84C` on all interactive elements |
+| Keyboard navigation | Full exam operable via keyboard (Tab to advance, Enter to select) |
+| Screen reader | All timers have `role="timer"` + `aria-live="polite"`. Question stem has `role="heading"`. |
+| Reduced motion | `@media (prefers-reduced-motion: reduce)` disables all animations; timers still functional |
+| Form labels | All inputs have visible labels + `aria-describedby` for error messages |
+| Modal focus trap | Radix UI dialog handles focus trapping and aria-modal |
+| Touch targets | Minimum 44×44px on all interactive elements (exam options: 60px tall) |
+
+---
+
+## 14. Page Load & Performance
+
+| Target | Metric |
+|---|---|
+| Largest Contentful Paint | < 2.0s on 4G |
+| Cumulative Layout Shift | < 0.05 |
+| First Input Delay | < 80ms |
+| Exam page bundle | < 150kb gzipped JS  |
+| Hero image | WebP, 85% quality, preloaded via `<link rel="preload">` |
+| Google Fonts | Preconnect + display=swap |
+| Animations | GPU-composited only (`transform`, `opacity`) — no layout-triggering properties |
+| Tailwind | Purged to < 15kb CSS in production |

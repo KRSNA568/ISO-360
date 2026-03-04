@@ -13,7 +13,7 @@ const TRACKS = [
     slug:       'associate',
     name:       'Associate',
     subtitle:   'ISMS Foundation',
-    desc:       'Clauses 4–10 · Risk methodology · Leadership requirements',
+    desc:       'Clauses 4-10 · Risk methodology · Leadership requirements',
     accentClass: 'border-blue-200 bg-blue-50',
     iconClass:  'text-blue-600 bg-blue-100',
     icon:       BookOpen,
@@ -115,7 +115,7 @@ function AttemptsTable({ attempts, loading }) {
         </thead>
         <tbody className="divide-y divide-border">
           {attempts.map((a) => {
-            const pct      = a.total_questions ? Math.round((a.correct_answers / a.total_questions) * 100) : null
+            const pct      = a.total_questions ? Math.round((a.score / a.total_questions) * 100) : null
             const passed   = a.status === 'completed' && pct !== null && pct >= 80
             const trackLabel = a.track === 'associate' ? 'Associate' : 'Professional'
             const date     = new Date(a.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -124,7 +124,7 @@ function AttemptsTable({ attempts, loading }) {
               <tr key={a.id} className="hover:bg-surface/50 transition-colors">
                 <td className="py-3 pr-4 font-medium text-ink">{trackLabel}</td>
                 <td className="py-3 pr-4 text-ink-muted">
-                  {pct !== null ? `${pct}% (${a.correct_answers}/${a.total_questions})` : '—'}
+                  {pct !== null ? `${pct}% (${a.score}/${a.total_questions})` : '—'}
                 </td>
                 <td className="py-3 pr-4">
                   {a.status === 'completed' ? (
@@ -164,7 +164,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     userApi.getAttempts()
-      .then(r => setAttempts(r.data.attempts || []))
+      .then(r => setAttempts(r.data.data || []))
       .catch(() => {})
       .finally(() => setAttLoading(false))
   }, [])
@@ -190,16 +190,16 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <StatCard label="Total Attempts"  value={user?.total_attempts ?? '—'} />
-          <StatCard label="Exams Passed"    value={user?.total_passed   ?? '—'} />
+          <StatCard label="Total Attempts"  value={user?.stats?.total_attempts ?? '—'} />
+          <StatCard label="Exams Passed"    value={user?.stats?.total_passed   ?? '—'} />
           <StatCard
             label="Pass Rate"
             value={
-              user?.total_attempts
-                ? `${Math.round(((user.total_passed || 0) / user.total_attempts) * 100)}%`
+              user?.stats?.total_attempts
+                ? `${Math.round(((user.stats.total_passed || 0) / user.stats.total_attempts) * 100)}%`
                 : '—'
             }
-            sub={user?.total_attempts ? `${user.total_attempts} attempts` : 'No attempts yet'}
+            sub={user?.stats?.total_attempts ? `${user.stats.total_attempts} attempts` : 'No attempts yet'}
           />
         </div>
 

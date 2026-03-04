@@ -1,0 +1,689 @@
+# Product Requirements Document — Admin Dashboard
+## ISO-Audit360.com Internal Operations Panel
+**Document:** PRD-ADMIN
+**Version:** 1.0.0
+**Status:** Ready for Development — Phase 6
+**Last Updated:** March 3, 2026
+**Parent Document:** PRD-v2 (v2026.3.0)
+
+---
+
+## 0. Purpose & Scope
+
+This document defines the full product requirements for the Admin Dashboard at `/admin`. It is a separate, internal-facing interface built inside the same React SPA, accessible only to users with `role = 'admin'` in their JWT. It is **not** a public-facing page and should never be indexed by search engines.
+
+This PRD covers all 7 views of the admin panel, every API endpoint that backs them, all data display and interaction patterns, security rules, and performance requirements.
+
+---
+
+## 1. Access Control
+
+### 1.1 Authentication
+- Admin users authenticate through the same `/login` flow as regular users.
+- After JWT is verified, `role` field is checked. If `role !== 'admin'`, the request is rejected with `403 Forbidden`.
+- The `requireAdmin` Express middleware enforces this on every `/api/admin/*` route.
+- On the frontend, all `/admin/*` routes are wrapped in an `AdminRoute` component (extends `ProtectedRoute`) that additionally checks `user.role === 'admin'`. Non-admin authenticated users are redirected to `/dashboard`.
+
+### 1.2 Route Guard Behavior
+| Scenario | Behavior |
+|---|---|
+| Not logged in | Redirect to `/login?redirect=/admin` |
+| Logged in, `role = 'user'` | Redirect to `/dashboard` with no error shown |
+| Logged in, `role = 'admin'` | Admin panel renders |
+| JWT expired mid-session | Auto-logout → `/login` |
+
+### 1.3 Admin Role Management
+- Admin accounts are **not creatable via the public registration form**.
+- Admin accounts are provisioned directly via a seed script (`backend/scripts/seed-admin.js`) that sets `role = 'admin'` in the `users` table.
+- There is no UI to promote a regular user to admin (out of scope for v1; prevents privilege escalation via UI).
+
+---
+
+## 2. Navigation Structure
+
+The admin panel uses a **fixed left sidebar** (240px wide) plus a **main content area**. The sidebar is always visible on all admin views.
+
+### 2.1 Sidebar Items
+```
+ISO-Audit360 [Admin]
+─────────────────────
+📊  Overview
+👥  Users
+🖥️  Exam Sessions
+🏅  Certificates
+🚩  Question Flags
+📦  Buffer Pool
+─────────────────────
+↩  Back to Portal
+```
+
+### 2.2 URL Structure
+| Sidebar Item | Route |
+|---|---|
+| Overview | `/admin` |
+| Users | `/admin/users` |
+| Exam Sessions | `/admin/sessions` |
+| Certificates | `/admin/certificates` |
+| Question Flags | `/admin/flags` |
+| Buffer Pool | `/admin/buffer-pool` |
+| Back to Portal | navigates to `/dashboard` |
+
+### 2.3 Active State
+- Sidebar highlights the currently active route.
+- Each view has a page-level `<h1>` title matching the sidebar label.
+
+---
+
+## 3. View 1 — Overview (`/admin`)
+
+The KPI command center. Loads on admin login. All metrics update on page load; no auto-refresh (admin manually refreshes).
+
+### 3.1 Top-Row KPI Cards (6 cards, responsive grid)
+| Card | Metric | API Source | Format |
+|---|---|---|---|
+| Total Registered Users | Count of all users | `GET /api/admin/stats` | Integer |
+| Verified Users | Count with `email_verified = true` | same | Integer + % of total |
+| Exams Today | `exam_sessions` created in last 24h | same | Integer |
+| Pass Rate (All Time) | `passed = true` / `completed` sessions | same | % |
+| Active Sessions Right Now | sessions with `status = 'active'` | same | Integer (live badge) |
+| Certificates Issued (All Time) | Count from `certificates` table | same | Integer |
+
+### 3.2 Charts Section
+
+**Chart 1 — Registrations & Exams Over Time (Line Chart)**
+- X-axis: last 30 days (daily buckets)
+- Y-axis: count
+- Two lines: "New Registrations" (gold) + "Exams Taken" (ink/dark)
+- Data from: `GET /api/admin/stats/timeseries?metric=registrations,exams&days=30`
+
+**Chart 2 — Pass Rate by Track (Bar Chart)**
+- Two grouped bars per track: Associate, Professional
+- Shows: Attempts vs. Passes
+- Data from: `GET /api/admin/stats/tracks`
+
+**Chart 3 — Generation Success Rate (Donut / Pie)**
+- Segments: AI Success, Buffer Fallback Used, Generation Failed + Aborted
+- Data from: `GET /api/admin/stats/generation`
+
+**Chart 4 — Average Time Per Question (Bar by Thread)**
+- X-axis: Domain Threads 1–5
+- Y-axis: average seconds per question in that thread
+- Helps identify "too easy" or "too hard" threads
+- Data from: `GET /api/admin/stats/question-timing`
+
+### 3.3 Flag Alert Banner
+- If there are **unreviewed question flags > 10**, show a yellow warning banner at the top:
+  `"⚠ 14 unreviewed question flags — Review Now"` (links to `/admin/flags`)
+- If there are **active high-suspicion sessions > 0**, show a red alert:
+  `"🔴 2 sessions in integrity review queue"` (links to `/admin/sessions?filter=suspicious`)
+
+### 3.4 API — Overview Stats
+```
+GET /api/admin/stats
+  Response: {
+    total_users: number,
+    verified_users: number,
+    exams_today: number,
+    pass_rate_all_time: number,         // 0–100
+    active_sessions_now: number,
+    certificates_issued: number,
+    unreviewed_flags: number,
+    suspicious_sessions: number
+  }
+
+GET /api/admin/stats/timeseries?metric=registrations,exams&days=30
+  Response: {
+    dates: string[],                    // ["2026-02-01", ...]
+    registrations: number[],
+    exams: number[]
+  }
+
+GET /api/admin/stats/tracks
+  Response: {
+    associate: { attempts: number, passes: number },
+    professional: { attempts: number, passes: number }
+  }
+
+GET /api/admin/stats/generation
+  Response: {
+    ai_success: number,
+    buffer_fallback: number,
+    failed_aborted: number
+  }
+
+GET /api/admin/stats/question-timing
+  Response: {
+    threads: [
+      { thread: 1, domain: "Context & Scope", avg_seconds: number },
+      ...
+    ]
+  }
+```
+
+---
+
+## 4. View 2 — Users (`/admin/users`)
+
+### 4.1 Layout
+- Full-page searchable, filterable, paginated table.
+- **Search bar** at top (searches by email, full name, or company — debounced 300ms).
+- **Filters:** Status (All / Verified / Unverified / Blocked), Country (dropdown), Registration Date range (date picker).
+- **Export button** — downloads filtered results as CSV.
+
+### 4.2 Users Table
+| Column | Data | Sortable |
+|---|---|---|
+| Name | `full_name` | ✅ |
+| Email | `email` | ✅ |
+| Company | `company` | — |
+| Country | `country` | — |
+| Verified | Yes / No badge | ✅ |
+| Registered | `created_at` (relative + tooltip with absolute) | ✅ |
+| Attempts | Count of their `exam_sessions` | ✅ |
+| Status | Active / Blocked | ✅ |
+| Actions | [View] [Block/Unblock] | — |
+
+- **Pagination:** 25 rows per page, page controls at bottom.
+- **Row click** opens the User Detail Drawer (see 4.3).
+
+### 4.3 User Detail Drawer (slide-in from right)
+Opens when admin clicks [View] or a table row. Shows full user profile and history in a right-side panel without navigating away.
+
+**Sections in drawer:**
+1. **Profile** — full name, email, company, role, country, registration date, verification status.
+2. **Attempt History** — table of all their `exam_sessions`: date, track, score, pass/fail, session ID, status (completed/aborted/expired).
+3. **Certificates** — list of issued certificates with links and revocation status.
+4. **Actions:**
+   - **Manually Verify Email** — sets `email_verified = true` (use case: corporate email servers that block OTPs).
+   - **Block Account** — sets `blocked = true` (see 4.4 for schema addition), user cannot log in.
+   - **Unblock Account** — re-enables login.
+   - **Delete Account (GDPR)** — soft-delete: sets `deleted_at = NOW()`, anonymizes PII fields.
+
+### 4.4 Schema Addition (users table)
+```sql
+ALTER TABLE users ADD COLUMN blocked BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN blocked_reason TEXT;
+ALTER TABLE users ADD COLUMN blocked_at TIMESTAMPTZ;
+```
+
+### 4.5 API — Users
+```
+GET /api/admin/users?page=1&limit=25&search=&status=all&country=&from=&to=
+  Response: {
+    data: User[],
+    total: number,
+    page: number,
+    pages: number
+  }
+
+PATCH /api/admin/users/:user_id/verify
+  Body: {}
+  Response: { success: true }
+
+PATCH /api/admin/users/:user_id/block
+  Body: { reason: string }
+  Response: { success: true }
+
+PATCH /api/admin/users/:user_id/unblock
+  Response: { success: true }
+
+DELETE /api/admin/users/:user_id
+  (Soft delete — sets deleted_at, nullifies PII)
+  Response: { success: true }
+
+GET /api/admin/users/export?search=&status=&country=
+  Response: CSV file download (Content-Disposition: attachment)
+```
+
+---
+
+## 5. View 3 — Exam Sessions (`/admin/sessions`)
+
+### 5.1 Layout
+- Paginated table with **live-refresh toggle** (polls every 10 seconds when enabled).
+- **Filters:** Status (`generating` / `active` / `completed` / `expired` / `aborted`), Track (Associate / Professional), Date range, Suspicious only (toggle).
+- **Search:** by user email or session UUID.
+
+### 5.2 Sessions Table
+| Column | Data | Sortable |
+|---|---|---|
+| Session ID | First 8 chars of UUID + copy icon | — |
+| User | Email (links to user drawer) | ✅ |
+| Track | Associate / Professional badge | — |
+| Status | Colored status badge | ✅ |
+| Score | `score / 50` or `—` if incomplete | ✅ |
+| Pass/Fail | Badge or `—` | — |
+| Tab Violations | `tab_violations` count (red if > 0) | ✅ |
+| Duration | `completed_at - started_at` in mm:ss | — |
+| Started At | Relative time + tooltip | ✅ |
+| Flags | 🚩 count if any questions flagged | — |
+| Actions | [View] [Abort] (only if status = active) | — |
+
+### 5.3 Session Detail Drawer
+- **Summary:** User info, track, start/end time, score, pass/fail, IP address, user agent.
+- **Integrity Signals:**
+  - Tab violations count and timestamps.
+  - Time per question (sparkline bar chart — flags questions answered in < 3 seconds).
+  - IP + device fingerprint note.
+- **Question-by-Question Table:** Q# | Domain | Correct? | Time Taken | User's Answer | Correct Answer
+- **Actions:**
+  - **Abort Session** (only if `status = active`) — forces session to `aborted`, sends notification email.
+  - **Mark as Suspicious** — tags session for review, adds to suspicious queue.
+  - **Revoke Certificate** (only if `passed = true`) — links to certificate revocation flow.
+
+### 5.4 Suspicious Session Detection (Automatic Flagging)
+The backend automatically flags a session as suspicious when:
+- Perfect score (50/50) AND average time per question < 4 seconds.
+- Tab violations ≥ 3.
+- Session completed in under 3 minutes (180 seconds) for a 50-question exam.
+
+These sessions appear with a 🔴 badge and are queryable via `?filter=suspicious`.
+
+### 5.5 API — Sessions
+```
+GET /api/admin/sessions?page=1&limit=25&status=&track=&from=&to=&suspicious=false&search=
+  Response: { data: Session[], total, page, pages }
+
+GET /api/admin/sessions/:session_id
+  Response: Full session object including questions, answers with timing
+
+PATCH /api/admin/sessions/:session_id/abort
+  Body: { reason: string }
+  Response: { success: true }
+
+PATCH /api/admin/sessions/:session_id/flag-suspicious
+  Response: { success: true }
+```
+
+### 5.6 Schema Addition (exam_sessions table)
+```sql
+ALTER TABLE exam_sessions ADD COLUMN suspicious BOOLEAN DEFAULT FALSE;
+ALTER TABLE exam_sessions ADD COLUMN suspicious_reason TEXT;
+ALTER TABLE exam_sessions ADD COLUMN aborted_by_admin BOOLEAN DEFAULT FALSE;
+ALTER TABLE exam_sessions ADD COLUMN aborted_reason TEXT;
+```
+
+---
+
+## 6. View 4 — Certificates (`/admin/certificates`)
+
+### 6.1 Layout
+- Searchable, paginated table.
+- **Search:** by certificate ID (`ISO27-2026-XXXXXXXX`), user email, or user name.
+- **Filters:** Track, Status (Active / Revoked), Date range (awarded_on).
+- **Export button** — CSV of filtered results.
+
+### 6.2 Certificates Table
+| Column | Data | Sortable |
+|---|---|---|
+| Certificate ID | `ISO27-2026-XXXXXXXX` (copy icon) | — |
+| Holder Name | `full_name` from certificate | ✅ |
+| Email | User email | — |
+| Track | Associate / Professional badge | — |
+| Score | Score at time of award | ✅ |
+| Awarded On | Date + time | ✅ |
+| Status | Active (green) / Revoked (red) | ✅ |
+| Actions | [View] [Revoke] or [Reinstate] | — |
+
+### 6.3 Certificate Detail Drawer
+- Certificate preview thumbnail (loads from R2 URL).
+- Full metadata: holder, email, track, score, session ID, awarded date, revocation status.
+- **Verification link** — opens `/verify/:cert_id` in a new tab.
+- **Download links** — landscape JPEG, square JPEG.
+- **Revocation Section:**
+  - If active: [Revoke Certificate] button opens a confirmation modal requiring a reason.
+  - If revoked: shows revocation reason, date, revoking admin's email. [Reinstate] button available.
+
+### 6.4 Revocation Flow
+1. Admin clicks [Revoke Certificate].
+2. Confirmation modal: "This action will set the certificate as invalid on the public verification page. Enter a reason:"
+3. Admin enters reason → clicks [Confirm Revoke].
+4. API: `PATCH /api/admin/certificates/:cert_id/revoke` → sets `revoked = true`, `revoked_reason = reason`.
+5. The public `/verify/:cert_id` page now shows "REVOKED" status.
+6. An email is sent to the certificate holder notifying them of the revocation.
+
+### 6.5 API — Certificates
+```
+GET /api/admin/certificates?page=1&limit=25&search=&track=&status=&from=&to=
+  Response: { data: Certificate[], total, page, pages }
+
+GET /api/admin/certificates/:cert_id
+  Response: Full certificate object
+
+PATCH /api/admin/certificates/:cert_id/revoke
+  Body: { reason: string }
+  Response: { success: true }
+
+PATCH /api/admin/certificates/:cert_id/reinstate
+  Body: { reason: string }
+  Response: { success: true }
+
+GET /api/admin/certificates/export
+  Response: CSV download
+```
+
+---
+
+## 7. View 5 — Question Flags (`/admin/flags`)
+
+### 7.1 Purpose
+Users can flag a question during the Results screen ("Report inaccuracy" link under each question). This view allows admins to review all flagged questions, take action, and feed corrections back into the AI prompt tuning process.
+
+### 7.2 Schema — question_flags table (new)
+```sql
+CREATE TABLE question_flags (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exam_session_id   UUID REFERENCES exam_sessions(id),
+  user_id           UUID REFERENCES users(id),
+  question_id       TEXT NOT NULL,            -- e.g. "A-T1-0012"
+  question_stem     TEXT NOT NULL,            -- full question text at time of flagging
+  flag_reason       TEXT NOT NULL,            -- user-provided freetext, max 500 chars
+  status            TEXT NOT NULL DEFAULT 'open'
+                    CHECK (status IN ('open','reviewed','dismissed','escalated')),
+  admin_note        TEXT,
+  reviewed_by       UUID REFERENCES users(id),
+  reviewed_at       TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_question_flags_question_id ON question_flags(question_id);
+CREATE INDEX idx_question_flags_status ON question_flags(status);
+```
+
+### 7.3 Flags Table
+| Column | Data | Sortable |
+|---|---|---|
+| Question ID | e.g. `A-T1-0012` | — |
+| Flag Count | How many users flagged this exact question_id | ✅ |
+| Domain | Derived from thread number | — |
+| Track | Associate / Professional | — |
+| Status | Open / Reviewed / Dismissed / Escalated badge | ✅ |
+| Last Flagged | Most recent `created_at` | ✅ |
+| Actions | [Review] | — |
+
+- Default sort: unreviewed flags first, then by flag count descending.
+- **Filters:** Status, Track, Domain/Thread.
+- Questions are **grouped by `question_id`** — if 5 users flagged the same question, it appears as one row with flag count = 5.
+
+### 7.4 Flag Detail Drawer
+- **Question stem** (full text, large readable format).
+- **All 4 answer options** with the correct option highlighted.
+- **Explanation** as generated by AI.
+- **Clause Reference** (e.g., "ISO 27001:2022 Clause 6.1.2").
+- **Individual Flag Reports** — table of each flag submission: user email, their submitted reason, date.
+- **Actions:**
+  - **Mark as Reviewed + Add Admin Note** — status → `reviewed`, stores admin note.
+  - **Dismiss** — status → `dismissed` (flag was inaccurate/user error).
+  - **Escalate** — status → `escalated` (question has real error, needs prompt engineering fix).
+
+### 7.5 Escalated Questions
+- Escalated flags appear on a dedicated sub-tab within this view.
+- Admin can add notes for future prompt tuning: "Thread 3 prompt needs stronger distractor guidance for Clause 8.2."
+- Escalated questions can be added to a **blocklist** (`question_blocklist` table, keyed by `stem_hash`) so that exact question is excluded from future sessions.
+
+### 7.6 Schema — question_blocklist table (new)
+```sql
+CREATE TABLE question_blocklist (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stem_hash       TEXT UNIQUE NOT NULL,
+  question_id     TEXT,
+  reason          TEXT,
+  added_by        UUID REFERENCES users(id),
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 7.7 API — Question Flags
+```
+GET /api/admin/flags?page=1&limit=25&status=open&track=&thread=
+  Response: { data: FlagGroup[], total, page, pages }
+  -- FlagGroup: { question_id, question_stem, flag_count, track, thread, status, last_flagged }
+
+GET /api/admin/flags/:question_id
+  Response: { question, individual_flags: Flag[] }
+
+PATCH /api/admin/flags/:question_id/review
+  Body: { note: string }
+  Response: { success: true }
+
+PATCH /api/admin/flags/:question_id/dismiss
+  Response: { success: true }
+
+PATCH /api/admin/flags/:question_id/escalate
+  Body: { note: string }
+  Response: { success: true }
+
+POST /api/admin/flags/:question_id/blocklist
+  Body: { reason: string }
+  Response: { success: true }
+```
+
+---
+
+## 8. View 6 — Buffer Pool (`/admin/buffer-pool`)
+
+### 8.1 Purpose
+The Buffer Pool is a set of pre-validated, human-reviewed questions used as fallback when AI generation fails for a thread. It must always contain ≥ 200 questions per track (100 per thread × 2 tracks). Admins manage this pool from this view.
+
+### 8.2 Layout
+- **Track tabs** at top: Associate | Professional
+- Within each track: **Thread sub-tabs** (Thread 1–5, labeled with domain name)
+- Each tab shows the question list for that track + thread combination.
+- **Stats bar:** "137 / 200 questions (68%)" — shows how full the buffer is. Red if < 50%.
+
+### 8.3 Buffer Questions Table
+| Column | Data |
+|---|---|
+| Question ID | `A-T1-0001` format |
+| Stem Preview | First 80 chars of question stem |
+| Difficulty | Easy / Medium / Hard badge |
+| Clause Ref | e.g., `6.1.2` |
+| Times Used | How many times this was pulled as a fallback |
+| Added On | Date admin added it |
+| Actions | [View / Edit] [Delete] |
+
+### 8.4 Add Question Flow
+1. Admin clicks **[+ Add Question]** button (top right).
+2. A modal/form opens with fields matching the Question Object JSON Schema (Section 4.2 of PRD-v2):
+   - Question Stem (textarea)
+   - Option A / B / C / D (4 text inputs)
+   - Correct Option (radio: A / B / C / D)
+   - Explanation (textarea)
+   - Clause Reference (text)
+   - Difficulty (select: Easy / Medium / Hard)
+   - Thread (1–5, auto-set from active tab but editable)
+3. On submit: frontend validates against the same AJV schema used in the backend.
+4. POST to `/api/admin/buffer-pool` — backend re-validates schema, generates `question_id`, sets `is_buffer = true`, inserts into PostgreSQL.
+5. Success: question appears in the table; modal closes.
+
+### 8.5 Edit Question
+- Same form as Add, pre-filled.
+- PUT to `/api/admin/buffer-pool/:question_id`.
+
+### 8.6 Import via JSON (Bulk Upload)
+- **[Import JSON]** button opens a textarea.
+- Admin pastes a JSON array of question objects.
+- Frontend validates each object against the schema and shows a preview table with validation errors highlighted per row.
+- Admin confirms → bulk POST to `/api/admin/buffer-pool/import`.
+- Response: `{ imported: 45, skipped: 3, errors: [{ row: 12, error: "missing clause_ref" }] }`
+
+### 8.7 API — Buffer Pool
+```
+GET /api/admin/buffer-pool?track=associate&thread=1
+  Response: { data: BufferQuestion[], total, track_total }
+
+POST /api/admin/buffer-pool
+  Body: QuestionObject
+  Response: { success: true, question_id: string }
+
+PUT /api/admin/buffer-pool/:question_id
+  Body: Partial<QuestionObject>
+  Response: { success: true }
+
+DELETE /api/admin/buffer-pool/:question_id
+  Response: { success: true }
+
+POST /api/admin/buffer-pool/import
+  Body: { questions: QuestionObject[] }
+  Response: { imported: number, skipped: number, errors: ImportError[] }
+
+GET /api/admin/buffer-pool/stats
+  Response: {
+    associate: { total: number, by_thread: { [1..5]: number } },
+    professional: { total: number, by_thread: { [1..5]: number } }
+  }
+```
+
+---
+
+## 9. View 7 — Admin Audit Log (future, Phase 7)
+
+All admin actions are logged in an `admin_audit_log` table for accountability. This view exposes the log in read-only format. Not required for Phase 6 MVP but the **backend logging must be implemented from Phase 6 onwards**.
+
+### 9.1 Schema — admin_audit_log (log from Phase 6)
+```sql
+CREATE TABLE admin_audit_log (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id     UUID REFERENCES users(id),
+  action       TEXT NOT NULL,    -- e.g. "revoke_certificate", "block_user", "add_buffer_question"
+  target_type  TEXT NOT NULL,    -- "certificate", "user", "session", "question"
+  target_id    TEXT NOT NULL,    -- the id/uuid of the affected resource
+  metadata     JSONB,            -- before/after state, reason, etc.
+  ip_address   TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 9.2 What Gets Logged
+| Action | target_type | metadata |
+|---|---|---|
+| Block / Unblock user | user | `{ reason, previous_status }` |
+| Manually verify email | user | `{}` |
+| GDPR delete user | user | `{ anonymized_email }` |
+| Revoke / Reinstate certificate | certificate | `{ reason, cert_id }` |
+| Abort exam session | session | `{ reason }` |
+| Flag session as suspicious | session | `{}` |
+| Review / Escalate / Dismiss flag | question | `{ question_id, note }` |
+| Add to blocklist | question | `{ stem_hash, reason }` |
+| Add / Edit / Delete buffer question | question | `{ question_id, diff }` |
+
+---
+
+## 10. Non-Functional Requirements
+
+### 10.1 Security
+- All `/api/admin/*` routes require valid JWT with `role = 'admin'`. Double-checked by `requireAdmin` middleware — no exceptions.
+- Admin session shares the same 24h JWT lifespan. No "remember me" for admin.
+- All admin write actions (block, revoke, delete) require the action to include a valid CSRF token (double-submit cookie pattern).
+- Rate limit on admin API: 100 requests/minute per admin IP (separate bucket from user API).
+- The `/admin*` frontend routes are excluded from the public sitemap and `robots.txt` (`Disallow: /admin`).
+- Admin panel routes are not linked from any public page.
+
+### 10.2 Performance
+- All admin list endpoints respond within **500ms** for up to 100,000 records (requires indexes on all filter columns).
+- Charts/stats endpoints respond within **1 second** (use materialized views or daily-aggregated stats table for timeseries).
+- The buffer pool import endpoint accepts up to **500 questions** in a single batch.
+
+### 10.3 Required Database Indexes
+```sql
+-- For user search
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_created_at ON users(created_at);
+CREATE INDEX idx_users_blocked ON users(blocked);
+
+-- For sessions filtering
+CREATE INDEX idx_exam_sessions_status ON exam_sessions(status);
+CREATE INDEX idx_exam_sessions_user_id ON exam_sessions(user_id);
+CREATE INDEX idx_exam_sessions_created_at ON exam_sessions(created_at);
+CREATE INDEX idx_exam_sessions_suspicious ON exam_sessions(suspicious);
+
+-- For certificates search
+CREATE INDEX idx_certificates_certificate_id ON certificates(certificate_id);
+CREATE INDEX idx_certificates_user_id ON certificates(user_id);
+CREATE INDEX idx_certificates_awarded_on ON certificates(awarded_on);
+CREATE INDEX idx_certificates_revoked ON certificates(revoked);
+
+-- For flags
+CREATE INDEX idx_question_flags_status ON question_flags(status);
+CREATE INDEX idx_question_flags_question_id ON question_flags(question_id);
+
+-- For buffer pool
+CREATE INDEX idx_questions_buffer ON exam_sessions(id) WHERE is_buffer = true;
+```
+
+### 10.4 Responsive Behavior
+- The admin panel is **desktop-first** (min-width 1280px target).
+- It is **not required to be fully mobile-responsive** — admin actions are operational tasks performed on workstations.
+- A basic mobile warning banner is shown on viewports < 768px: "Admin panel is optimized for desktop browsers."
+
+---
+
+## 11. UI Design Guidelines
+
+Follows the DESIGN document but with these admin-specific overrides:
+
+| Token | Value | Rationale |
+|---|---|---|
+| Sidebar background | `#0A0A0A` (Ink Black) | Distinct from public portal; signals internal tool |
+| Sidebar text | `#E5E5E5` | High contrast on dark |
+| Active sidebar item | Gold left border (`#C9A84C`) + `#1A1A1A` bg | Matches brand accent |
+| Main content area | `#FAFAFA` (off-white) | Clean data reading surface |
+| Table row hover | `#F0F0F0` | Subtle feedback |
+| Danger action (Revoke, Block, Delete) | `#DC2626` (red) + confirm modal required | Destructive action pattern |
+| Warning action (Suspend, Flag) | `#D97706` (amber) | Caution without full danger |
+| Card/stat backgrounds | White with 1px `#E5E5E5` border | Clean |
+| Typography | Inter (same as portal) | Consistency |
+
+### 11.1 Component Reuse
+These components from the public portal can be reused with admin styling:
+- `<Badge>` — used for status displays
+- `<Dialog>` / modal — used for confirmation flows
+- `<Toast>` — success/error notifications after actions
+- `<Tooltip>` — used on truncated text, dates
+- `<Select>` — used in all filter dropdowns
+
+### 11.2 Table Component (new, admin-specific)
+A shared `<AdminTable>` component to be created in `frontend/src/components/admin/AdminTable.jsx` with:
+- Props: `columns`, `data`, `onRowClick`, `loading`, `pagination`
+- Built-in: column sort indicators, loading skeleton (5 rows), empty state, pagination controls
+- Used by all 5 data views (Users, Sessions, Certificates, Flags, Buffer Pool)
+
+---
+
+## 12. Phase Placement in PLAN
+
+Admin Dashboard is built in **Phase 6** of the PLAN document. All backend schema additions (question_flags, question_blocklist, admin_audit_log, user.blocked columns, session.suspicious columns) should be added to the **Phase 0 database migration** so the columns exist from the start, even if the admin UI is built in Phase 6.
+
+### 12.1 Phase 6 Task Breakdown (appends existing PLAN Phase 6)
+| Task | Description | Effort (days) |
+|---|---|---|
+| 6.1 | Create `AdminRoute` guard + sidebar layout component | 0.5 |
+| 6.2 | Schema migrations: all new tables + columns from this PRD | 0.5 |
+| 6.3 | `GET /api/admin/stats` + all stats sub-endpoints | 1 |
+| 6.4 | Overview KPI cards + 4 charts (recharts) | 1 |
+| 6.5 | Users list API (search/filter/paginate/export) | 0.5 |
+| 6.6 | Users table + User Detail Drawer + all action modals | 1.5 |
+| 6.7 | Sessions list API (filter/paginate/suspicious) | 0.5 |
+| 6.8 | Sessions table + Session Detail Drawer + abort/flag actions | 1.5 |
+| 6.9 | Certificates list API + revoke/reinstate | 0.5 |
+| 6.10 | Certificates table + Certificate Detail Drawer + revocation flow | 1 |
+| 6.11 | Question flags backend (create flag on results page + admin endpoints) | 1 |
+| 6.12 | Flags view + Flag Detail Drawer + escalate/dismiss/blocklist | 1 |
+| 6.13 | Buffer pool CRUD API (including bulk import) | 1 |
+| 6.14 | Buffer pool view + add/edit form + JSON import flow | 1.5 |
+| 6.15 | Admin audit log backend middleware (logs all write actions) | 0.5 |
+| 6.16 | Sentry integration in React (Vite plugin) and Express (error handler middleware) — error capture + session replay | 0.5 |
+| 6.17 | PostHog admin tracking (admin action events) | 0.25 |
+| **Total** | | **~13.25 days** |
+
+---
+
+## 13. Out of Scope (v1 Admin)
+
+- Admin audit log **view** in the UI (log is written, but the UI view is deferred to v2)
+- Bulk user operations (mass block, mass email)
+- Admin-to-admin messaging
+- Push notifications / real-time WebSocket dashboards (polling is sufficient for v1)
+- AI prompt editor inside the admin UI (prompts are version-controlled in code)
+- Two-factor authentication for admin accounts (deferred to v2)
+- Role hierarchy (super-admin vs. admin) — single `admin` role in v1

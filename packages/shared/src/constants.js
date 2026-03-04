@@ -38,7 +38,7 @@ const ROLES = Object.freeze({
 
 // ── Exam Configuration (per track) ─────────────────────────────────────────
 const EXAM_CONFIG = Object.freeze({
-  associate: Object.freeze({
+   associate: Object.freeze({
     TOTAL_QUESTIONS:       50,     // 5 threads × 10 questions
     QUESTIONS_PER_THREAD:  10,
     TOTAL_THREADS:         5,

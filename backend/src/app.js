@@ -9,6 +9,7 @@ const sessionRouter     = require('./routes/session')
 const resultsRouter     = require('./routes/results')
 const certificateRouter = require('./routes/certificate')
 const adminRouter       = require('./routes/admin')
+const questionsRouter   = require('./routes/questions')
 const { errorHandler } = require('./middlewares/errorHandler')
 
 const app = express()
@@ -27,9 +28,14 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
 }
 
-// ── Health check ────────────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+// ── Health check (includes live DB probe) ──────────────────────────────────
+app.get('/api/health', async (_req, res) => {
+  try {
+    await require('./config/db').query('SELECT 1')
+    res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() })
+  } catch (err) {
+    res.status(503).json({ status: 'degraded', db: 'error', error: err.message, timestamp: new Date().toISOString() })
+  }
 })
 
 // ── Routes ───────────────────────────────────────────────────────────────────
@@ -39,6 +45,7 @@ app.use('/api/session',       sessionRouter)
 app.use('/api/results',       resultsRouter)
 app.use('/api/certificates',  certificateRouter)
 app.use('/api/admin',         adminRouter)
+app.use('/api/questions',     questionsRouter)
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {

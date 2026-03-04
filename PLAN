@@ -1,0 +1,368 @@
+# Development Plan: ISO-Audit360.com
+## ISO 27001:2022 Certification Portal — End-to-End Build Plan
+**Version:** 2026.2.0
+**Date:** March 3, 2026
+**Estimated Total Duration:** 9 Weeks
+**Target Launch:** Week of May 4, 2026
+
+---
+
+## Overview
+
+```
+Phase 0  ├── Architecture & Infra Setup        Week 1–2  (10 days)
+Phase 1  ├── Auth & User System                Week 2–3  (8 days)
+Phase 2  ├── AI Generation Engine              Week 3–4  (8 days)
+Phase 3  ├── Exam Interface                    Week 4–5  (8 days)
+Phase 4  ├── Results & Reporting               Week 5–6  (7 days)
+Phase 5  ├── Certificate Generation & Verify   Week 6–7  (7 days)
+Phase 6  ├── Admin Panel & Observability       Week 7–8  (7 days)
+Phase 7  └── Legal, Hardening & Launch         Week 8–9  (7 days)
+```
+
+---
+
+## Phase 0: Architecture & Foundation
+**Duration:** 10 working days (Week 1–2)
+**Goal:** Zero ambiguity before a single line of product code is written. Every engineering decision documented and environment running.
+
+### Deliverables
+
+| # | Task | Owner | Days |
+|---|---|---|---|
+| 0.1 | ~~Monorepo scaffold~~ — **DONE** via npm workspaces (`frontend/`, `backend/`, root `package.json` with `concurrently`) | Backend | ✅ |
+| 0.2 | ~~Configure ESLint, Prettier, TypeScript strict mode across all packages~~ — **DONE** (`.prettierrc`, `.eslintrc.cjs` × 2, scripts in all `package.json`) | Backend | ✅ |
+| 0.3 | ~~Provision Supabase project, apply schema migrations~~ — **DONE** (`001_initial_schema.sql`, `migrate.js`, `seed-admin.js` — manual `npm run migrate` still needed after Supabase URL set) | Backend | ✅ |
+| 0.4 | Provision Upstash Redis (staging + production), configure TLS | Backend | 0.5 |
+| 0.5 | Provision Cloudflare R2 bucket (`iso-audit360-certs`), configure public read / private write | Backend | 0.5 |
+| 0.6 | Configure Resend.com account, domain DNS verification for `mail.iso-audit360.com` | Backend | 0.5 |
+| 0.7 | Configure OpenAI API account, set up project-level usage limits and alerts | Backend | 0.5 |
+| 0.8 | ~~Set up Fly.io Express app (staging + production), configure secrets manager~~ — **DONE** (`Dockerfile`, `fly.toml`, `.dockerignore`) | Backend | ✅ |
+| 0.9 | ~~Set up Cloudflare Pages project, link `frontend/` build output, configure environment variables~~ — **DONE** (`_headers`, `_redirects`, `wrangler.toml`, `robots.txt`) | Frontend | ✅ |
+| 0.10 | ~~Define and document all OpenAPI 3.1 endpoint specs (auth, session, exam, cert, admin)~~ — **DONE** (`openapi.yaml` — 35+ endpoints, 7 tags, full schemas) | Both | ✅ |
+| 0.11 | ~~Define shared types in `packages/shared-types`~~ — **DONE** (`@iso-audit360/shared` — constants, schemas, utils; linked in both workspaces) | Both | ✅ |
+| 0.12 | ~~Author 10 AI prompt templates (5 Associate + 5 Professional threads)~~ — **DONE** (`promptBuilder.js` + `associate/thread-{1-5}.js` + `professional/thread-{1-5}.js`) | Backend | ✅ |
+| 0.13 | ~~Set up CI/CD pipeline (GitHub Actions): lint → test → build → deploy staging~~ — **DONE** (`.github/workflows/ci.yml` + `deploy.yml` — PR lint/build/docker-check; push → Fly.io + CF Pages) | Both | ✅ |
+
+### Exit Criteria
+- [ ] Both staging environments accessible via URL.
+- [ ] Supabase schema fully migrated (all tables from PRD Section 4.1 exist).
+- [ ] At least 1 test AI generation call returns valid JSON conforming to question schema.
+- [ ] OpenAPI spec reviewed and approved.
+
+---
+
+## Phase 1: Auth & User System
+**Duration:** 8 working days (Week 2–3)
+**Goal:** Users can register, verify email via OTP, log in, and access a functional Readiness Dashboard.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 1.1 | `POST /api/auth/register` — create user, send OTP via Resend | 1 |
+| 1.2 | `POST /api/auth/verify-otp` — validate OTP, issue JWT + refresh token | 1 |
+| 1.3 | `POST /api/auth/resend-otp` — with rate limiting (3/hr/email, 3/hr/IP) | 0.5 |
+| 1.4 | `POST /api/auth/login` — email + password, issue JWT | 0.5 |
+| 1.5 | `POST /api/auth/refresh` — validate refresh token, issue new JWT | 0.5 |
+| 1.6 | `POST /api/auth/forgot-password` — send reset link | 0.5 |
+| 1.7 | `POST /api/auth/reset-password` — validate signed token, update password hash | 0.5 |
+| 1.8 | `GET /api/user/me` — return profile + attempt summary | 0.5 |
+| 1.9 | `PATCH /api/user/me` — update name, company, role, country | 0.5 |
+| 1.10 | `DELETE /api/user/me` — soft delete + schedule PII purge job | 0.5 |
+| 1.11 | `GET /api/user/attempts` — paginated list of past exam sessions | 0.5 |
+| 1.12 | Express middleware: `authenticate` (JWT guard), `express-rate-limit`, `morgan` request logger | 1 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 1.13 | Landing page (`/iso-27001`) — dark/gold executive design, trust indicators, registration CTA | 1.5 |
+| 1.14 | Registration modal — form with validation (react-hook-form + zod) | 0.5 |
+| 1.15 | OTP verification screen — 6-digit input, resend timer, error states | 0.5 |
+| 1.16 | Login page + forgot/reset password flows | 0.5 |
+| 1.17 | Readiness Dashboard (`/dashboard`) — welcome header, track selector cards, attempt history table, retake policy notice | 1.5 |
+| 1.18 | Profile settings page — edit fields, delete account flow with confirmation | 0.5 |
+
+### Exit Criteria
+- [ ] Full registration → OTP → login → dashboard flow works end-to-end in staging.
+- [ ] Rate limits verified (OTP hammer test).
+- [ ] JWT expiry and refresh token rotation work correctly.
+- [ ] Past attempts appear in correct order on dashboard.
+
+---
+
+## Phase 2: AI Generation Engine
+**Duration:** 8 working days (Week 3–4)
+**Goal:** Reliably produce 50 unique, schema-valid questions in under 3 minutes, with fallback handling.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 2.1 | `POST /api/session/create` — validate retake eligibility, create `exam_sessions` record, issue exam session token | 1 |
+| 2.2 | Build `GenerationService`: fires 5 parallel OpenAI calls per track, each with structured JSON mode prompt | 2 |
+| 2.3 | Per-thread timeout (45s), retry-once logic, buffer pool fallback integration | 1 |
+| 2.4 | JSON schema validator (`ajv`) for all 50 incoming question objects | 0.5 |
+| 2.5 | Question fingerprinting: SHA-256 stem hash, overlap check against last 3 attempts | 0.5 |
+| 2.6 | Write question fingerprints + activate session (`status = 'ready'`) on success | 0.5 |
+| 2.7 | `GET /api/session/[id]/status` — polling endpoint for generation progress (0–100%) | 0.5 |
+| 2.8 | Buffer pool schema, seed script, and admin upload endpoint | 1 |
+| 2.9 | Abort logic: > 2 threads fail → mark session `aborted`, do NOT increment attempt count | 0.5 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 2.10 | Generation screen with animated progress bar (polling `/status` every 3s) | 0.5 |
+| 2.11 | "Audit Wisdom" rotating tips component (Associate: Clause Reminders, Professional: Auditor Ethics) | 0.5 |
+| 2.12 | "Enter Exam" CTA state transition on generation success; error + retry state on failure | 0.5 |
+
+### Exit Criteria
+- [ ] Associate and Professional tracks both complete generation with valid 50-question payloads.
+- [ ] Deliberate thread timeout test: buffer pool activates correctly.
+- [ ] Overlap check: re-generating for the same user returns < 4 duplicate question hashes in any thread.
+- [ ] Abort path: session is not created if > 2 threads fail; attempt count unchanged.
+
+---
+
+## Phase 3: Exam Interface
+**Duration:** 8 working days (Week 4–5)
+**Goal:** The "pressure-cooker" — dual-timer, server-authoritative, non-reversible exam experience.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 3.1 | `POST /api/session/[id]/start` — write `global_end` and first `q_end` to Redis; update session `status = 'active'`, `started_at` | 1 |
+| 3.2 | `POST /api/session/[id]/answer` — validate exam session token, record answer, advance to next question, reset `q_end` in Redis | 1.5 |
+| 3.3 | Redis keyspace notifications: `q_end` expiry → auto-advance (log null answer, push next question); `global_end` expiry → auto-submit | 1.5 |
+| 3.4 | `POST /api/session/[id]/heartbeat` — return `{ global_remaining_ms, q_remaining_ms, current_q_index, tab_violations }`; accept `{ is_visible, tab_violation }` payload | 1 |
+| 3.5 | Tab violation counter: increment on server at violation 1, 2; trigger auto-submit at violation 3 | 0.5 |
+| 3.6 | Session reconstruction: if Redis keys missing on heartbeat, reconstruct from `exam_sessions.started_at` + `expires_at` | 0.5 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 3.7 | Global countdown timer component (server-synced, never trusts client clock) | 0.5 |
+| 3.8 | Per-question countdown ring/bar (resets on each advance) | 0.5 |
+| 3.9 | Question card component: stem, 4 option buttons, immediate lock on selection | 0.5 |
+| 3.10 | Heartbeat service (5-second interval) with re-sync on reconnect | 0.5 |
+| 3.11 | Tab visibility monitoring (`visibilitychange` + `blur` events), violation toast warnings | 0.5 |
+| 3.12 | Anti-cheat: right-click disable, copy-paste disable, dev tools size heuristic flag | 0.5 |
+| 3.13 | Network loss banner ("Connection lost — timers continue on server") | 0.25 |
+| 3.14 | Auto-redirect to `/results/[id]` on exam completion (heartbeat trigger or WebSocket push) | 0.25 |
+
+### Exit Criteria
+- [ ] 15s question timeout fires server-side and auto-advances without client action.
+- [ ] 600s global timer submits exam automatically, no client dependency.
+- [ ] 3rd tab violation triggers submission.
+- [ ] Disconnecting from network for 60s and reconnecting: exam state correctly restored from Redis.
+- [ ] Answers are server-locked; cannot be resubmitted once sent.
+
+---
+
+## Phase 4: Results & Reporting
+**Duration:** 7 working days (Week 5–6)
+**Goal:** Server-side scored, full audit report with radar chart and per-question breakdown.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 4.1 | Score calculation service: compare submitted answers to `correct_option` per question; compute domain scores | 1 |
+| 4.2 | `GET /api/results/[session_id]` — returns signed result payload (score, domain breakdown, per-question review with explanations) | 1 |
+| 4.3 | Trigger certificate generation if `passed = true` (async job; result endpoint returns immediately, cert URL populated when ready) | 0.5 |
+| 4.4 | `POST /api/questions/[q_id]/flag` — user inaccuracy report, stored in DB for admin review | 0.5 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 4.5 | Results page pass/fail verdict with animated reveal | 0.5 |
+| 4.6 | Score display (e.g., "42 / 50 — PASSED") with percentage | 0.25 |
+| 4.7 | Radar chart (5 domains) using Recharts | 1 |
+| 4.8 | Per-question review table: stem, user answer, correct answer, explanation, clause_ref | 1 |
+| 4.9 | "Download Certificate" button (polling for cert readiness) | 0.5 |
+| 4.10 | "Retake in 24 hours" CTA with countdown for failed attempts | 0.25 |
+| 4.11 | "Flag this question" button on each review row | 0.25 |
+
+### Exit Criteria
+- [ ] Score calculation is server-side only; no client-side computation.
+- [ ] Radar chart accurately reflects domain-level breakdown.
+- [ ] Result page renders correctly for both pass and fail scenarios.
+- [ ] Flagging a question records to DB.
+
+---
+
+## Phase 5: Certificate Generation & Verification
+**Duration:** 7 working days (Week 6–7)
+**Goal:** Shareable, publicly verifiable, professionally designed digital certificate.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 5.1 | `CertificateService`: Sharp pipeline generating 1920×1080 + 1080×1080 JPEG with all design elements | 2 |
+| 5.2 | QR code generation (SVG via `qrcode` npm package) embedded in image at bottom-right | 0.5 |
+| 5.3 | Certificate ID generation: `ISO27-2026-[8 random base-36 chars]`, uniqueness check in DB | 0.5 |
+| 5.4 | Upload both JPEGs to Cloudflare R2, store signed URLs in `certificates` table | 0.5 |
+| 5.5 | `GET /api/certificates/[certificate_id]` — returns certificate record + signed download URLs | 0.5 |
+| 5.6 | `GET /api/certificates/verify/:cert_id` (Express) + `/verify/:cert_id` React page — public verification | 0.5 |
+| 5.7 | Open Graph meta tags for certificate social preview (og:image points to square JPEG) | 0.25 |
+| 5.8 | Admin `POST /api/admin/certificates/[id]/revoke` — with reason; updates `revoked = true` | 0.25 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 5.9 | Certificate download section on results page (landscape + square download buttons) | 0.5 |
+| 5.10 | LinkedIn share button (Open Graph URL) | 0.25 |
+| 5.11 | Twitter/X share button with pre-filled hashtags | 0.25 |
+| 5.12 | "Copy verification link" button | 0.25 |
+| 5.13 | Public verification page (`/verify/[id]`): candidate name, track, date, status, revocation banner | 0.75 |
+
+### Exit Criteria
+- [ ] Generated JPEG contains correct name, track, certificate_id, and QR code.
+- [ ] QR code scans to correct `/verify/[id]` URL.
+- [ ] Verification page shows correct data for valid, revoked, and non-existent IDs.
+- [ ] Social share buttons generate correct URLs with OG preview.
+
+---
+
+## Phase 6: Admin Panel & Observability
+**Duration:** 7 working days (Week 7–8)
+**Goal:** Full operational visibility; you can run the platform day-to-day without touching the database directly.
+
+### Backend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 6.1 | Admin role guard middleware (JWT `role = 'admin'`) | 0.25 |
+| 6.2 | `GET /api/admin/users` — search, filter, paginate | 0.5 |
+| 6.3 | `POST /api/admin/users/[id]/block` and `/unblock` | 0.25 |
+| 6.4 | `GET /api/admin/sessions` — live active sessions count + recent sessions list | 0.5 |
+| 6.5 | `GET /api/admin/flags` — flagged questions list with count and content | 0.5 |
+| 6.6 | `POST /api/admin/buffer-pool` — upload / approve buffer questions per track | 0.5 |
+| 6.7 | `GET /api/admin/kpis` — registration→verified rate, daily exams, pass rate, share rate | 0.5 |
+| 6.8 | Fraud detection flagging logic: perfect score with avg time < 4s → admin review queue | 0.5 |
+| 6.9 | IP block logic: > 5 exam attempts per IP per 24h → temp block + admin alert | 0.5 |
+
+### Frontend Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 6.10 | Admin dashboard shell (`/admin`) — sidebar nav, responsive layout | 0.5 |
+| 6.11 | Users page: searchable table, view history, block/unblock button | 0.5 |
+| 6.12 | Live sessions monitor: active count, track distribution, error rate widget | 0.5 |
+| 6.13 | Certificate management: search by ID, revoke with reason modal | 0.5 |
+| 6.14 | Question flags page: list flagged questions, dismiss or escalate, buffer pool uploader | 0.5 |
+| 6.15 | KPI dashboard: charts for all 8 defined KPIs (PostHog or DB-query backed) | 0.5 |
+
+### Observability Setup
+
+| # | Task | Days |
+|---|---|---|
+| 6.16 | Sentry integration in React (Vite plugin) and Express (error handler middleware) — error capture + session replay | 0.5 |
+| 6.17 | PostHog: instrument all 8 KPI events (registration, verification, track select, exam start, exam complete, pass, share click, cert view) | 0.5 |
+| 6.18 | Uptime monitoring (BetterStack or Checkly): heartbeats for frontend and API health endpoints | 0.25 |
+
+### Exit Criteria
+- [ ] Admin can search users, view their full attempt history, and block an account.
+- [ ] Admin can revoke a certificate; revocation reflected immediately on public verify page.
+- [ ] Admin can upload buffer pool questions; they appear in fallback pool.
+- [ ] All 8 KPI events fire in PostHog under a test scenario.
+
+---
+
+## Phase 7: Legal, Hardening & Launch
+**Duration:** 7 working days (Week 8–9)
+**Goal:** Legally compliant, load-tested, beta-validated production launch.
+
+### Legal Tasks
+
+| # | Task | Days |
+|---|---|---|
+| 7.1 | Draft Privacy Policy (GDPR/CCPA compliant, all third-party processors listed) | 1 |
+| 7.2 | Draft Terms of Service (exam integrity, IP disclaimer, certificate limitations, liability) | 1 |
+| 7.3 | Add privacy/terms links to registration flow (checkbox acknowledgement) | 0.25 |
+| 7.4 | Cookie consent banner (if using PostHog with cookies) | 0.25 |
+| 7.5 | OpenAI prompt audit: confirm zero verbatim ISO clause reproduction in 50 sample outputs | 0.5 |
+
+### Security Hardening
+
+| # | Task | Days |
+|---|---|---|
+| 7.6 | OWASP checklist review for all API endpoints (input validation, SQL injection, XSS, CORS policy) | 0.5 |
+| 7.7 | Penetration test: answer injection (submit answers without exam session token), session hijacking (reuse another user's session token), certificate forgery (enumerate certificate IDs) | 0.5 |
+| 7.8 | Security headers (CSP, HSTS, X-Frame-Options) via Helmet on Express + `_headers` file on Cloudflare Pages | 0.25 |
+| 7.9 | Secrets rotation: ensure no secrets in source code; all via environment variables | 0.25 |
+
+### Load & Quality Testing
+
+| # | Task | Days |
+|---|---|---|
+| 7.10 | Load test: simulate 500 concurrent exam sessions using k6; validate Redis timer accuracy stays within ±200ms under load | 0.5 |
+| 7.11 | OpenAI cost modeling at scale: 500 concurrent generations = N API calls = $X per day; set hard budget limit | 0.25 |
+| 7.12 | End-to-end test script (Playwright): full flow from registration to certificate download for both tracks | 0.5 |
+
+### Beta & Launch
+
+| # | Task | Days |
+|---|---|---|
+| 7.13 | Soft launch: 50 beta users (GRC professionals from your network); collect structured feedback form | — |
+| 7.14 | Fix critical beta issues (dedicated 1 day) | 1 |
+| 7.15 | DNS cutover: iso-audit360.com → Cloudflare Pages production + Fly.io API subdomain | 0.25 |
+| 7.16 | Announce launch: LinkedIn post, Product Hunt submission, GRC community forums | — |
+
+### Exit Criteria
+- [ ] Privacy Policy and Terms live on site; checkbox in registration form.
+- [ ] Load test: 0 timer drift failures at 500 concurrent sessions.
+- [ ] Playwright E2E tests pass on production URL.
+- [ ] Beta feedback: < 5% question accuracy flag rate.
+- [ ] Certificate QR codes scannable and verification page live.
+
+---
+
+## Risk Register
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| OpenAI API latency > 45s per thread | Medium | High | Buffer pool fallback (Phase 2); alert on fallback rate |
+| OpenAI cost overrun at scale | Medium | High | Usage hard cap in OpenAI project; per-user generation rate limit |
+| ISO/BSI IP complaint | Low | Very High | Strict paraphrase-only prompt enforcement; ToS disclaimer |
+| Redis timer drift under load | Low | High | Load test before launch; server-side reconstruction fallback |
+| Spam registrations exhaust AI quota | Medium | High | OTP gate + IP rate limit + generation rate limit per user |
+| Certificate JPEG rendering fails | Low | Medium | Sentry alert on Sharp errors; retry queue for failed jobs |
+| Beta users find systematic AI question errors | Medium | High | Buffer pool + admin question review process in Phase 6 |
+
+---
+
+## Team & Responsibility
+
+| Role | Scope |
+|---|---|
+| Frontend Engineer | Phases 1–5 frontend tasks, Phase 7 Playwright tests |
+| Backend Engineer | Phases 0–6 backend tasks, Phase 7 security + load tests |
+| Designer | Landing page, dashboard, exam UI, certificate design (Phase 0–3 in parallel) |
+| Legal Counsel | Phase 7 legal documents |
+| Product Lead | Phase 0 decisions, PRD sign-off, beta coordination |
+
+---
+
+## Total Effort Estimate
+
+| Phase | Backend (days) | Frontend (days) | Total |
+|---|---|---|---|
+| Phase 0: Architecture | 7.5 | 2 | 9.5 |
+| Phase 1: Auth & Users | 6 | 5 | 11 |
+| Phase 2: AI Engine | 7.5 | 1.5 | 9 |
+| Phase 3: Exam Interface | 6 | 4 | 10 |
+| Phase 4: Results | 3 | 3.75 | 6.75 |
+| Phase 5: Certificates | 5 | 2.75 | 7.75 |
+| Phase 6: Admin & Ops | 5 | 3.5 | 8.5 |
+| Phase 7: Legal & Launch | 3 | 1 | 4 |
+| **Total** | **43.5** | **23.5** | **67 dev-days** |
+
+At 2 engineers (1 frontend + 1 backend) running in parallel across 9 weeks (~45 working days), this is achievable with appropriate focus. Buffer of ~10 days accounted for in the 9-week timeline.

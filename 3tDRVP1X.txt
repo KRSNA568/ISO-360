@@ -288,3 +288,7 @@ Notes, assumptions & open points I took a best-effort decision on
 I included email + SMS OTP for verification; if you want only email, remove SMS.
 
 Certificate design specifics (fonts, colors) will need a designer; include a design ticket to deliver PNG/JPEG templates.
+
+
+
+Okay, now I want to replace the AI question generation with the pre-saved question bank for the associate and professional exam. The question bank should contain a pool of 300 questions for both exams. Every time random questions are given to the user during the exam according to the track chosen, it should be drawn from this pool. Please don’t remove the code for AI generation; just comment it out.

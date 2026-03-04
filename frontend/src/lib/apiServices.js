@@ -21,12 +21,15 @@ export const sessionApi = {
   getStatus: (id)        => api.get(`/session/${id}/status`),
   start:     (id)        => api.post(`/session/${id}/start`),
   answer:    (id, data)  => api.post(`/session/${id}/answer`, data),
-  heartbeat: (id, data)  => api.post(`/session/${id}/heartbeat`, data),
+  submit:    (id)        => api.post(`/session/${id}/submit`),
+  heartbeat: (id)        => api.post(`/session/${id}/heartbeat`),
+  report:    (id)        => api.get(`/session/${id}/report`),
+  history:   ()          => api.get('/session/history'),
 }
 
 export const resultsApi = {
-  get: (sessionId) => api.get(`/results/${sessionId}`),
-  flagQuestion: (qId) => api.post(`/questions/${qId}/flag`),
+  get:          (id)       => api.get(`/session/${id}/report`),
+  flagQuestion: (qId, data) => api.post(`/questions/${qId}/flag`, data),
 }
 
 export const certificateApi = {
