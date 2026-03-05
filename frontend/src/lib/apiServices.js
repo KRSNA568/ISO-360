@@ -38,3 +38,33 @@ export const certificateApi = {
   get:    (certId) => api.get(`/certificates/${certId}`),
   verify: (certId) => api.get(`/certificates/verify/${certId}`),
 }
+
+export const adminApi = {
+  // Users
+  getUsers:          (params) => api.get('/admin/users', { params }),
+  blockUser:         (id, d)  => api.post(`/admin/users/${id}/block`, d),
+  unblockUser:       (id)     => api.post(`/admin/users/${id}/unblock`),
+
+  // Sessions
+  getSessions:       (params) => api.get('/admin/sessions', { params }),
+  getSession:        (id)     => api.get(`/admin/sessions/${id}`),
+  flagSession:       (id, d)  => api.post(`/admin/sessions/${id}/flag`, d),
+
+  // Certificates
+  getCertificates:   (params) => api.get('/admin/certificates', { params }),
+  revokeCertificate: (id, d)  => api.post(`/admin/certificates/${id}/revoke`, d),
+
+  // Flags
+  getFlags:          (params) => api.get('/admin/flags', { params }),
+  updateFlag:        (id, d)  => api.patch(`/admin/flags/${id}`, d),
+
+  // Questions
+  getQuestions:      (params) => api.get('/admin/questions', { params }),
+  addQuestion:       (d)      => api.post('/admin/questions', d),
+  editQuestion:      (id, d)  => api.patch(`/admin/questions/${id}`, d),
+  retireQuestion:    (id)     => api.delete(`/admin/questions/${id}`),
+
+  // KPIs & Audit
+  getKpis:           ()       => api.get('/admin/kpis'),
+  getAuditLog:       (params) => api.get('/admin/audit-log', { params }),
+}

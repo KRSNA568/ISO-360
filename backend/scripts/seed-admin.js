@@ -29,27 +29,23 @@ async function seedAdmin() {
 
   const client = await pool.connect()
   try {
-    // Check if admin already exists
-    const { rows } = await client.query(
-      "SELECT id FROM users WHERE email = $1 AND role = 'admin'",
-      [email]
-    )
-    if (rows.length > 0) {
-      console.log(`Admin already exists: ${email}`)
-      return
-    }
-
     const passwordHash = await bcrypt.hash(password, 12)
 
+    // Upsert: insert new admin OR promote existing user to admin and update password
     const result = await client.query(
       `INSERT INTO users (full_name, email, password_hash, email_verified, role)
        VALUES ($1, $2, $3, true, 'admin')
+       ON CONFLICT (email) DO UPDATE
+         SET role          = 'admin',
+             email_verified = true,
+             password_hash  = EXCLUDED.password_hash,
+             full_name      = EXCLUDED.full_name
        RETURNING id, email, role`,
       [name, email, passwordHash]
     )
 
     const admin = result.rows[0]
-    console.log('✅  Admin user created:')
+    console.log('✅  Admin user ready:')
     console.log(`    ID:    ${admin.id}`)
     console.log(`    Email: ${admin.email}`)
     console.log(`    Role:  ${admin.role}`)
