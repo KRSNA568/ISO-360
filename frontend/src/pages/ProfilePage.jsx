@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -218,11 +218,21 @@ function ProfileForm() {
 
       <div>
         <Label>Country</Label>
-        <input
-          {...register('country')}
-          placeholder="Optional"
-          className="input"
-        />
+        <select {...register('country')} className="input">
+          <option value="">— select —</option>
+          {['Afghanistan','Albania','Algeria','Argentina','Australia','Austria','Bangladesh',
+            'Belgium','Bolivia','Brazil','Bulgaria','Cambodia','Canada','Chile','China',
+            'Colombia','Croatia','Czech Republic','Denmark','Ecuador','Egypt','Ethiopia',
+            'Finland','France','Germany','Ghana','Greece','Guatemala','Hungary','India',
+            'Indonesia','Iran','Iraq','Ireland','Israel','Italy','Japan','Jordan','Kazakhstan',
+            'Kenya','Malaysia','Mexico','Morocco','Netherlands','New Zealand','Nigeria',
+            'Norway','Pakistan','Peru','Philippines','Poland','Portugal','Romania','Russia',
+            'Saudi Arabia','Serbia','Singapore','South Africa','South Korea','Spain',
+            'Sri Lanka','Sweden','Switzerland','Tanzania','Thailand','Turkey','Uganda',
+            'Ukraine','United Arab Emirates','United Kingdom','United States','Uzbekistan',
+            'Venezuela','Vietnam','Zimbabwe',
+          ].map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
       <div>
@@ -322,6 +332,7 @@ function DangerZone() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  useEffect(() => { document.title = 'Profile | ISO-Audit360' }, [])
   return (
     <div className="min-h-screen bg-surface">
       <AppNavbar />

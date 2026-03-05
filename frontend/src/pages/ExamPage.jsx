@@ -81,6 +81,8 @@ export default function ExamPage() {
   const [current,    setCurrent]    = useState(0)
   const [remaining,  setRemaining]  = useState(0)
   const [track,      setTrack]      = useState('')
+
+  useEffect(() => { document.title = 'Exam | ISO-Audit360' }, [])
   const [confirmBox, setConfirmBox] = useState(false)
   const [errorMsg,   setErrorMsg]   = useState('')
   const [tabWarnings,       setTabWarnings]       = useState(0)  // 0 | 1 | 2

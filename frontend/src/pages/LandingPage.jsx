@@ -81,7 +81,7 @@ function Hero() {
   return (
     <section className="min-h-screen bg-ink flex flex-col items-center justify-center text-center px-6 pt-16">
       <div className="max-w-4xl mx-auto">
-        <span className="overline mb-6 inline-block">ISO 27001:2022 · AI-Proctored · Free Certification</span>
+        <span className="overline mb-6 inline-block">ISO 27001:2022 · Integrity-Checked · Free Certification</span>
 
         <h1 className="text-hero font-serif font-bold text-white mt-4 leading-none">
           The Certification<br />

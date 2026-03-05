@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -11,16 +11,34 @@ import { cn } from '@/lib/cn'
 
 // ─── Zod schemas ─────────────────────────────────────────────────────────────
 
+const COUNTRIES = [
+  'Afghanistan','Albania','Algeria','Argentina','Australia','Austria','Bangladesh',
+  'Belgium','Bolivia','Brazil','Bulgaria','Cambodia','Canada','Chile','China',
+  'Colombia','Croatia','Czech Republic','Denmark','Ecuador','Egypt','Ethiopia',
+  'Finland','France','Germany','Ghana','Greece','Guatemala','Hungary','India',
+  'Indonesia','Iran','Iraq','Ireland','Israel','Italy','Japan','Jordan','Kazakhstan',
+  'Kenya','Malaysia','Mexico','Morocco','Netherlands','New Zealand','Nigeria',
+  'Norway','Pakistan','Peru','Philippines','Poland','Portugal','Romania','Russia',
+  'Saudi Arabia','Serbia','Singapore','South Africa','South Korea','Spain',
+  'Sri Lanka','Sweden','Switzerland','Tanzania','Thailand','Turkey','Uganda',
+  'Ukraine','United Arab Emirates','United Kingdom','United States','Uzbekistan',
+  'Venezuela','Vietnam','Zimbabwe',
+]
+
 const registerSchema = z.object({
-  full_name: z.string().min(2, 'Full name required').max(100),
-  email:     z.string().email('Invalid email'),
-  password:  z.string()
+  full_name:        z.string().min(2, 'Full name required').max(100),
+  email:            z.string().email('Invalid email'),
+  password:         z.string()
     .min(8, 'At least 8 characters')
     .regex(/[A-Z]/, 'Must contain an uppercase letter')
     .regex(/[0-9]/, 'Must contain a number'),
-  company:   z.string().max(100).optional(),
-  job_role:  z.string().max(100).optional(),
-  country:   z.string().max(60).optional(),
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+  company:          z.string().max(100).optional(),
+  job_role:         z.string().max(100).optional(),
+  country:          z.string().max(60).optional(),
+}).refine((d) => d.password === d.confirm_password, {
+  message: 'Passwords do not match',
+  path:    ['confirm_password'],
 })
 
 const loginSchema = z.object({
@@ -100,11 +118,43 @@ function useResendTimer(seconds = 60) {
 
 // ─── Screen: Register ─────────────────────────────────────────────────────────
 
+function PasswordStrength({ password }) {
+  if (!password) return null
+  const hasLen   = password.length >= 8
+  const hasUpper = /[A-Z]/.test(password)
+  const hasNum   = /[0-9]/.test(password)
+  const hasSpec  = /[^A-Za-z0-9]/.test(password)
+  const score = [hasLen, hasUpper, hasNum, hasSpec].filter(Boolean).length
+  const levels = [
+    { label: 'Weak',   color: 'bg-red-500'    },
+    { label: 'Fair',   color: 'bg-orange-400'  },
+    { label: 'Good',   color: 'bg-yellow-400'  },
+    { label: 'Strong', color: 'bg-green-500'   },
+  ]
+  const { label, color } = levels[Math.max(0, score - 1)]
+  return (
+    <div className="mt-1.5 space-y-1">
+      <div className="flex gap-1">
+        {levels.map((l, i) => (
+          <div
+            key={l.label}
+            className={cn('h-1 flex-1 rounded-full transition-colors', i < score ? color : 'bg-border')}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-ink-muted">
+        Strength: <span className={cn('font-medium', score <= 1 ? 'text-red-500' : score === 2 ? 'text-orange-400' : score === 3 ? 'text-yellow-500' : 'text-green-600')}>{label}</span>
+      </p>
+    </div>
+  )
+}
+
 function RegisterScreen({ onSuccess }) {
   const [apiError, setApiError] = useState('')
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
   })
+  const passwordValue = useWatch({ control, name: 'password', defaultValue: '' })
 
   async function onSubmit(data) {
     setApiError('')
@@ -148,6 +198,11 @@ function RegisterScreen({ onSuccess }) {
       <div>
         <PasswordInput registration={register('password')} placeholder="Password *" error={errors.password} />
         <FieldError msg={errors.password?.message} />
+        <PasswordStrength password={passwordValue} />
+      </div>
+      <div>
+        <PasswordInput registration={register('confirm_password')} placeholder="Confirm Password *" error={errors.confirm_password} />
+        <FieldError msg={errors.confirm_password?.message} />
       </div>
 
       {/* Optional profile fields */}
@@ -163,11 +218,10 @@ function RegisterScreen({ onSuccess }) {
           {...register('job_role')}
           className="input"
         />
-        <input
-          placeholder="Country"
-          {...register('country')}
-          className="input"
-        />
+        <select {...register('country')} className="input" defaultValue="">
+          <option value="">Country (optional)</option>
+          {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
       <ApiError msg={apiError} />
@@ -484,6 +538,11 @@ export default function LoginPage() {
   const defaultMode   = params.get('register') ? 'register' : 'login'
   const [mode, setMode]       = useState(defaultMode)
   const [userId, setUserId]   = useState('')
+
+  useEffect(() => {
+    const titles = { login: 'Sign In', register: 'Create Account', otp: 'Verify Email', forgot: 'Reset Password', reset: 'New Password', done: 'Password Updated' }
+    document.title = `${titles[mode] || 'Sign In'} | ISO-Audit360`
+  }, [mode])
   const [email, setEmail]     = useState('')
 
   function handleRegisterSuccess(uid, em) {
