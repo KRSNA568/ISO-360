@@ -89,7 +89,7 @@ function Hero() {
         </h1>
 
         <p className="text-xl text-white/60 mt-6 max-w-2xl mx-auto leading-relaxed">
-          AI-generated exams. 15-second per-question timer. No two attempts are identical.
+          AI-Powered Results . 15-second per-question timer. No two attempts are identical.
           The ISO 27001:2022 credential that actually means something.
         </p>
 
