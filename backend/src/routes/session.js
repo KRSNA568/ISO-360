@@ -80,16 +80,29 @@ router.post('/create', async (req, res, next) => {
 
     // 1. Prevent duplicate: return existing generating/ready session
     const { rows: active } = await pool.query(
-      `SELECT id FROM exam_sessions
+      `SELECT id, jsonb_array_length(questions) AS qlen
+       FROM exam_sessions
        WHERE user_id = $1 AND track = $2 AND status IN ('generating', 'ready')
        ORDER BY created_at DESC LIMIT 1`,
       [userId, track],
     )
     if (active.length > 0) {
-      return res.status(409).json({
-        error:     'You already have an active session for this track.',
-        sessionId: active[0].id,
-      })
+      const existingSession = active[0]
+      // If the existing session has no questions (race condition wiped them),
+      // abort it so we can create a fresh one instead of returning a broken session.
+      if (!existingSession.qlen || existingSession.qlen === 0) {
+        await pool.query(
+          `UPDATE exam_sessions SET status = 'aborted' WHERE id = $1`,
+          [existingSession.id],
+        )
+        console.warn(`[Session] ⚠ Aborted empty session ${existingSession.id} — will create a fresh one.`)
+        // fall through to create a new session
+      } else {
+        return res.status(409).json({
+          error:     'You already have an active session for this track.',
+          sessionId: existingSession.id,
+        })
+      }
     }
 
     // 2. Retake limit — configurable via env, defaults to shared constants
@@ -136,10 +149,12 @@ router.post('/create', async (req, res, next) => {
     // 6. Wipe questions from all previous sessions for this user+track.
     //    Keeps the rows (score history / retake counter) but removes the
     //    questions jsonb so old answers can't be extracted from the DB.
+    //    Only wipe sessions that are fully done — never touch 'active' sessions.
     await pool.query(
       `UPDATE exam_sessions
        SET questions = '[]'::jsonb
-       WHERE user_id = $1 AND track = $2 AND id <> $3`,
+       WHERE user_id = $1 AND track = $2 AND id <> $3
+         AND status IN ('completed', 'expired', 'aborted')`,
       [userId, track, sessionId],
     )
 
@@ -259,6 +274,14 @@ router.post('/:id/start', async (req, res, next) => {
 
     if (session.status !== 'ready') {
       return res.status(400).json({ error: `Cannot start a session with status "${session.status}".` })
+    }
+
+    // Guard: questions must be present (race condition / StrictMode double-create can wipe them)
+    if (!session.questions || session.questions.length === 0) {
+      return res.status(409).json({
+        error: 'This session has no questions (likely wiped by a concurrent session). Please start a new exam.',
+        code:  'SESSION_EMPTY',
+      })
     }
 
     const config            = EXAM_CONFIG[session.track]
@@ -457,6 +480,42 @@ router.post('/:id/submit', async (req, res, next) => {
     // Fire AI report async (non-blocking)
     generateReport(id, session.track, correctCount, passed, topicBreakdown).catch(() => {})
 
+    // Fire certificate generation async if candidate passed
+    if (passed) {
+      // Fetch user full_name + email for the certificate
+      pool.query('SELECT full_name, email FROM users WHERE id = $1', [userId])
+        .then(async ({ rows: uRows }) => {
+          const fullName  = uRows.length > 0 ? uRows[0].full_name : 'Candidate'
+          const userEmail = uRows.length > 0 ? uRows[0].email     : null
+
+          const { generateCertificate }  = require('../services/certificateService')
+          const { sendCertificateEmail } = require('../services/emailService')
+
+          const cert = await generateCertificate({
+            sessionId:      id,
+            userId,
+            track:          session.track,
+            fullName,
+            score:          correctCount,
+            totalQuestions: config.TOTAL_QUESTIONS,
+            awardedOn:      new Date(),
+          })
+
+          if (cert && userEmail) {
+            const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')
+            const verifyUrl   = `${frontendUrl}/verify/${cert.certificate_id}`
+            const trackLabel  = session.track === 'associate'
+              ? 'Associate — ISMS Foundation'
+              : 'Professional — Lead Auditor'
+            await sendCertificateEmail(
+              userEmail, fullName, cert.certificate_id,
+              trackLabel, cert.r2_url_landscape, verifyUrl
+            ).catch(() => {})
+          }
+        })
+        .catch(err => console.error('[Cert] async generation error:', err.message))
+    }
+
     return res.json({
       sessionId:      id,
       score:          correctCount,
@@ -495,11 +554,13 @@ router.get('/:id/report', async (req, res, next) => {
     const userId = req.user.sub
 
     const { rows } = await pool.query(
-      `SELECT id, track, status, score, passed,
-              topic_breakdown, ai_report, completed_at,
-              suspicious, suspicious_reason, answers
-       FROM exam_sessions
-       WHERE id = $1 AND user_id = $2`,
+      `SELECT s.id, s.track, s.status, s.score, s.passed,
+              s.topic_breakdown, s.ai_report, s.completed_at,
+              s.suspicious, s.suspicious_reason, s.answers,
+              c.certificate_id, c.r2_url_landscape, c.r2_url_square, c.revoked
+       FROM exam_sessions s
+       LEFT JOIN certificates c ON c.exam_session_id = s.id
+       WHERE s.id = $1 AND s.user_id = $2`,
       [id, userId],
     )
 
@@ -527,6 +588,13 @@ router.get('/:id/report', async (req, res, next) => {
       suspicious:       s.suspicious       || false,
       suspiciousReason: s.suspicious_reason || null,
       questionReviews:  s.answers          || [],     // full per-question review with revealed answers
+      // Certificate (null until generated, ~5s after submit)
+      certificate: s.certificate_id ? {
+        certificateId: s.certificate_id,
+        landscapeUrl:  s.r2_url_landscape || null,
+        squareUrl:     s.r2_url_square    || null,
+        revoked:       s.revoked          || false,
+      } : null,
     })
   } catch (err) { next(err) }
 })

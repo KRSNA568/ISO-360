@@ -3,6 +3,7 @@ import { Link, useParams }             from 'react-router-dom'
 import {
   CheckCircle2, XCircle, RotateCcw, LayoutDashboard,
   TrendingUp, FileText, AlertTriangle, BookOpen, Flag, Shield,
+  Award, Download, Copy, ExternalLink, Check,
 } from 'lucide-react'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
@@ -350,6 +351,130 @@ function DomainBreakdown({ topicBreakdown }) {
   )
 }
 
+// ── Certificate Card ──────────────────────────────────────────────────────────
+function CertificateCard({ certificate, trackLabel, sessionId }) {
+  const [copied, setCopied] = useState(false)
+
+  const FRONTEND_URL = window.location.origin
+  const verifyUrl    = certificate ? `${FRONTEND_URL}/verify/${certificate.certificateId}` : ''
+
+  function handleCopy() {
+    if (!verifyUrl) return
+    navigator.clipboard.writeText(verifyUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function linkedInShare() {
+    if (!certificate) return
+    const params = new URLSearchParams({
+      startTask:             'CERTIFICATION_NAME',
+      name:                  `ISO 27001 — ${trackLabel}`,
+      organizationId:        '',
+      issueYear:             new Date().getFullYear(),
+      issueMonth:            new Date().getMonth() + 1,
+      certUrl:               verifyUrl,
+      certId:                certificate.certificateId,
+    })
+    window.open(`https://www.linkedin.com/profile/add?${params}`, '_blank', 'noopener,noreferrer')
+  }
+
+  return (
+    <div className="card border border-gold/30 bg-gradient-to-br from-surface to-surface-raised">
+      <div className="flex items-center gap-2 mb-5">
+        <Award size={16} className="text-gold" />
+        <h2 className="text-base font-semibold text-ink">Your Certificate</h2>
+        {!certificate && (
+          <span className="ml-auto flex items-center gap-1.5 text-xs text-ink-muted">
+            <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse-ring" />
+            Generating…
+          </span>
+        )}
+      </div>
+
+      {!certificate ? (
+        <div className="space-y-3 py-2">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-10 w-full rounded-lg mt-3" />
+          <p className="text-xs text-ink-muted text-center pt-1">
+            Certificate is being generated — usually ready in under 30 seconds.
+          </p>
+        </div>
+      ) : (
+        <div className="animate-fade-in space-y-4">
+          {/* Cert ID display */}
+          <div className="bg-surface rounded-lg px-4 py-3 text-center">
+            <p className="text-xs text-ink-muted mb-1">Certificate ID</p>
+            <p className="font-mono text-lg font-semibold text-gold">{certificate.certificateId}</p>
+          </div>
+
+          {/* Download buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            {certificate.landscapeUrl ? (
+              <a
+                href={certificate.landscapeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-md justify-center"
+              >
+                <Download size={14} /> Landscape (1920×1080)
+              </a>
+            ) : (
+              <button disabled className="btn btn-primary btn-md justify-center opacity-50 cursor-not-allowed">
+                <Download size={14} /> Landscape
+              </button>
+            )}
+            {certificate.squareUrl ? (
+              <a
+                href={certificate.squareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-md justify-center"
+              >
+                <Download size={14} /> Square (1080×1080)
+              </a>
+            ) : (
+              <button disabled className="btn btn-outline btn-md justify-center opacity-50 cursor-not-allowed">
+                <Download size={14} /> Square
+              </button>
+            )}
+          </div>
+
+          {/* Share row */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleCopy}
+              className="btn btn-outline btn-sm flex-1 justify-center"
+            >
+              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+              {copied ? 'Copied!' : 'Copy verify link'}
+            </button>
+            <button
+              onClick={linkedInShare}
+              className="btn btn-outline btn-sm flex-1 justify-center"
+            >
+              <ExternalLink size={13} />
+              Add to LinkedIn
+            </button>
+          </div>
+
+          {/* View verify page */}
+          <a
+            href={verifyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center text-xs text-ink-muted hover:text-gold transition-colors mt-1"
+          >
+            {verifyUrl}
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── AI Report ─────────────────────────────────────────────────────────────────
 function AIReport({ aiReport }) {
   return (
@@ -405,8 +530,9 @@ export default function ResultsPage() {
       setData(d)
       setPhase('ready')
 
-      // Stop polling once aiReport arrives
-      if (d.aiReport && pollRef.current) {
+      // Stop polling once aiReport AND certificate (if passed) have arrived
+      const certReady = !d.passed || d.certificate !== null
+      if (d.aiReport && certReady && pollRef.current) {
         clearInterval(pollRef.current)
         pollRef.current = null
       }
@@ -518,6 +644,15 @@ export default function ResultsPage() {
         {/* ── Suspicion banner (shown only when flagged) ────────────────── */}
         {suspicious && (
           <SuspicionBanner reason={suspiciousReason} />
+        )}
+
+        {/* ── Certificate (shown when passed) ──────────────────────────── */}
+        {passed && (
+          <CertificateCard
+            certificate={data.certificate}
+            trackLabel={trackLabel}
+            sessionId={sessionId}
+          />
         )}
 
         {/* ── Domain breakdown ────────────────────────────────────── */}

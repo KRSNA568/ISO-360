@@ -1,37 +1,37 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Award, BookOpen, Zap, ChevronRight, RotateCcw } from 'lucide-react'
+import { Clock, Award, BookOpen, Zap, ChevronRight, RotateCcw, Download, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { userApi } from '@/lib/apiServices'
 import AppNavbar from '@/components/layout/AppNavbar'
 import { cn } from '@/lib/cn'
 
-// ─── Track data ───────────────────────────────────────────────────────────────
+// ─── Track data ─────────────────────────────────────────────────────────────────────────
 
 const TRACKS = [
   {
-    slug:       'associate',
-    name:       'Associate',
-    subtitle:   'ISMS Foundation',
-    desc:       'Clauses 4-10 · Risk methodology · Leadership requirements',
+    slug:        'associate',
+    name:        'Associate',
+    subtitle:    'ISMS Foundation',
+    desc:        'Clauses 4-10 · Risk methodology · Leadership requirements',
     accentClass: 'border-blue-200 bg-blue-50',
-    iconClass:  'text-blue-600 bg-blue-100',
-    icon:       BookOpen,
-    questions:  50,
-    time:       '10 min',
-    pass:       '80%',
+    iconClass:   'text-blue-600 bg-blue-100',
+    icon:        BookOpen,
+    questions:   50,
+    time:        '15 min',
+    pass:        '80%',
   },
   {
-    slug:       'professional',
-    name:       'Professional',
-    subtitle:   'Lead Auditor',
-    desc:       'Annex A Controls · ISO 19011 · Non-conformity scenarios',
+    slug:        'professional',
+    name:        'Professional',
+    subtitle:    'Lead Auditor',
+    desc:        'Annex A Controls · ISO 19011 · Non-conformity scenarios',
     accentClass: 'border-amber-200 bg-amber-50',
-    iconClass:  'text-amber-700 bg-amber-100',
-    icon:       Zap,
-    questions:  50,
-    time:       '10 min',
-    pass:       '80%',
+    iconClass:   'text-amber-700 bg-amber-100',
+    icon:        Zap,
+    questions:   100,
+    time:        '30 min',
+    pass:        '80%',
   },
 ]
 
@@ -81,7 +81,83 @@ function TrackCard({ track }) {
   )
 }
 
-// ─── Attempts Table ───────────────────────────────────────────────────────────
+// ─── Certificates Card ───────────────────────────────────────────────────────────
+
+function CertificatesSection({ certs, loading }) {
+  if (loading) {
+    return (
+      <div className="card">
+        <h2 className="text-base font-semibold text-ink mb-5">My Certificates</h2>
+        <div className="py-6 text-center text-ink-muted text-sm animate-pulse">Loading…</div>
+      </div>
+    )
+  }
+
+  if (!certs.length) return null  // Don't show section if no certs yet
+
+  const TRACK_LABEL = { associate: 'Associate', professional: 'Professional' }
+
+
+  return (
+    <div className="card">
+      <h2 className="text-base font-semibold text-ink mb-5">My Certificates</h2>
+      <div className="space-y-3">
+        {certs.map((c) => {
+          const date    = new Date(c.awarded_on || c.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+          const revoked = c.revoked
+          return (
+            <div
+              key={c.certificate_id}
+              className={cn(
+                'flex items-center justify-between gap-4 p-4 rounded-lg border',
+                revoked ? 'border-red-200 bg-red-50/50 opacity-60' : 'border-gold/20 bg-gradient-to-r from-surface to-surface-raised'
+              )}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', revoked ? 'bg-red-100' : 'bg-gold/10')}>
+                  <Award size={14} className={revoked ? 'text-red-500' : 'text-gold'} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink truncate">
+                    ISO 27001 — {TRACK_LABEL[c.track] || c.track}
+                    {revoked && <span className="ml-2 text-xs text-red-500 font-normal">(Revoked)</span>}
+                  </p>
+                  <p className="text-xs text-ink-muted font-mono">{c.certificate_id}</p>
+                  <p className="text-xs text-ink-muted mt-0.5">Awarded {date}</p>
+                </div>
+              </div>
+
+              {!revoked && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {c.r2_url_landscape && (
+                    <a
+                      href={c.r2_url_landscape}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-md text-ink-muted hover:text-ink hover:bg-surface-raised transition-all"
+                      title="Download certificate"
+                    >
+                      <Download size={14} />
+                    </a>
+                  )}
+                  <Link
+                    to={`/verify/${c.certificate_id}`}
+                    className="p-1.5 rounded-md text-ink-muted hover:text-gold hover:bg-surface-raised transition-all"
+                    title="Verify certificate"
+                  >
+                    <ExternalLink size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Attempts Table ──────────────────────────────────────────────────────────────────────
 
 function AttemptsTable({ attempts, loading }) {
   if (loading) {
@@ -159,14 +235,27 @@ function AttemptsTable({ attempts, loading }) {
 
 export default function Dashboard() {
   const { user }          = useAuth()
-  const [attempts, setAttempts] = useState([])
+  const [attempts,   setAttempts]   = useState([])
   const [attLoading, setAttLoading] = useState(true)
+  const [stats,      setStats]      = useState(user?.stats || null)
+  const [certs,      setCerts]      = useState([])
+  const [certLoading, setCertLoading] = useState(true)
 
   useEffect(() => {
+    // Fresh stats — auth context may be stale after completing an exam
+    userApi.getMe()
+      .then(r => setStats(r.data.stats))
+      .catch(() => {})
+
     userApi.getAttempts()
       .then(r => setAttempts(r.data.data || []))
       .catch(() => {})
       .finally(() => setAttLoading(false))
+
+    userApi.getCertificates()
+      .then(r => setCerts(r.data.data || []))
+      .catch(() => {})
+      .finally(() => setCertLoading(false))
   }, [])
 
   const firstName = user?.full_name?.split(' ')[0] || 'there'
@@ -190,16 +279,16 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <StatCard label="Total Attempts"  value={user?.stats?.total_attempts ?? '—'} />
-          <StatCard label="Exams Passed"    value={user?.stats?.total_passed   ?? '—'} />
+          <StatCard label="Total Attempts"  value={stats?.total_attempts ?? '—'} />
+          <StatCard label="Exams Passed"    value={stats?.total_passed   ?? '—'} />
           <StatCard
             label="Pass Rate"
             value={
-              user?.stats?.total_attempts
-                ? `${Math.round(((user.stats.total_passed || 0) / user.stats.total_attempts) * 100)}%`
+              stats?.total_attempts
+                ? `${Math.round(((stats.total_passed || 0) / stats.total_attempts) * 100)}%`
                 : '—'
             }
-            sub={user?.stats?.total_attempts ? `${user.stats.total_attempts} attempts` : 'No attempts yet'}
+            sub={stats?.total_attempts ? `${stats.total_attempts} attempts` : 'No attempts yet'}
           />
         </div>
 
@@ -210,6 +299,9 @@ export default function Dashboard() {
             {TRACKS.map(t => <TrackCard key={t.slug} track={t} />)}
           </div>
         </div>
+
+        {/* Certificates */}
+        <CertificatesSection certs={certs} loading={certLoading} />
 
         {/* Attempt history */}
         <div className="card">

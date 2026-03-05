@@ -102,6 +102,7 @@ export default function GenerationPage() {
   const pollRef    = useRef(null)
   const sessionRef = useRef(null)  // Keep a ref to the latest status so cleanup closures always read the current value
   const statusRef   = useRef('idle')
+  const creationStartedRef = useRef(false)  // StrictMode guard — prevent double-create
 
   // Keep statusRef in sync with the status state
   useEffect(() => { statusRef.current = status }, [status])
@@ -131,6 +132,10 @@ export default function GenerationPage() {
       navigate('/dashboard')
       return
     }
+    // StrictMode in dev calls effects twice (mount → cleanup → remount).
+    // This ref persists across the remount so we only ever fire one create.
+    if (creationStartedRef.current) return
+    creationStartedRef.current = true
     createSession()
     return () => {
       clearInterval(pollRef.current)

@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, AlertTriangle } from 'lucide-react'
+import { Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { userApi } from '@/lib/apiServices'
+import { userApi, authApi } from '@/lib/apiServices'
 import AppNavbar from '@/components/layout/AppNavbar'
 import { cn } from '@/lib/cn'
 
@@ -36,6 +36,122 @@ function Flash({ type, msg }) {
     : 'bg-red-50 border-red-200 text-red-700'
   return (
     <div className={cn('rounded-md border px-4 py-3 text-sm', styles)}>{msg}</div>
+  )
+}
+
+// ─── Change Password Form ─────────────────────────────────────────────────
+
+const changePasswordSchema = z.object({
+  current_password: z.string().min(1, 'Current password is required'),
+  new_password:     z.string()
+    .min(8,       'At least 8 characters')
+    .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    .regex(/[0-9]/, 'Must contain a number'),
+  confirm_password: z.string().min(1, 'Please confirm your new password'),
+}).refine((d) => d.new_password === d.confirm_password, {
+  message: 'Passwords do not match',
+  path:    ['confirm_password'],
+})
+
+function PasswordInput({ registration, placeholder, error }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        placeholder={placeholder}
+        {...registration}
+        className={cn('input pr-11', error && 'input-error')}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  )
+}
+
+function ChangePasswordForm() {
+  const [flash, setFlash] = useState({ type: '', msg: '' })
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(changePasswordSchema),
+  })
+
+  async function onSubmit(data) {
+    setFlash({ type: '', msg: '' })
+    try {
+      await authApi.changePassword({
+        current_password: data.current_password,
+        new_password:     data.new_password,
+      })
+      setFlash({ type: 'success', msg: 'Password updated successfully.' })
+      reset()
+    } catch (e) {
+      const code = e.response?.data?.code
+      if (code === 'WRONG_CURRENT_PASSWORD') {
+        setFlash({ type: 'error', msg: 'Current password is incorrect.' })
+      } else if (code === 'SAME_PASSWORD') {
+        setFlash({ type: 'error', msg: 'New password must be different from your current password.' })
+      } else {
+        setFlash({ type: 'error', msg: e.response?.data?.error || 'Update failed. Please try again.' })
+      }
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="card space-y-5">
+      <h2 className="text-base font-semibold text-ink">Change Password</h2>
+
+      <div>
+        <Label>Current Password</Label>
+        <PasswordInput
+          registration={register('current_password')}
+          placeholder="Current password"
+          error={errors.current_password}
+        />
+        {errors.current_password && (
+          <p className="text-xs text-red-600 mt-1">{errors.current_password.message}</p>
+        )}
+      </div>
+
+      <div>
+        <Label>New Password</Label>
+        <PasswordInput
+          registration={register('new_password')}
+          placeholder="New password (8+ chars, uppercase, number)"
+          error={errors.new_password}
+        />
+        {errors.new_password && (
+          <p className="text-xs text-red-600 mt-1">{errors.new_password.message}</p>
+        )}
+      </div>
+
+      <div>
+        <Label>Confirm New Password</Label>
+        <PasswordInput
+          registration={register('confirm_password')}
+          placeholder="Repeat new password"
+          error={errors.confirm_password}
+        />
+        {errors.confirm_password && (
+          <p className="text-xs text-red-600 mt-1">{errors.confirm_password.message}</p>
+        )}
+      </div>
+
+      <Flash {...flash} />
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="btn btn-primary btn-md disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Update Password'}
+      </button>
+    </form>
   )
 }
 
@@ -217,6 +333,7 @@ export default function ProfilePage() {
         </div>
 
         <ProfileForm />
+        <ChangePasswordForm />
         <DangerZone />
       </main>
     </div>

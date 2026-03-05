@@ -467,4 +467,40 @@ router.post('/reset-password', resetLimiter, async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+// ── Change Password (authenticated) ──────────────────────────────────────────
+
+const changePasswordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password:     z.string().min(8).max(128)
+    .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    .regex(/[0-9]/, 'Must contain a number'),
+})
+
+router.post('/change-password', authenticate, async (req, res, next) => {
+  try {
+    const data = validate(changePasswordSchema, req.body)
+
+    const { rows } = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL',
+      [req.user.sub]
+    )
+    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+
+    const match = await bcrypt.compare(data.current_password, rows[0].password_hash)
+    if (!match) return res.status(400).json({ error: 'Current password is incorrect.', code: 'WRONG_CURRENT_PASSWORD' })
+
+    // Prevent reuse of the same password
+    const same = await bcrypt.compare(data.new_password, rows[0].password_hash)
+    if (same) return res.status(400).json({ error: 'New password must be different from your current password.', code: 'SAME_PASSWORD' })
+
+    const newHash = await bcrypt.hash(data.new_password, BCRYPT_ROUNDS)
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [newHash, req.user.sub]
+    )
+
+    res.json({ message: 'Password updated successfully.' })
+  } catch (err) { next(err) }
+})
+
 module.exports = router

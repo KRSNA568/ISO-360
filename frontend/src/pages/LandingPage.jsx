@@ -7,28 +7,32 @@ import { cn } from '@/lib/cn'
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { value: '50',    label: 'Questions Per Exam' },
-  { value: '10',    label: 'Minutes on the Clock' },
-  { value: '80%',   label: 'Pass Threshold' },
-  { value: '100%',  label: 'Free Forever' },
+  { value: '50–100', label: 'Questions Per Exam' },
+  { value: '15–30',  label: 'Minutes on the Clock' },
+  { value: '80%',    label: 'Pass Threshold' },
+  { value: '100%',   label: 'Free Forever' },
 ]
 
 const TRACKS = [
   {
-    slug:  'associate',
-    level: 'Level 1',
-    name:  'Associate',
-    full:  'ISMS Foundation',
+    slug:      'associate',
+    level:     'Level 1',
+    name:      'Associate',
+    full:      'ISMS Foundation',
+    questions: 50,
+    time:      '15 min',
     desc:  'Master the ISO 27001:2022 management system framework — clauses 4 through 10, risk methodology, and leadership requirements.',
     topics: ['Clause 4 – Context', 'Clause 6 – Risk Assessment', 'Clause 9 – Internal Audit', 'Clause 10 – Improvement'],
     color: 'from-blue-900 to-blue-800',
     badge: 'bg-blue-500/20 text-blue-300',
   },
   {
-    slug:  'professional',
-    level: 'Level 2',
-    name:  'Professional',
-    full:  'Lead Auditor',
+    slug:      'professional',
+    level:     'Level 2',
+    name:      'Professional',
+    full:      'Lead Auditor',
+    questions: 100,
+    time:      '30 min',
     desc:  'Demonstrate practical mastery of Annex A controls, ISO 19011 audit principles, and real-world non-conformity scenarios.',
     topics: ['Annex A Controls (5-8)', 'ISO 19011 Audit Methodology', 'Non-conformity Identification', 'Audit Evidence & Reporting'],
     color: 'from-amber-900 to-amber-800',
@@ -37,18 +41,18 @@ const TRACKS = [
 ]
 
 const STEPS = [
-  { icon: Shield,  step: '01', title: 'Register & Verify', body: 'Create a free account. We verify your email with a one-time code — no bots, no ghost accounts.' },
-  { icon: Brain,   step: '02', title: 'AI Generates Your Exam', body: 'Select a track. Our AI generates 50 unique questions in under 3 minutes — never the same exam twice.' },
-  { icon: Award,   step: '03', title: 'Pass & Get Certified', body: 'Score 80% or higher. Receive a verifiable digital certificate with a unique ID and QR code.' },
+  { icon: Shield, step: '01', title: 'Register & Verify',    body: 'Create a free account. We verify your email with a one-time code — no bots, no ghost accounts.' },
+  { icon: Brain,  step: '02', title: 'Start Your Exam',      body: 'Select a track. A unique exam is drawn from our question bank — never the same exam twice.' },
+  { icon: Award,  step: '03', title: 'Pass & Get Certified', body: 'Score 80% or higher. Receive a verifiable digital certificate with a unique ID and QR code.' },
 ]
 
 const FAQS = [
   { q: 'Is this certification free?', a: 'Yes, completely free. No hidden fees, no premium tier required for the exam or certificate.' },
-  { q: 'How is cheating prevented?', a: 'Every exam is AI-generated uniquely for you. Questions are never reused. Combined with a 15-second per-question hard timer, there is no time to search for answers.' },
-  { q: 'What is the 15-second rule?', a: 'Each question auto-advances after 15 seconds. An unanswered or timed-out question counts as incorrect. The exam rewards audit-ready instinct, not memorisation.' },
-  { q: 'What does the certificate look like?', a: 'A 1920×1080 and 1080×1080 branded credential with a unique TPRM-2026-XXXX ID, a 2026 Premium gold seal, and a QR code for instant verification by anyone.' },
-  { q: 'How many attempts do I get?', a: 'Unlimited. You can retake after a 24-hour cooldown. Each attempt generates an entirely new exam.' },
-  { q: 'Which track should I start with?', a: 'If you are new to ISO 27001, start with Associate (Clauses). If you have implementation experience and want a Lead Auditor credential, go straight to Professional.' },
+  { q: 'How is cheating prevented?', a: 'Every exam draws uniquely from our question bank — no two exams are identical. Combined with a global countdown timer, copy/paste blocking, and tab-switch detection, the format rewards genuine knowledge over last-minute searching.' },
+  { q: 'How long is the exam?', a: 'Associate: 50 questions, 15 minutes. Professional: 100 questions, 30 minutes. The clock runs continuously from the moment you start — unanswered questions at time-out count as incorrect.' },
+  { q: 'What does the certificate look like?', a: 'A 1920×1080 landscape and 1080×1080 square branded credential. Each certificate carries a unique ISO27-2026-XXXXXXXX ID and a QR code that anyone can scan to verify authenticity instantly.' },
+  { q: 'How many attempts do I get?', a: 'Unlimited. You can retake after a 24-hour cooldown. Each attempt draws an entirely new set of questions.' },
+  { q: 'Which track should I start with?', a: 'If you are new to ISO 27001, start with Associate (Clauses 4–10). If you have implementation experience and want a Lead Auditor credential, go straight to Professional.' },
 ]
 
 // ─── Components ──────────────────────────────────────────────────────────────
@@ -176,7 +180,7 @@ function Tracks() {
           <span className="overline">Curriculum</span>
           <h2 className="text-display font-serif font-bold text-ink mt-2">Choose Your Track</h2>
           <p className="text-ink-muted mt-3 max-w-xl mx-auto">
-            50 AI-generated questions. 10 minutes. A credential worth sharing.
+            Associate: 50 questions in 15 minutes. Professional: 100 questions in 30 minutes. One credential worth sharing.
           </p>
         </div>
 
@@ -190,7 +194,7 @@ function Tracks() {
                   </span>
                   <div className="flex items-center gap-1 text-white/40 text-xs">
                     <Clock size={12} />
-                    <span>50Q · 10 min</span>
+                    <span>{t.questions}Q · {t.time}</span>
                   </div>
                 </div>
 
@@ -262,8 +266,8 @@ function Footer() {
           Not affiliated with ISO or BSI. This credential is issued by ISO-Audit360 as proof of exam performance.
         </p>
         <div className="flex gap-6 text-white/40 text-xs">
-          <a href="#" className="hover:text-white/70 transition-colors">Privacy</a>
-          <a href="#" className="hover:text-white/70 transition-colors">Terms</a>
+          <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>
           <Link to="/login" className="hover:text-white/70 transition-colors">Sign In</Link>
         </div>
       </div>

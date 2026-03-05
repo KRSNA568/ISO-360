@@ -160,4 +160,21 @@ router.get('/attempts', async (req, res, next) => {
   } catch (err) { next(err) }
 })
 
+// ── GET /certificates ────────────────────────────────────────────────────────
+
+router.get('/certificates', async (req, res, next) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         certificate_id, track, r2_url_landscape, r2_url_square,
+         revoked, revoked_at, awarded_on, created_at
+       FROM certificates
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.sub]
+    )
+    res.json({ data: rows })
+  } catch (err) { next(err) }
+})
+
 module.exports = router

@@ -52,16 +52,21 @@ function OptionButton({ letter, text, selected, onClick }) {
   )
 }
 
-function NavDot({ index, current, answered }) {
+function NavDot({ index, current, answered, onClick }) {
   const n = index + 1
-  let cls = 'w-8 h-8 rounded-md text-xs font-semibold select-none '
+  let cls = 'w-8 h-8 rounded-md text-xs font-semibold select-none transition-all duration-100 '
   if (index === current)   cls += 'bg-gold text-ink'
-  else if (answered)       cls += 'bg-gold/20 text-gold border border-gold/30'
-  else                     cls += 'bg-exam-surface border border-exam-border text-ink-muted'
+  else if (answered)       cls += 'bg-gold/20 text-gold border border-gold/30 hover:bg-gold/30'
+  else                     cls += 'bg-exam-surface border border-exam-border text-ink-muted hover:border-gold/40 hover:text-white'
   return (
-    <div className={cls + ' flex items-center justify-center'} title={`Question ${n}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cls + ' flex items-center justify-center'}
+      title={`Jump to question ${n}`}
+    >
       {n}
-    </div>
+    </button>
   )
 }
 
@@ -78,13 +83,20 @@ export default function ExamPage() {
   const [track,      setTrack]      = useState('')
   const [confirmBox, setConfirmBox] = useState(false)
   const [errorMsg,   setErrorMsg]   = useState('')
+  const [tabWarnings,       setTabWarnings]       = useState(0)  // 0 | 1 | 2
+  const [tabWarningVisible, setTabWarningVisible] = useState(false)
+
+  const TAB_WARNING_MAX = 2  // auto-submit on the 3rd violation
 
   const tickRef      = useRef(null)
   const answersRef   = useRef({})   // always-fresh ref used in submit closure
   const submittedRef = useRef(false)
+  const tabWarningsRef = useRef(0)  // always-fresh count for the submit closure
 
   // Keep answersRef in sync
   useEffect(() => { answersRef.current = answers }, [answers])
+  // Keep tabWarningsRef in sync
+  useEffect(() => { tabWarningsRef.current = tabWarnings }, [tabWarnings])
 
   // ── Load exam on mount ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -98,10 +110,23 @@ export default function ExamPage() {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden' && phase === 'exam') {
         api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
+
+        const next = tabWarningsRef.current + 1
+        tabWarningsRef.current = next
+        setTabWarnings(next)
+
+        if (next > TAB_WARNING_MAX) {
+          // Already shown 2 warnings — auto-submit on this (3rd) violation
+          submitExam(true)
+        } else {
+          // Show the warning overlay when user comes back
+          setTabWarningVisible(true)
+        }
       }
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, sessionId])
 
   async function startExam() {
@@ -121,6 +146,11 @@ export default function ExamPage() {
       // Already completed — go straight to results
       if (err.response?.status === 400 && data?.redirect) {
         navigate(data.redirect, { replace: true })
+        return
+      }
+      // Session wiped by concurrent create (StrictMode / double-click) — go to dashboard
+      if (err.response?.status === 409 && data?.code === 'SESSION_EMPTY') {
+        navigate('/dashboard', { replace: true })
         return
       }
       setErrorMsg(data?.error || 'Could not load exam. Please try again.')
@@ -248,7 +278,7 @@ export default function ExamPage() {
   const unanswered = totalQ - answeredCount
 
   return (
-    <div className="min-h-screen bg-ink flex flex-col">
+    <div className="h-screen bg-ink flex flex-col">
 
       {/* ── Top bar: timer + progress ── */}
       <div className="sticky top-0 z-30 bg-ink border-b border-exam-border px-4 md:px-8 py-3 flex items-center justify-between gap-4">
@@ -303,6 +333,7 @@ export default function ExamPage() {
                 index={i}
                 current={current}
                 answered={!!answers[q.id]}
+                onClick={() => setCurrent(i)}
               />
             ))}
           </div>
@@ -393,11 +424,59 @@ export default function ExamPage() {
                 index={i}
                 current={current}
                 answered={!!answers[q.id]}
+                onClick={() => setCurrent(i)}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {/* ── Tab-switch warning overlay ── */}
+      {tabWarningVisible && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4">
+          <div className="bg-exam-surface border border-red-700/60 rounded-xl p-8 max-w-sm w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-900/40 border border-red-700/50 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <h2 className="text-white font-semibold text-lg">Tab Switch Detected</h2>
+            </div>
+
+            <p className="text-ink-muted text-sm leading-relaxed mb-2">
+              Leaving the exam tab is not allowed.
+            </p>
+            <div className="flex items-center gap-2 mb-6">
+              {[1, 2].map((n) => (
+                <div
+                  key={n}
+                  className={[
+                    'flex-1 h-2 rounded-full',
+                    n <= tabWarnings ? 'bg-red-500' : 'bg-exam-border',
+                  ].join(' ')}
+                />
+              ))}
+              <span className="text-xs text-red-400 font-semibold ml-1 tabular-nums">
+                {tabWarnings} / {TAB_WARNING_MAX}
+              </span>
+            </div>
+
+            <p className="text-xs text-red-400 font-medium mb-5">
+              {tabWarnings < TAB_WARNING_MAX
+                ? `Warning ${tabWarnings} of ${TAB_WARNING_MAX}. One more violation will auto-submit your exam.`
+                : `This is your final warning. The next tab switch will immediately submit your exam.`}
+            </p>
+
+            <button
+              onClick={() => setTabWarningVisible(false)}
+              className="w-full py-2.5 rounded-lg bg-gold text-ink text-sm font-bold hover:bg-gold-light transition-colors"
+            >
+              Return to Exam
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Confirm submit modal ── */}
       {confirmBox && (

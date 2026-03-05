@@ -1,19 +1,21 @@
 import api from '@/lib/api'
 
 export const authApi = {
-  register:      (data)  => api.post('/auth/register', data),
-  verifyOtp:     (data)  => api.post('/auth/verify-otp', data),
-  resendOtp:     (data)  => api.post('/auth/resend-otp', data),
-  login:         (data)  => api.post('/auth/login', data),
-  forgotPassword:(data)  => api.post('/auth/forgot-password', data),
-  resetPassword: (data)  => api.post('/auth/reset-password', data),
+  register:       (data) => api.post('/auth/register', data),
+  verifyOtp:      (data) => api.post('/auth/verify-otp', data),
+  resendOtp:      (data) => api.post('/auth/resend-otp', data),
+  login:          (data) => api.post('/auth/login', data),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword:  (data) => api.post('/auth/reset-password', data),
+  changePassword: (data) => api.post('/auth/change-password', data),
 }
 
 export const userApi = {
-  getMe:     ()     => api.get('/user/me'),
-  updateMe:  (data) => api.patch('/user/me', data),
-  deleteMe:  ()     => api.delete('/user/me'),
-  getAttempts: ()   => api.get('/user/attempts'),
+  getMe:           ()     => api.get('/user/me'),
+  updateMe:        (data) => api.patch('/user/me', data),
+  deleteMe:        ()     => api.delete('/user/me'),
+  getAttempts:     ()     => api.get('/user/attempts'),
+  getCertificates: ()     => api.get('/user/certificates'),
 }
 
 export const sessionApi = {
