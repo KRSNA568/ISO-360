@@ -7,7 +7,7 @@
 
 const pool   = require('../config/db')
 const { createAIClient } = require('../prompts/promptBuilder')
-const { EXAM_CONFIG, THREAD_DOMAINS } = require('@iso-audit360/shared/constants')
+const { EXAM_CONFIG, THREAD_DOMAINS, AI_CONFIG } = require('@iso-audit360/shared/constants')
 
 /**
  * Generate and persist an AI report for a completed session.
@@ -63,9 +63,11 @@ async function generateReport(sessionId, track, score, passed, topicBreakdown) {
       `Keep each section to 2–4 sentences. Make study recommendations specific — name the exact ISO 27001:2022 clauses or Annex A controls to revisit. ` +
       `If the candidate passed, acknowledge it but still highlight improvement opportunities.`
 
+
+      
     const client   = createAIClient()
     const response = await client.chat.completions.create({
-      model:       'meta-llama/llama-4-maverick-17b-128e-instruct',
+      model:       AI_CONFIG.MODEL,
       temperature: 0.5,
       max_tokens:  1200,
       messages: [

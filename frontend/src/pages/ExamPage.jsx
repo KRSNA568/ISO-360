@@ -75,7 +75,7 @@ export default function ExamPage() {
   const { sessionId } = useParams()
   const navigate      = useNavigate()
 
-  const [phase,      setPhase]      = useState('loading')  // loading | exam | submitting | error
+  const [phase,      setPhase]      = useState('loading')  // loading | ready_to_start | exam | submitting | error
   const [questions,  setQuestions]  = useState([])
   const [answers,    setAnswers]    = useState({})          // { questionId: 'A'|'B'|'C'|'D' }
   const [current,    setCurrent]    = useState(0)
@@ -150,12 +150,7 @@ export default function ExamPage() {
   useEffect(() => {
     if (phase !== 'exam') return
 
-    // Request fullscreen (silently ignored if browser denies)
-    const el = document.documentElement
-    if (el.requestFullscreen && !document.fullscreenElement) {
-      el.requestFullscreen().catch(() => {})
-    }
-
+    // Only attach exit-listener — fullscreen is requested via user click in enterExam()
     const onFsChange = () => {
       // If user exits fullscreen during exam, treat as a violation
       if (!document.fullscreenElement && phase === 'exam' && !submittedRef.current) {
@@ -255,8 +250,7 @@ export default function ExamPage() {
       setRemaining(rem)
       setTrack(t)
       setAnswers(savedAnswers || {})
-      setPhase('exam')
-      beginCountdown(rem)
+      setPhase('ready_to_start')
     } catch (err) {
       const data = err.response?.data
       // Already completed — go straight to results
@@ -272,6 +266,16 @@ export default function ExamPage() {
       setErrorMsg(data?.error || 'Could not load exam. Please try again.')
       setPhase('error')
     }
+  }
+
+  // ── Enter exam (user clicked → valid gesture for fullscreen) ───────────────
+  function enterExam() {
+    const el = document.documentElement
+    if (el.requestFullscreen && !document.fullscreenElement) {
+      el.requestFullscreen().catch(() => {})
+    }
+    setPhase('exam')
+    beginCountdown(remaining)
   }
 
   function beginCountdown(startSecs) {
@@ -364,6 +368,35 @@ export default function ExamPage() {
         <div className="flex flex-col items-center gap-4">
           <span className="w-3 h-3 rounded-full bg-gold animate-ping" />
           <span className="text-ink-muted text-sm">Loading exam…</span>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Ready to start (fullscreen prompt) ─────────────────────────────────────
+  if (phase === 'ready_to_start') {
+    return (
+      <div className="min-h-screen bg-ink flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25v4.5m0-4.5h-4.5m4.5 0L15 9m-11.25 11.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25v-4.5m0 4.5h-4.5m4.5 0L15 15" />
+            </svg>
+          </div>
+          <h2 className="text-white font-semibold text-xl mb-3">Exam Ready</h2>
+          <p className="text-ink-muted text-sm leading-relaxed mb-2">
+            Your exam will run in <span className="text-white font-medium">fullscreen mode</span>.
+          </p>
+          <div className="text-ink-muted text-xs leading-relaxed mb-8 space-y-1">
+            <p>⚠️ Exiting fullscreen, switching tabs, or opening DevTools will count as a violation.</p>
+            <p>After <span className="text-red-400 font-semibold">3 violations</span>, your exam will be auto-submitted.</p>
+          </div>
+          <button
+            onClick={enterExam}
+            className="px-8 py-3 bg-gold text-ink font-bold rounded-lg hover:bg-gold-light transition-colors text-sm"
+          >
+            Enter Fullscreen & Begin Exam
+          </button>
         </div>
       </div>
     )

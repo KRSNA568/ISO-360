@@ -476,13 +476,13 @@ function CertificateCard({ certificate, trackLabel, sessionId }) {
 }
 
 // ── AI Report ─────────────────────────────────────────────────────────────────
-function AIReport({ aiReport }) {
+function AIReport({ aiReport, failed }) {
   return (
     <div className="card">
       <div className="flex items-center gap-2 mb-5">
         <FileText size={16} className="text-gold" />
         <h2 className="text-base font-semibold text-ink">AI Performance Analysis</h2>
-        {!aiReport && (
+        {!aiReport && !failed && (
           <span className="ml-auto flex items-center gap-1.5 text-xs text-ink-muted">
             <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse-ring" />
             Generating…
@@ -493,6 +493,16 @@ function AIReport({ aiReport }) {
       {aiReport ? (
         <div className="animate-fade-in">
           <MarkdownBlock content={aiReport} />
+        </div>
+      ) : failed ? (
+        <div className="animate-fade-in text-center py-6">
+          <AlertTriangle size={28} className="text-ink-muted mx-auto mb-3" />
+          <p className="text-sm font-medium text-ink mb-1">AI Report Unavailable</p>
+          <p className="text-xs text-ink-muted leading-relaxed max-w-sm mx-auto">
+            The AI analysis could not be generated for this session. This does not affect
+            your score, domain breakdown, or certificate. You can still review all your
+            results below.
+          </p>
         </div>
       ) : (
         <div className="space-y-3 py-2">
@@ -521,7 +531,11 @@ export default function ResultsPage() {
   const [data,  setData]  = useState(null)
   const [phase, setPhase] = useState('loading')   // loading | ready | error
   const [errMsg, setErrMsg] = useState('')
-  const pollRef = useRef(null)
+  const [reportFailed, setReportFailed] = useState(false)
+  const pollRef    = useRef(null)
+  const timeoutRef = useRef(null)
+
+  const AI_REPORT_TIMEOUT = 20_000  // stop polling for AI report after 20s
 
   const fetchReport = async () => {
     try {
@@ -535,6 +549,7 @@ export default function ResultsPage() {
       if (d.aiReport && certReady && pollRef.current) {
         clearInterval(pollRef.current)
         pollRef.current = null
+        if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null }
       }
     } catch (err) {
       if (phase === 'loading') {
@@ -549,8 +564,23 @@ export default function ResultsPage() {
     fetchReport()
     // Start polling for AI report every 4 s
     pollRef.current = setInterval(fetchReport, 4000)
+
+    // Timeout: stop polling after 60s and show "report unavailable"
+    timeoutRef.current = setTimeout(() => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+      // Only mark failed if we still don't have the report
+      setData(prev => {
+        if (prev && !prev.aiReport) setReportFailed(true)
+        return prev
+      })
+    }, AI_REPORT_TIMEOUT)
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
@@ -560,6 +590,8 @@ export default function ResultsPage() {
     if (data?.aiReport && pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
+      if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null }
+      setReportFailed(false)
     }
   }, [data?.aiReport])
 
@@ -661,7 +693,7 @@ export default function ResultsPage() {
         )}
 
         {/* ── AI Report ──────────────────────────────────────────── */}
-        <AIReport aiReport={aiReport} />
+        <AIReport aiReport={aiReport} failed={reportFailed} />
 
         {/* ── Per-question review ────────────────────────────────── */}
         {questionReviews?.length > 0 && (
