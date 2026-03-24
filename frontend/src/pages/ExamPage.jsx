@@ -87,18 +87,30 @@ export default function ExamPage() {
   const [errorMsg,   setErrorMsg]   = useState('')
   const [tabWarnings,       setTabWarnings]       = useState(0)  // 0 | 1 | 2
   const [tabWarningVisible, setTabWarningVisible] = useState(false)
+  const [fingerprintWarning, setFingerprintWarning] = useState(false)
 
   const TAB_WARNING_MAX = 2  // auto-submit on the 3rd violation
+  const DEVTOOLS_CHECK_INTERVAL = 2000 // ms between DevTools size checks
+  const DEVTOOLS_THRESHOLD      = 160  // px difference to flag DevTools
 
-  const tickRef      = useRef(null)
-  const answersRef   = useRef({})   // always-fresh ref used in submit closure
-  const submittedRef = useRef(false)
-  const tabWarningsRef = useRef(0)  // always-fresh count for the submit closure
+  const tickRef        = useRef(null)
+  const answersRef     = useRef({})   // always-fresh ref used in submit closure
+  const submittedRef   = useRef(false)
+  const tabWarningsRef = useRef(0)    // always-fresh count for the submit closure
+  const devtoolsRef    = useRef(null) // interval id for devtools polling
+  const sessionFpRef   = useRef(null) // stored fingerprint from session start
 
   // Keep answersRef in sync
   useEffect(() => { answersRef.current = answers }, [answers])
   // Keep tabWarningsRef in sync
   useEffect(() => { tabWarningsRef.current = tabWarnings }, [tabWarnings])
+
+  // ── Persist tab warnings to sessionStorage ─────────────────────────────
+  useEffect(() => {
+    if (sessionId && tabWarnings > 0) {
+      sessionStorage.setItem(`tabWarnings_${sessionId}`, String(tabWarnings))
+    }
+  }, [tabWarnings, sessionId])
 
   // ── Load exam on mount ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -107,23 +119,26 @@ export default function ExamPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])
 
+  // ── Shared violation handler — used by tab-switch, fullscreen exit, and DevTools ──
+  function recordViolation() {
+    api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
+
+    const next = tabWarningsRef.current + 1
+    tabWarningsRef.current = next
+    setTabWarnings(next)
+
+    if (next > TAB_WARNING_MAX) {
+      submitExam(true)
+    } else {
+      setTabWarningVisible(true)
+    }
+  }
+
   // ── Tab-switch detection ───────────────────────────────────────────────────
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden' && phase === 'exam') {
-        api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
-
-        const next = tabWarningsRef.current + 1
-        tabWarningsRef.current = next
-        setTabWarnings(next)
-
-        if (next > TAB_WARNING_MAX) {
-          // Already shown 2 warnings — auto-submit on this (3rd) violation
-          submitExam(true)
-        } else {
-          // Show the warning overlay when user comes back
-          setTabWarningVisible(true)
-        }
+        recordViolation()
       }
     }
     document.addEventListener('visibilitychange', onVisibility)
@@ -131,11 +146,110 @@ export default function ExamPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, sessionId])
 
+  // ── Fullscreen enforcement ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'exam') return
+
+    // Request fullscreen (silently ignored if browser denies)
+    const el = document.documentElement
+    if (el.requestFullscreen && !document.fullscreenElement) {
+      el.requestFullscreen().catch(() => {})
+    }
+
+    const onFsChange = () => {
+      // If user exits fullscreen during exam, treat as a violation
+      if (!document.fullscreenElement && phase === 'exam' && !submittedRef.current) {
+        recordViolation()
+        // Re-request fullscreen after the warning is dismissed
+        setTimeout(() => {
+          if (phase === 'exam' && !submittedRef.current) {
+            el.requestFullscreen().catch(() => {})
+          }
+        }, 500)
+      }
+    }
+    document.addEventListener('fullscreenchange', onFsChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange)
+      // Exit fullscreen on cleanup (submit / navigate away)
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, sessionId])
+
+  // ── Keyboard shortcut blocking ─────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'exam') return
+    const onKeyDown = (e) => {
+      const ctrl = e.ctrlKey || e.metaKey
+      const shift = e.shiftKey
+      // Block: F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C, Ctrl+U, Ctrl+S
+      if (
+        e.key === 'F12' ||
+        (ctrl && shift && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) ||
+        (ctrl && !shift && ['u', 'U', 's', 'S'].includes(e.key))
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => document.removeEventListener('keydown', onKeyDown, true)
+  }, [phase])
+
+  // ── DevTools detection (viewport size heuristic) ───────────────────────────
+  useEffect(() => {
+    if (phase !== 'exam') return
+    let devtoolsOpen = false
+    devtoolsRef.current = setInterval(() => {
+      const widthDiff  = window.outerWidth  - window.innerWidth
+      const heightDiff = window.outerHeight - window.innerHeight
+      const opened = widthDiff > DEVTOOLS_THRESHOLD || heightDiff > DEVTOOLS_THRESHOLD
+      // Only trigger once per DevTools open (not every 2s while it stays open)
+      if (opened && !devtoolsOpen) {
+        devtoolsOpen = true
+        recordViolation()
+      } else if (!opened) {
+        devtoolsOpen = false
+      }
+    }, DEVTOOLS_CHECK_INTERVAL)
+    return () => clearInterval(devtoolsRef.current)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, sessionId])
+
   async function startExam() {
     try {
       const fingerprint = await getBrowserFingerprint()
+      sessionFpRef.current = fingerprint
       const res = await api.post(`/session/${sessionId}/start`, { device_fingerprint: fingerprint })
-      const { questions: qs, remaining: rem, track: t, savedAnswers } = res.data
+      const { questions: qs, remaining: rem, track: t, savedAnswers,
+              tabViolations: serverViolations, deviceFingerprint: storedFp } = res.data
+
+      // ── Restore tab warnings from sessionStorage or server (whichever is higher) ──
+      const storedLocal  = parseInt(sessionStorage.getItem(`tabWarnings_${sessionId}`)) || 0
+      const serverCount  = serverViolations || 0
+      const restored     = Math.max(storedLocal, serverCount)
+      if (restored > 0) {
+        tabWarningsRef.current = restored
+        setTabWarnings(restored)
+        if (restored > TAB_WARNING_MAX) {
+          // Already exceeded max — auto-submit immediately
+          setPhase('submitting')
+          await api.post(`/session/${sessionId}/submit`)
+          navigate(`/results/${sessionId}`, { replace: true })
+          return
+        }
+      }
+
+      // ── Fingerprint mismatch detection on resume ──
+      if (storedFp && storedFp !== fingerprint) {
+        setFingerprintWarning(true)
+        // Count as a violation — different device continuing the session
+        api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
+      }
 
       setQuestions(qs)
       setRemaining(rem)
@@ -194,8 +308,17 @@ export default function ExamPage() {
     if (submittedRef.current) return
     submittedRef.current = true
     clearInterval(tickRef.current)
+    clearInterval(devtoolsRef.current)
     setPhase('submitting')
     setConfirmBox(false)
+
+    // Clean up sessionStorage
+    sessionStorage.removeItem(`tabWarnings_${sessionId}`)
+
+    // Exit fullscreen
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
+    }
 
     try {
       await api.post(`/session/${sessionId}/submit`)
@@ -433,7 +556,7 @@ export default function ExamPage() {
         </div>
       </div>
 
-      {/* ── Tab-switch warning overlay ── */}
+      {/* ── Tab-switch / fullscreen / DevTools warning overlay ── */}
       {tabWarningVisible && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4">
           <div className="bg-exam-surface border border-red-700/60 rounded-xl p-8 max-w-sm w-full shadow-xl">
@@ -443,11 +566,11 @@ export default function ExamPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
               </div>
-              <h2 className="text-white font-semibold text-lg">Tab Switch Detected</h2>
+              <h2 className="text-white font-semibold text-lg">Integrity Violation</h2>
             </div>
 
             <p className="text-ink-muted text-sm leading-relaxed mb-2">
-              Leaving the exam tab is not allowed.
+              Leaving the exam window, exiting fullscreen, or opening developer tools is not allowed.
             </p>
             <div className="flex items-center gap-2 mb-6">
               {[1, 2].map((n) => (
@@ -467,14 +590,49 @@ export default function ExamPage() {
             <p className="text-xs text-red-400 font-medium mb-5">
               {tabWarnings < TAB_WARNING_MAX
                 ? `Warning ${tabWarnings} of ${TAB_WARNING_MAX}. One more violation will auto-submit your exam.`
-                : `This is your final warning. The next tab switch will immediately submit your exam.`}
+                : `This is your final warning. The next violation will immediately submit your exam.`}
             </p>
 
             <button
-              onClick={() => setTabWarningVisible(false)}
+              onClick={() => {
+                setTabWarningVisible(false)
+                // Re-request fullscreen when returning to exam
+                const el = document.documentElement
+                if (el.requestFullscreen && !document.fullscreenElement) {
+                  el.requestFullscreen().catch(() => {})
+                }
+              }}
               className="w-full py-2.5 rounded-lg bg-gold text-ink text-sm font-bold hover:bg-gold-light transition-colors"
             >
               Return to Exam
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Fingerprint mismatch warning ── */}
+      {fingerprintWarning && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center px-4">
+          <div className="bg-exam-surface border border-yellow-700/60 rounded-xl p-8 max-w-sm w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-yellow-900/40 border border-yellow-700/50 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <h2 className="text-white font-semibold text-lg">Device Mismatch</h2>
+            </div>
+            <p className="text-ink-muted text-sm leading-relaxed mb-2">
+              This session was started on a different device or browser. Continuing from a different device has been flagged.
+            </p>
+            <p className="text-xs text-yellow-400 font-medium mb-5">
+              This incident has been recorded and may affect your exam results.
+            </p>
+            <button
+              onClick={() => setFingerprintWarning(false)}
+              className="w-full py-2.5 rounded-lg bg-gold text-ink text-sm font-bold hover:bg-gold-light transition-colors"
+            >
+              I Understand
             </button>
           </div>
         </div>

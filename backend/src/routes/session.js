@@ -247,7 +247,8 @@ router.post('/:id/start', async (req, res, next) => {
 
     const { rows } = await pool.query(
       `SELECT id, track, status, questions, answers,
-              EXTRACT(EPOCH FROM (expires_at - NOW()))::int AS remaining
+              EXTRACT(EPOCH FROM (expires_at - NOW()))::int AS remaining,
+              tab_violations, device_fingerprint
        FROM exam_sessions
        WHERE id = $1 AND user_id = $2`,
       [id, userId],
@@ -260,10 +261,12 @@ router.post('/:id/start', async (req, res, next) => {
     // Resume: already active (e.g. page refresh)
     if (session.status === 'active') {
       return res.json({
-        questions:    (session.questions || []).map(stripAnswers),
-        remaining:    Math.max(0, session.remaining || 0),
-        track:        session.track,
-        savedAnswers: buildAnswerMap(session.answers || []),
+        questions:        (session.questions || []).map(stripAnswers),
+        remaining:        Math.max(0, session.remaining || 0),
+        track:            session.track,
+        savedAnswers:     buildAnswerMap(session.answers || []),
+        tabViolations:    session.tab_violations || 0,
+        deviceFingerprint: session.device_fingerprint || null,
       })
     }
 
