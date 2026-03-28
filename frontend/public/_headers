@@ -13,7 +13,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-XSS-Protection: 1; mode=block
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://certs.iso-audit360.com https://vadhfkjubdjduscqkiff.supabase.co; connect-src 'self' https://api.iso-audit360.com https://iso-360-api-e9bi.onrender.com wss:; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://vadhfkjubdjduscqkiff.supabase.co https://certs.iso-audit360.com; connect-src 'self' https://api.27001certified.app https://iso-360-api-e9bi.onrender.com wss:; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 
 # ── Admin routes: extra no-index header ──────────────────────────────────
