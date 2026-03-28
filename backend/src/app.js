@@ -16,10 +16,18 @@ const app = express()
 
 // ── Security & Parsing ──────────────────────────────────────────────────────
 app.use(helmet())
-const FRONTEND_ORIGIN = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')
+const ALLOWED_ORIGINS = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean)
 
 app.use(cors({
-  origin: FRONTEND_ORIGIN,
+  origin(origin, callback) {
+    // Allow server-to-server requests and tools without an Origin header.
+    if (!origin) return callback(null, true)
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true)
+    return callback(new Error('CORS: origin not allowed'))
+  },
   credentials: true,
 }))
 app.use(express.json({ limit: '1mb' }))

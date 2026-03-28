@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Node modules (installed fresh in Docker)
+node_modules
+*/node_modules
+
+# Build outputs
+dist
+build
+frontend
+
+# Dev environment
+.env
+.env.*
+backend/.env
+
+# Logs
+*.log
+logs
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docs / design files
+*.md
+DESIGN
+PRD*
+openapi.yaml
+
+# Test files
+**/*.test.js
+**/*.spec.js
