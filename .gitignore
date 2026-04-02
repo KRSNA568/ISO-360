@@ -37,3 +37,10 @@ pids/
 # Sharp binaries (large)
 backend/node_modules/.cache/
 
+# Documentation
+*.md
+*.txt
+PRD
+PRD-ADMIN
+PRD-v2
+DESIGN
