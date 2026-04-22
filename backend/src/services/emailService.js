@@ -12,7 +12,7 @@ function getResend() {
 }
 
 const FROM   = () => process.env.EMAIL_FROM || 'onboarding@resend.dev'
-const APP    = 'ISO-Audit360'
+const APP    = '27001certified'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

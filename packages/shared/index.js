@@ -1,5 +1,5 @@
 /**
- * @iso-audit360/shared
+ * @27001certified/shared
  * Main entry point — re-exports all shared constants, schemas, and utilities.
  */
 const constants = require('./src/constants')

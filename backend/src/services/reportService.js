@@ -7,7 +7,7 @@
 
 const pool   = require('../config/db')
 const { createAIClient } = require('../prompts/promptBuilder')
-const { EXAM_CONFIG, THREAD_DOMAINS, AI_CONFIG } = require('@iso-audit360/shared/constants')
+const { EXAM_CONFIG, THREAD_DOMAINS, AI_CONFIG } = require('@27001certified/shared/constants')
 
 /**
  * Generate and persist an AI report for a completed session.

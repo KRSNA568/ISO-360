@@ -1,7 +1,7 @@
 {
-  "name": "@iso-audit360/shared",
+  "name": "@27001certified/shared",
   "version": "1.0.0",
-  "description": "Shared constants, schemas and utilities for ISO-Audit360",
+  "description": "Shared constants, schemas and utilities for 27001certified",
   "main": "index.js",
   "exports": {
     ".": "./index.js",

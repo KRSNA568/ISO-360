@@ -541,7 +541,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const titles = { login: 'Sign In', register: 'Create Account', otp: 'Verify Email', forgot: 'Reset Password', reset: 'New Password', done: 'Password Updated' }
-    document.title = `${titles[mode] || 'Sign In'} | ISO-Audit360`
+    document.title = `${titles[mode] || 'Sign In'} | 27001certified`
   }, [mode])
   const [email, setEmail]     = useState('')
 

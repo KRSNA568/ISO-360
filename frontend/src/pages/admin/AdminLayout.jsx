@@ -38,7 +38,7 @@ export default function AdminLayout() {
             <ShieldAlert size={18} className="text-gold" />
             <span className="font-semibold text-sm">Admin Portal</span>
           </div>
-          <p className="text-xs text-white/40 mt-0.5">ISO-Audit360</p>
+          <p className="text-xs text-white/40 mt-0.5">27001certified</p>
         </div>
 
         {/* Nav */}

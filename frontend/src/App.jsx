@@ -7,6 +7,8 @@ import GenerationPage from '@/pages/GenerationPage'
 import ExamPage from '@/pages/ExamPage'
 import ResultsPage from '@/pages/ResultsPage'
 import VerifyPage from '@/pages/VerifyPage'
+import BlogPage from '@/pages/BlogPage'
+import BlogPostPage from '@/pages/BlogPostPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
@@ -29,6 +31,8 @@ export default function App() {
           <Route path="/iso-27001" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/verify/:certificateId" element={<VerifyPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
 
           {/* Protected */}
           <Route element={<ProtectedRoute />}>

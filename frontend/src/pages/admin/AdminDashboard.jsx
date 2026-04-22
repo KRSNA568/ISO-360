@@ -19,7 +19,7 @@ function pct(n, d) {
 }
 
 export default function AdminDashboard() {
-  useEffect(() => { document.title = 'Admin Dashboard | ISO-Audit360' }, [])
+  useEffect(() => { document.title = 'Admin Dashboard | 27001certified' }, [])
   const [kpis, setKpis]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState('')

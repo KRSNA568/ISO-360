@@ -241,7 +241,7 @@ export default function Dashboard() {
   const [certs,      setCerts]      = useState([])
   const [certLoading, setCertLoading] = useState(true)
 
-  useEffect(() => { document.title = 'Dashboard | ISO-Audit360' }, [])
+  useEffect(() => { document.title = 'Dashboard | 27001certified' }, [])
 
   useEffect(() => {
     // Fresh stats — auth context may be stale after completing an exam

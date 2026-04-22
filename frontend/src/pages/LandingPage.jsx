@@ -158,7 +158,7 @@ function Navbar() {
     <nav className="fixed top-0 inset-x-0 z-50 bg-ink/95 backdrop-blur-sm border-b border-white/10">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="font-serif font-bold text-xl text-white tracking-tight">
-          ISO-Audit<span className="text-gold">360</span>
+          27001<span className="text-gold">certified</span>
           <p className="text-[10px] text-white/40 font-sans font-medium tracking-normal">ISO 27001:2022 Certification Portal</p>
         </Link>
 
@@ -277,7 +277,7 @@ function Testimonials() {
   return (
     <section className="bg-ink py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">Why Teams Choose <span className="text-gold">ISO-Audit360</span></h2>
+        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">Why Teams Choose <span className="text-gold">27001certified</span></h2>
 
         <div className="grid md:grid-cols-3 gap-5">
           {TESTIMONIALS.map((t) => (
@@ -423,7 +423,7 @@ function BlogSection() {
         <p className="text-white/60 mt-3 mb-10">Stay updated with practical guides, implementation patterns, and audit readiness tips for ISO 27001.</p>
 
         <article className="rounded-xl border border-white/10 bg-white/5 p-6 text-left max-w-3xl mx-auto">
-          <p className="text-xs text-white/45 mb-2">ISO-Audit360 · 3/17/2026</p>
+          <p className="text-xs text-white/45 mb-2">27001certified · 3/17/2026</p>
           <h3 className="text-white text-lg font-semibold mb-2">What is ISO 27001:2022? A Practical Guide for ISMS Teams</h3>
           <p className="text-sm text-white/65 mb-4">
             A practical walkthrough of ISO 27001 clauses, risk treatment workflow, Statement of Applicability, and internal audit readiness.
@@ -487,7 +487,7 @@ function FinalCta() {
     <section className="bg-ink py-20 px-6 text-center">
       <div className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-10">
         <h2 className="text-4xl font-serif font-bold text-white mb-4">Ready to Prove Your <span className="text-gold">ISO 27001 Expertise?</span></h2>
-        <p className="text-white/65 mb-7">Join professionals using ISO-Audit360 to validate practical ISMS capability and showcase it with a verifiable certificate.</p>
+        <p className="text-white/65 mb-7">Join professionals using 27001certified to validate practical ISMS capability and showcase it with a verifiable certificate.</p>
         <Link to="/login?register=1" className="btn btn-gold btn-lg">Create Free Account</Link>
       </div>
     </section>
@@ -506,7 +506,7 @@ export default function LandingPage() {
       <TopicAreas />
       <Levels />
       <CertificatesShowcase />
-      <MockInterview />
+      {/* <MockInterview /> */}
       <Audience />
       <BlogSection />
       <Faq />

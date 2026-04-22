@@ -32,7 +32,7 @@ function getR2Client() {
   return _client
 }
 
-const BUCKET     = () => process.env.R2_BUCKET_NAME  || 'iso-audit360-certs'
+const BUCKET     = () => process.env.R2_BUCKET_NAME  || '27001certified-certs'
 const PUBLIC_URL = () => process.env.R2_PUBLIC_URL   || ''
 
 module.exports = { getR2Client, BUCKET, PUBLIC_URL }

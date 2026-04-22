@@ -4,7 +4,7 @@
  * Uses Groq (OpenAI-compatible API) with llama-3.3-70b-versatile — free tier.
  * Used by GenerationService to build messages arrays and create the AI client.
  */
-const { AI_CONFIG } = require('@iso-audit360/shared/constants')
+const { AI_CONFIG } = require('@27001certified/shared/constants')
 
 /**
  * Compute difficulty distribution proportionally for any question count.

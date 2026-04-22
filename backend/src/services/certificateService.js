@@ -70,7 +70,7 @@ function buildLandscapeSvg({ name, trackLabel, score, dateLabel, certId, qrBase6
 
   <!-- Brand / header -->
   <text x="960" y="140" font-family="serif" font-size="24" fill="#c9a84c"
-        text-anchor="middle" letter-spacing="10">ISO-AUDIT360</text>
+        text-anchor="middle" letter-spacing="10">27001CERTIFIED</text>
   <text x="960" y="220" font-family="serif" font-size="60" fill="#ffffff"
         text-anchor="middle" letter-spacing="4">Certificate of Achievement</text>
 
@@ -147,7 +147,7 @@ function buildSquareSvg({ name, trackLabel, score, dateLabel, certId, qrBase64, 
 
   <!-- Brand -->
   <text x="540" y="110" font-family="serif" font-size="20" fill="#c9a84c"
-        text-anchor="middle" letter-spacing="8">ISO-AUDIT360</text>
+        text-anchor="middle" letter-spacing="8">27001CERTIFIED</text>
   <text x="540" y="192" font-family="serif" font-size="42" fill="#ffffff"
         text-anchor="middle" letter-spacing="2">Certificate of Achievement</text>
 
@@ -275,7 +275,7 @@ async function generateCertificate({ sessionId, userId, track, fullName, score, 
   const dateLabel  = new Date(awardedOn).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
-  const verifyUrl  = `${(process.env.FRONTEND_URL || 'https://iso-audit360.com').replace(/\/$/, '')}/verify/${certId}`
+  const verifyUrl  = `${(process.env.FRONTEND_URL || 'https://27001certified.app').replace(/\/$/, '')}/verify/${certId}`
 
   console.log(`[Cert] 🏆 Generating certificate ${certId} for session ${sessionId}`)
 

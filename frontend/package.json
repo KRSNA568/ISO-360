@@ -12,7 +12,7 @@
     "format": "prettier --write 'src/**/*.{js,jsx,css}'"
   },
   "dependencies": {
-    "@iso-audit360/shared": "*",
+    "@27001certified/shared": "*",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-dialog": "^1.0.5",

@@ -32,7 +32,7 @@ export default function VerifyPage() {
       <Link to="/iso-27001" className="mb-8 flex items-center gap-2 group">
         <Shield size={22} className="text-gold" />
         <span className="font-serif font-semibold text-ink tracking-wide text-lg group-hover:text-gold transition-colors">
-          ISO-Audit360
+          27001certified
         </span>
       </Link>
 
@@ -143,7 +143,7 @@ export default function VerifyPage() {
       </div>
 
       <p className="mt-8 text-xs text-ink-muted text-center max-w-sm">
-        This certificate verification service is provided by ISO-Audit360.
+        This certificate verification service is provided by 27001certified.
         The information shown above reflects the official record at time of verification.
       </p>
 

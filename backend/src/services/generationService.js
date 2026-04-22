@@ -15,7 +15,7 @@
 const crypto = require('crypto')
 const pool   = require('../config/db')
 const { createAIClient, buildMessages, AI_CALL_CONFIG } = require('../prompts/promptBuilder')
-const { EXAM_CONFIG, AI_CONFIG }                        = require('@iso-audit360/shared/constants')
+const { EXAM_CONFIG, AI_CONFIG }                        = require('@27001certified/shared/constants')
 
 // ── Thread modules ────────────────────────────────────────────────────────────
 const THREAD_MODULES = {

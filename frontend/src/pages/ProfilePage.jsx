@@ -332,7 +332,7 @@ function DangerZone() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-  useEffect(() => { document.title = 'Profile | ISO-Audit360' }, [])
+  useEffect(() => { document.title = 'Profile | 27001certified' }, [])
   return (
     <div className="min-h-screen bg-surface">
       <AppNavbar />

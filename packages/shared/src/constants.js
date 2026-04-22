@@ -1,7 +1,7 @@
 /**
  * @file constants.js
  * Shared constants used by both frontend and backend.
- * Import: const { TRACKS, SESSION_STATUS, ... } = require('@iso-audit360/shared/constants')
+ * Import: const { TRACKS, SESSION_STATUS, ... } = require('@27001certified/shared/constants')
  */
 
 // ── Exam Tracks ──────────────────────────────────────────────────────────────

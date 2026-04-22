@@ -11,7 +11,7 @@ const {
   RETAKE_POLICY,
   THREAD_DOMAINS,
   INTEGRITY_THRESHOLDS,
-} = require('@iso-audit360/shared/constants')
+} = require('@27001certified/shared/constants')
 
 router.use(authenticate)
 

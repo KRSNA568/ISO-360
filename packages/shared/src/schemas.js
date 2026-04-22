@@ -2,7 +2,7 @@
  * @file schemas.js
  * AJV-compatible JSON Schema for the Question object.
  * Used by backend (ajv validation) and frontend (form validation reference).
- * Import: const { QUESTION_SCHEMA, QUESTION_ARRAY_SCHEMA } = require('@iso-audit360/shared/schemas')
+ * Import: const { QUESTION_SCHEMA, QUESTION_ARRAY_SCHEMA } = require('@27001certified/shared/schemas')
  */
 
 /**

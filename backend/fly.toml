@@ -1,7 +1,7 @@
 # Fly.io deployment configuration
 # https://fly.io/docs/reference/configuration/
 
-app       = "iso-audit360-api"
+app       = "27001certified-api"
 primary_region = "bom"          # Mumbai — closest to Indian user base
 
 [build]
@@ -47,6 +47,6 @@ primary_region = "bom"          # Mumbai — closest to Indian user base
     method       = "GET"
     path         = "/api/health"
 
-# Staging app (deploy with: fly deploy --app iso-audit360-api-staging)
+# Staging app (deploy with: fly deploy --app 27001certified-api-staging)
 # [staging]
-#   app = "iso-audit360-api-staging"
+#   app = "27001certified-api-staging"
