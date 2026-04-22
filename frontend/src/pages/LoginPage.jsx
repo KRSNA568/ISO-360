@@ -576,7 +576,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
       {/* Logo */}
       <Link to="/iso-27001" className="font-serif font-bold text-xl text-ink mb-8 hover:opacity-75 transition-opacity">
-        ISO-Audit<span className="text-gold">360</span>
+        27001<span className="text-gold">certified</span>
       </Link>
 
       <div className="card w-full max-w-md">
