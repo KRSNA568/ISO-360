@@ -18,7 +18,7 @@ export default function AppNavbar() {
     <nav className="sticky top-0 z-40 bg-white border-b border-border">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
         <Link to="/dashboard" className="font-serif font-bold text-base text-ink hover:opacity-75 transition-opacity">
-          ISO-Audit<span className="text-gold">360</span>
+          27001<span className="text-gold">Certified</span>
         </Link>
 
         <div className="relative">
