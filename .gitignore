@@ -12,6 +12,11 @@ build/
 .env
 .env.local
 .env.production
+.env.test
+
+# Playwright
+frontend/playwright-report/
+frontend/test-results/
 
 # Logs
 logs/

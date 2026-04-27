@@ -1,0 +1,99 @@
+name: CI — E2E Tests (Playwright)
+
+# Only runs on PRs to main (not on every push — E2E tests take longer).
+# This is the final gate before merging to production.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - '.github/workflows/ci-e2e.yml'
+
+jobs:
+  e2e:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Node.js ─────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. Install dependencies ──────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Install Playwright browsers ───────────────────────────────────
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      # ── 5. Write backend .env.test ───────────────────────────────────────
+      - name: Create backend .env.test
+        run: |
+          cat > backend/.env.test << 'EOF'
+          PORT=5002
+          NODE_ENV=test
+          FRONTEND_URL=http://localhost:3000
+          DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}
+          REDIS_URL=${{ secrets.TEST_REDIS_URL }}
+          REDIS_TOKEN=${{ secrets.TEST_REDIS_TOKEN }}
+          JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
+          JWT_EXPIRES_IN=15m
+          REFRESH_TOKEN_SECRET=${{ secrets.TEST_REFRESH_TOKEN_SECRET }}
+          REFRESH_TOKEN_EXPIRES_IN=7d
+          GROQ_API_KEY=gsk_ci_dummy_key_not_used_in_e2e
+          RESEND_API_KEY=re_ci_dummy_key_not_used_in_e2e
+          EMAIL_FROM=ci@27001certified.app
+          SUPABASE_URL=https://ci-mock.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY=ci_dummy_role_key
+          SUPABASE_CERT_BUCKET=ci-test-certificates
+          ADMIN_EMAIL=ci-admin@test.com
+          ADMIN_PASSWORD=CIAdmin123!
+          ADMIN_NAME=CI Admin
+          EOF
+
+      # ── 6. Write frontend .env.local for Vite ────────────────────────────
+      - name: Create frontend .env.local
+        run: |
+          cat > frontend/.env.local << 'EOF'
+          VITE_API_URL=http://localhost:5002
+          EOF
+
+      # ── 7. Start backend server in background ────────────────────────────
+      - name: Install wait-on
+        run: npm install -g wait-on
+
+      - name: Start backend server
+        run: |
+          node -r dotenv/config backend/src/server.js &
+          echo "Waiting for backend to be ready..."
+          wait-on http://localhost:5002/api/health --timeout 30000
+        env:
+          NODE_ENV: test
+          DOTENV_CONFIG_PATH: backend/.env.test
+
+      # ── 8. Run Playwright E2E tests ───────────────────────────────────────
+      - name: Run Playwright tests
+        run: npm run test:e2e --workspace=frontend
+        env:
+          CI: true
+          E2E_BASE_URL: http://localhost:3000
+
+      # ── 9. Upload Playwright report on failure ────────────────────────────
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14

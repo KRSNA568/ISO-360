@@ -1,0 +1,93 @@
+name: CI — Backend Integration Tests
+
+# Runs on every push and PR to main/develop branches.
+# Protects the production deploy gate — a failing test blocks the merge.
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'packages/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - 'packages/**'
+      - '.github/workflows/ci-backend.yml'
+
+jobs:
+  test:
+    name: Jest Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Node.js ─────────────────────────────────────────────────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. Install dependencies ──────────────────────────────────────────
+      # Installs all workspaces (root, frontend, backend, packages/*)
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Write .env.test from GitHub Secrets ───────────────────────────
+      # These are STAGING/TEST credentials — never production keys.
+      # Set these in: GitHub repo → Settings → Secrets → Actions
+      - name: Create backend .env.test
+        run: |
+          cat > backend/.env.test << 'EOF'
+          PORT=5002
+          NODE_ENV=test
+          FRONTEND_URL=http://localhost:3000
+
+          # Staging Supabase (separate project from production)
+          DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}
+
+          # Staging Redis (separate Upstash database from production)
+          REDIS_URL=${{ secrets.TEST_REDIS_URL }}
+          REDIS_TOKEN=${{ secrets.TEST_REDIS_TOKEN }}
+
+          # JWT secrets (test-only, not the production secret)
+          JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}
+          JWT_EXPIRES_IN=15m
+          REFRESH_TOKEN_SECRET=${{ secrets.TEST_REFRESH_TOKEN_SECRET }}
+          REFRESH_TOKEN_EXPIRES_IN=7d
+
+          # Groq — tests mock this, so a dummy key is fine in CI
+          GROQ_API_KEY=gsk_ci_dummy_key_tests_mock_this
+
+          # Resend — tests mock this, so a dummy key is fine
+          RESEND_API_KEY=re_ci_dummy_key_tests_mock_this
+          EMAIL_FROM=ci@27001certified.app
+
+          # Supabase (used for auth client in some services)
+          SUPABASE_URL=https://ci-mock.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY=ci_dummy_role_key
+          SUPABASE_CERT_BUCKET=ci-test-certificates
+
+          # Admin (test seed only)
+          ADMIN_EMAIL=ci-admin@test.com
+          ADMIN_PASSWORD=CIAdmin123!
+          ADMIN_NAME=CI Admin
+          EOF
+
+      # ── 5. Run backend integration tests ─────────────────────────────────
+      - name: Run Jest integration tests
+        run: npm run test --workspace=backend
+
+      # ── 6. Upload test results on failure ────────────────────────────────
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-test-results
+          path: backend/coverage/
+          retention-days: 7

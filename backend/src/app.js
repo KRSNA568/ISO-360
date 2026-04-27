@@ -6,7 +6,7 @@ const morgan  = require('morgan')
 const authRouter        = require('./routes/auth')
 const userRouter        = require('./routes/user')
 const sessionRouter     = require('./routes/session')
-const resultsRouter     = require('./routes/results')
+
 const certificateRouter = require('./routes/certificate')
 const adminRouter       = require('./routes/admin')
 const questionsRouter   = require('./routes/questions')
@@ -52,7 +52,7 @@ app.get('/api/health', async (_req, res) => {
 app.use('/api/auth',          authRouter)
 app.use('/api/user',          userRouter)
 app.use('/api/session',       sessionRouter)
-app.use('/api/results',       resultsRouter)
+
 app.use('/api/certificates',  certificateRouter)
 app.use('/api/admin',         adminRouter)
 app.use('/api/questions',     questionsRouter)

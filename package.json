@@ -14,7 +14,9 @@
     "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
     "install:all": "npm install",
     "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend",
-    "format": "npm run format --workspace=frontend && npm run format --workspace=backend"
+    "format": "npm run format --workspace=frontend && npm run format --workspace=backend",
+    "test": "npm run test --workspace=backend",
+    "test:e2e": "npm run test:e2e --workspace=frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

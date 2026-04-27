@@ -1,0 +1,162 @@
+# ── Artillery Load Test — 27001certified Pre-Launch Stress Test ──────────────
+#
+# Purpose: Validate that the Express + Redis infrastructure can handle
+#          realistic exam-day concurrent traffic without degradation.
+#
+# Run against STAGING only:
+#   npx artillery run backend/tests/load/artillery.yml
+#
+# Run against production (PRE-LAUNCH only, with warning):
+#   E2E_BASE_URL=https://api.27001certified.com npx artillery run backend/tests/load/artillery.yml --environment production
+#
+# Requires: npx artillery@latest (install globally: npm i -g artillery)
+# ─────────────────────────────────────────────────────────────────────────────
+
+config:
+  target: "http://localhost:5002"
+
+  # ── Environment overrides ─────────────────────────────────────────────────
+  environments:
+    staging:
+      target: "https://api-staging.27001certified.app"
+    production:
+      target: "https://api.27001certified.app"
+      phases:
+        - duration: 30
+          arrivalRate: 5
+          name: "Production — Light smoke test only. DO NOT ramp."
+
+  # ── Load phases ───────────────────────────────────────────────────────────
+  # Simulates launch day: a slow build-up to peak concurrent exam users.
+  phases:
+    - name: "Phase 1 — Warm-up (10 users over 30s)"
+      duration: 30
+      arrivalRate: 1
+      rampTo: 10
+
+    - name: "Phase 2 — Ramp to peak (50 users over 60s)"
+      duration: 60
+      arrivalRate: 10
+      rampTo: 50
+
+    - name: "Phase 3 — Sustained peak (50 users for 2 min)"
+      duration: 120
+      arrivalRate: 50
+
+    - name: "Phase 4 — Cool-down"
+      duration: 30
+      arrivalRate: 50
+      rampTo: 5
+
+  # ── Thresholds — test FAILS if these are breached ─────────────────────────
+  ensure:
+    thresholds:
+      - http.response_time.p95: 500     # 95th percentile < 500ms
+      - http.response_time.p99: 1000    # 99th percentile < 1s
+      - http.request_rate: 50           # Sustain at least 50 RPS
+    conditions:
+      - expression: "(counters['http.codes.5xx'] || 0) == 0"
+        strict: true
+        comment: "Zero 5xx errors allowed"
+      - expression: "(counters['http.codes.429'] || 0) < 10"
+        strict: true
+        comment: "Rate limit hits should be < 10 (normal abuse prevention)"
+
+  # ── Variables for reuse ───────────────────────────────────────────────────
+  variables:
+    # A pre-issued JWT for a test user — replace with a real staging token.
+    # Generate with: node -e "const jwt=require('jsonwebtoken'); console.log(jwt.sign({sub:'load-test-user',email:'loadtest@test.com',role:'user'},process.env.JWT_SECRET,{expiresIn:'1h'}))"
+    testJwt: "REPLACE_WITH_STAGING_JWT"
+    testSessionId: "REPLACE_WITH_STAGING_SESSION_ID"
+
+  http:
+    timeout: 10        # 10 second request timeout
+    pool: 10           # Connection pool size
+
+  # ── Plugins ───────────────────────────────────────────────────────────────
+  plugins:
+    expect: {}         # Enables response assertion with `expect:`
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scenarios
+# ─────────────────────────────────────────────────────────────────────────────
+
+scenarios:
+
+  # ── Scenario 1: Health Check (20% of traffic) ─────────────────────────────
+  # Simulates load balancer and monitoring pings.
+  - name: "Health Check"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/health"
+          expect:
+            - statusCode: 200
+            - hasProperty: "status"
+
+  # ── Scenario 2: Exam Timer Heartbeat (50% of traffic) ─────────────────────
+  # This is the highest-frequency endpoint: fires every 5s per active user.
+  # 50 concurrent users = 10 heartbeat RPS. This is the critical Redis load.
+  - name: "Exam Heartbeat Stress"
+    weight: 50
+    flow:
+      - loop:
+          - post:
+              url: "/api/session/{{ testSessionId }}/heartbeat"
+              headers:
+                Authorization: "Bearer {{ testJwt }}"
+                Content-Type: "application/json"
+              json: {}
+              # We expect either 200 (session active) or 400 (test session not active — ok in load test)
+              expect:
+                - statusCode:
+                    - 200
+                    - 400
+                    - 401  # Expired token — expected if staging JWT is old
+          - think: 5       # Wait 5 seconds (simulate the real 5s heartbeat interval)
+        count: 6           # 6 iterations × 5s = ~30s per virtual user
+
+  # ── Scenario 3: Session Status Polling (20% of traffic) ───────────────────
+  # Simulates users on the "Generating..." loader screen, polling every 3s.
+  - name: "Generation Status Polling"
+    weight: 20
+    flow:
+      - loop:
+          - get:
+              url: "/api/session/{{ testSessionId }}/status"
+              headers:
+                Authorization: "Bearer {{ testJwt }}"
+              expect:
+                - statusCode:
+                    - 200
+                    - 404  # Session not found in staging — acceptable
+                    - 401
+          - think: 3
+        count: 10          # 10 polls × 3s = 30s
+
+  # ── Scenario 4: Public Certificate Verification (10% of traffic) ──────────
+  # Simulates LinkedIn share links being opened — no auth required.
+  - name: "Public Certificate Verification"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/certificates/verify/ISO27-2026-LOADTEST1"
+          expect:
+            - statusCode:
+                - 200
+                - 404    # Certificate doesn't exist in staging — acceptable
+
+# ─────────────────────────────────────────────────────────────────────────────
+# How to interpret results:
+#
+# ✅ PASS: p95 < 500ms, p99 < 1s, 0 5xx errors
+# ⚠ WARN: p95 300-500ms (acceptable, watch on production)
+# ❌ FAIL: p95 > 500ms or any 5xx — investigate before launch
+#
+# Key metrics to watch:
+#   - http.response_time.p95   → Should be < 500ms
+#   - http.response_time.p99   → Should be < 1000ms
+#   - http.codes.200           → Should be the majority
+#   - http.codes.5xx           → Must be 0
+#   - vusers.failed            → Should be 0
+# ─────────────────────────────────────────────────────────────────────────────

@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext js,jsx --fix",
-    "format": "prettier --write 'src/**/*.{js,jsx,css}'"
+    "format": "prettier --write 'src/**/*.{js,jsx,css}'",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@27001certified/shared": "*",
@@ -33,6 +36,8 @@
     "zod": "^3.23.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^18.19.130",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
