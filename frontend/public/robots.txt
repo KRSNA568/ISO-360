@@ -1,7 +1,21 @@
-# robots.txt — prevent indexing of admin and internal routes
 User-agent: *
+
+# Public pages — allow indexing
+Allow: /
+Allow: /iso-27001
+Allow: /verify
+Allow: /verify/
+Allow: /blog
+Allow: /blog/
+
+# Private app routes — block indexing
 Disallow: /admin
 Disallow: /admin/
-Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /exam/
+Disallow: /generate/
+Disallow: /results/
+Disallow: /login
 
-Sitemap: https://iso-audit360.com/sitemap.xml
+Sitemap: https://27001certified.app/sitemap.xml
