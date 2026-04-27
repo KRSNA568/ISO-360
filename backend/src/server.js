@@ -1,4 +1,7 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') })
+// Load .env only in local dev/test — Render & production inject env vars natively
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') })
+}
 const app  = require('./app')
 const pool = require('./config/db')
 
