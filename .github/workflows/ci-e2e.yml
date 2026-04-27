@@ -58,7 +58,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY=ci_dummy_role_key
           SUPABASE_CERT_BUCKET=ci-test-certificates
           ADMIN_EMAIL=ci-admin@test.com
-          ADMIN_PASSWORD=CIAdmin123!
+          ADMIN_PASSWORD=${{ secrets.TEST_ADMIN_PASSWORD }}
           ADMIN_NAME=CI Admin
           EOF
 

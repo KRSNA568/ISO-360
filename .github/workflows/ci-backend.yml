@@ -75,7 +75,7 @@ jobs:
 
           # Admin (test seed only)
           ADMIN_EMAIL=ci-admin@test.com
-          ADMIN_PASSWORD=CIAdmin123!
+          ADMIN_PASSWORD=${{ secrets.TEST_ADMIN_PASSWORD }}
           ADMIN_NAME=CI Admin
           EOF
 
