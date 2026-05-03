@@ -187,7 +187,7 @@ export default function GenerationPage() {
 
       if (data.status === 'ready') {
         clearInterval(pollRef.current)
-        setTimeout(() => navigate(`/exam/${sid}`), 800)
+        setTimeout(() => navigate(`/exam/${sid}`, { replace: true }), 800)
       } else if (data.status === 'aborted') {
         clearInterval(pollRef.current)
       }
