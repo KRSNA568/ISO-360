@@ -14,6 +14,23 @@ const { errorHandler } = require('./middlewares/errorHandler')
 
 const app = express()
 
+
+// ── Health checks (before CORS — no Origin header from load balancers) ───────
+app.get('/api/live', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+async function readyHandler(_req, res) {
+  try {
+    await require('./config/db').query('SELECT 1')
+    res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() })
+  } catch {
+    res.status(503).json({ status: 'degraded', db: 'error', timestamp: new Date().toISOString() })
+  }
+}
+app.get('/api/ready',  readyHandler)
+app.get('/api/health', readyHandler)
+
 // ── Security & Parsing ──────────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {
@@ -52,22 +69,6 @@ app.use(express.urlencoded({ extended: true }))
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
 }
-
-// ── Health checks ───────────────────────────────────────────────────────────
-app.get('/api/live', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
-async function readyHandler(_req, res) {
-  try {
-    await require('./config/db').query('SELECT 1')
-    res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() })
-  } catch {
-    res.status(503).json({ status: 'degraded', db: 'error', timestamp: new Date().toISOString() })
-  }
-}
-app.get('/api/ready',  readyHandler)
-app.get('/api/health', readyHandler)  // backward-compat alias
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRouter)
