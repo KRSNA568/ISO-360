@@ -43,7 +43,7 @@ pids/
 backend/node_modules/.cache/
 
 # Documentation
-*.md
+*.md 
 *.txt
 PRD
 PRD-ADMIN

@@ -1,15 +1,24 @@
-function errorHandler(err, req, res, _next) {
-  const status  = err.status || err.statusCode || 500
-  const message = err.message || 'Internal server error'
+const logger = require('../lib/logger')
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.error(`[ERROR] ${req.method} ${req.path} — ${status}:`, err.message)
+function errorHandler(err, req, res, _next) {
+  const status      = err.status || err.statusCode || 500
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (status >= 500) {
+    logger.error({ err, method: req.method, path: req.path, status }, err.message)
+  } else if (!isProduction) {
+    logger.debug({ method: req.method, path: req.path, status }, err.message)
   }
+
+  // Never expose internal detail on 5xx in production
+  const message = (isProduction && status >= 500)
+    ? 'Internal server error'
+    : (err.message || 'Internal server error')
 
   res.status(status).json({
     error: message,
     ...(err.details && { details: err.details }),
-    ...(process.env.NODE_ENV === 'development' && status >= 500 && { stack: err.stack }),
+    ...(!isProduction && status >= 500 && { stack: err.stack }),
   })
 }
 

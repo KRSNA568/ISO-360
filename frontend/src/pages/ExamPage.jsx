@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams }                   from 'react-router-dom'
+
 import api                                          from '@/lib/api'
 
 // ── Browser fingerprint (privacy-safe: no external lib) ──────────────────
@@ -55,9 +56,9 @@ function OptionButton({ letter, text, selected, onClick }) {
 function NavDot({ index, current, answered, onClick }) {
   const n = index + 1
   let cls = 'w-8 h-8 rounded-md text-xs font-semibold select-none transition-all duration-100 '
-  if (index === current)   cls += 'bg-gold text-ink'
-  else if (answered)       cls += 'bg-gold/20 text-gold border border-gold/30 hover:bg-gold/30'
-  else                     cls += 'bg-exam-surface border border-exam-border text-ink-muted hover:border-gold/40 hover:text-white'
+  if (index === current)   {cls += 'bg-gold text-ink'}
+  else if (answered)       {cls += 'bg-gold/20 text-gold border border-gold/30 hover:bg-gold/30'}
+  else                     {cls += 'bg-exam-surface border border-exam-border text-ink-muted hover:border-gold/40 hover:text-white'}
   return (
     <button
       type="button"
@@ -93,24 +94,20 @@ export default function ExamPage() {
   const DEVTOOLS_CHECK_INTERVAL = 2000 // ms between DevTools size checks
   const DEVTOOLS_THRESHOLD      = 160  // px difference to flag DevTools
 
-  const tickRef        = useRef(null)
-  const answersRef     = useRef({})   // always-fresh ref used in submit closure
-  const submittedRef   = useRef(false)
-  const tabWarningsRef = useRef(0)    // always-fresh count for the submit closure
-  const devtoolsRef    = useRef(null) // interval id for devtools polling
-  const sessionFpRef   = useRef(null) // stored fingerprint from session start
+  const tickRef          = useRef(null)
+  const answersRef       = useRef({})    // always-fresh ref used in submit closure
+  const submittedRef     = useRef(false)
+  const tabWarningsRef   = useRef(0)     // always-fresh count for the submit closure
+  const devtoolsRef      = useRef(null)  // interval id for devtools polling
+  const sessionFpRef     = useRef(null)  // stored fingerprint from session start
+  const expiresAtRef     = useRef(null)  // absolute timestamp; drives the countdown
+  const heartbeatFailRef = useRef(0)     // consecutive heartbeat failures
+  const fsRetryRef       = useRef(0)     // fullscreen re-entry attempts
 
   // Keep answersRef in sync
   useEffect(() => { answersRef.current = answers }, [answers])
   // Keep tabWarningsRef in sync
   useEffect(() => { tabWarningsRef.current = tabWarnings }, [tabWarnings])
-
-  // ── Persist tab warnings to sessionStorage ─────────────────────────────
-  useEffect(() => {
-    if (sessionId && tabWarnings > 0) {
-      sessionStorage.setItem(`tabWarnings_${sessionId}`, String(tabWarnings))
-    }
-  }, [tabWarnings, sessionId])
 
   // ── Load exam on mount ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -121,7 +118,15 @@ export default function ExamPage() {
 
   // ── Shared violation handler — used by tab-switch, fullscreen exit, and DevTools ──
   function recordViolation() {
-    api.post(`/session/${sessionId}/heartbeat`).catch(() => {})
+    api.post(`/session/${sessionId}/heartbeat`)
+      .then(() => { heartbeatFailRef.current = 0 })
+      .catch(() => {
+        heartbeatFailRef.current += 1
+        if (heartbeatFailRef.current >= 3) {
+          setErrorMsg('Connection lost. Your exam has been auto-submitted to preserve your progress.')
+          submitExam(true)
+        }
+      })
 
     const next = tabWarningsRef.current + 1
     tabWarningsRef.current = next
@@ -148,19 +153,25 @@ export default function ExamPage() {
 
   // ── Fullscreen enforcement ─────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam') {return}
 
     // Only attach exit-listener — fullscreen is requested via user click in enterExam()
     const onFsChange = () => {
-      // If user exits fullscreen during exam, treat as a violation
-      if (!document.fullscreenElement && phase === 'exam' && !submittedRef.current) {
-        recordViolation()
-        // Re-request fullscreen after the warning is dismissed
+      if (document.fullscreenElement) {
+        fsRetryRef.current = 0  // successful re-entry; reset counter
+        return
+      }
+      if (submittedRef.current) {return}
+      recordViolation()
+      // Re-request fullscreen with exponential backoff; give up after 3 tries
+      if (fsRetryRef.current < 3) {
+        fsRetryRef.current += 1
+        const delay = fsRetryRef.current * 2000  // 2s, 4s, 6s
         setTimeout(() => {
-          if (phase === 'exam' && !submittedRef.current) {
-            el.requestFullscreen().catch(() => {})
+          if (!document.fullscreenElement && !submittedRef.current) {
+            document.documentElement.requestFullscreen().catch(() => {})
           }
-        }, 500)
+        }, delay)
       }
     }
     document.addEventListener('fullscreenchange', onFsChange)
@@ -177,7 +188,7 @@ export default function ExamPage() {
 
   // ── Keyboard shortcut blocking ─────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam') {return}
     const onKeyDown = (e) => {
       const ctrl = e.ctrlKey || e.metaKey
       const shift = e.shiftKey
@@ -195,9 +206,17 @@ export default function ExamPage() {
     return () => document.removeEventListener('keydown', onKeyDown, true)
   }, [phase])
 
+  // ── Warn before tab/window close during active exam ──────────────────────
+  useEffect(() => {
+    if (phase !== 'exam') {return}
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [phase])
+
   // ── DevTools detection (viewport size heuristic) ───────────────────────────
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam') {return}
     let devtoolsOpen = false
     devtoolsRef.current = setInterval(() => {
       const widthDiff  = window.outerWidth  - window.innerWidth
@@ -223,10 +242,8 @@ export default function ExamPage() {
       const { questions: qs, remaining: rem, track: t, savedAnswers,
               tabViolations: serverViolations, deviceFingerprint: storedFp } = res.data
 
-      // ── Restore tab warnings from sessionStorage or server (whichever is higher) ──
-      const storedLocal  = parseInt(sessionStorage.getItem(`tabWarnings_${sessionId}`)) || 0
-      const serverCount  = serverViolations || 0
-      const restored     = Math.max(storedLocal, serverCount)
+      // ── Restore tab warnings from server (authoritative) ──
+      const restored = serverViolations || 0
       if (restored > 0) {
         tabWarningsRef.current = restored
         setTabWarnings(restored)
@@ -258,6 +275,11 @@ export default function ExamPage() {
         navigate(data.redirect, { replace: true })
         return
       }
+      // Session expired before the user could resume — go straight to results
+      if (err.response?.status === 410 && data?.redirect) {
+        navigate(data.redirect, { replace: true })
+        return
+      }
       // Session wiped by concurrent create (StrictMode / double-click) — go to dashboard
       if (err.response?.status === 409 && data?.code === 'SESSION_EMPTY') {
         navigate('/dashboard', { replace: true })
@@ -278,11 +300,13 @@ export default function ExamPage() {
     beginCountdown(remaining)
   }
 
-  function beginCountdown(startSecs) {
-    let secs = startSecs
+  function beginCountdown(serverRemaining) {
+    // Anchor countdown to an absolute timestamp so refreshes/re-renders
+    // can't drift the timer or allow a post-page-unload submission.
+    expiresAtRef.current = Date.now() + serverRemaining * 1000
     clearInterval(tickRef.current)
     tickRef.current = setInterval(() => {
-      secs -= 1
+      const secs = Math.max(0, Math.round((expiresAtRef.current - Date.now()) / 1000))
       setRemaining(secs)
       if (secs <= 0) {
         clearInterval(tickRef.current)
@@ -298,8 +322,8 @@ export default function ExamPage() {
 
     setAnswers((prev) => {
       const next = { ...prev }
-      if (newOption === null) delete next[questionId]
-      else next[questionId] = newOption
+      if (newOption === null) {delete next[questionId]}
+      else {next[questionId] = newOption}
       return next
     })
 
@@ -308,16 +332,13 @@ export default function ExamPage() {
   }
 
   // ── Submit ─────────────────────────────────────────────────────────────────
-  const submitExam = useCallback(async (autoSubmit = false) => {
-    if (submittedRef.current) return
+  const submitExam = useCallback(async (_autoSubmit = false) => {
+    if (submittedRef.current) {return}
     submittedRef.current = true
     clearInterval(tickRef.current)
     clearInterval(devtoolsRef.current)
     setPhase('submitting')
     setConfirmBox(false)
-
-    // Clean up sessionStorage
-    sessionStorage.removeItem(`tabWarnings_${sessionId}`)
 
     // Exit fullscreen
     if (document.fullscreenElement) {
@@ -337,11 +358,10 @@ export default function ExamPage() {
       setPhase('error')
       submittedRef.current = false
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, navigate])
   // ── Prevent copy / paste / right-click on exam page ────────────────────────
   useEffect(() => {
-    if (phase !== 'exam') return
+    if (phase !== 'exam') {return}
     const block = (e) => e.preventDefault()
     document.addEventListener('copy',         block)
     document.addEventListener('cut',          block)
@@ -551,8 +571,16 @@ export default function ExamPage() {
                 ))}
               </div>
 
-              {/* Next only — no back navigation, no jumping ahead */}
-              <div className="flex justify-end pt-4">
+              {/* Prev / Next navigation */}
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={() => setCurrent((i) => Math.max(0, i - 1))}
+                  disabled={current === 0}
+                  className="px-5 py-2 rounded-lg bg-exam-surface border border-exam-border text-white text-sm hover:border-gold/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  ← Previous
+                </button>
+
                 {current < totalQ - 1 ? (
                   <button
                     onClick={() => setCurrent((i) => i + 1)}

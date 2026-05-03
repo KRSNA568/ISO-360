@@ -1,6 +1,7 @@
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
+
 import { adminApi } from '@/lib/apiServices'
-import { ChevronLeft, ChevronRight, ExternalLink, AlertCircle } from 'lucide-react'
 
 function Badge({ children, color }) {
   const map = { green: 'bg-green-100 text-green-700', red: 'bg-red-100 text-red-700', gray: 'bg-surface text-ink-muted', yellow: 'bg-yellow-100 text-yellow-700' }
@@ -45,8 +46,8 @@ export default function AdminCertificates() {
   const load = useCallback(() => {
     setLoading(true)
     const p = { page, limit: PAGE_SIZE }
-    if (track)   p.track = track
-    if (revoked) p.revoked = revoked
+    if (track)   {p.track = track}
+    if (revoked) {p.revoked = revoked}
     adminApi.getCertificates(p)
       .then(r => { setCerts(r.data.certificates); setTotal(r.data.total) })
       .catch(() => {})
@@ -56,7 +57,7 @@ export default function AdminCertificates() {
   useEffect(() => { load() }, [load])
 
   async function handleRevoke() {
-    if (!reason.trim()) return
+    if (!reason.trim()) {return}
     setActing(true)
     try {
       await adminApi.revokeCertificate(modal.id, { reason })

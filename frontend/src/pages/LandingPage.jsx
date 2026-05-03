@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import * as Accordion from '@radix-ui/react-accordion'
 import {
   ChevronDown,
@@ -16,6 +15,7 @@ import {
   Briefcase,
   Users,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const STATS = [
   { value: '2', label: 'Certification Levels' },
@@ -364,7 +364,7 @@ function CertificatesShowcase() {
         <div className="grid md:grid-cols-2 gap-6">
           <article className="rounded-xl border border-white/10 bg-white/5 p-6">
             <p className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Certificate of Achievement</p>
-            <h3 className="text-white font-semibold mb-2">Issued to: Kevin De</h3>
+            <h3 className="text-white font-semibold mb-2">Issued to: Alex Johnson</h3>
             <p className="text-sm text-white/65">Certified ISO 27001 Associate</p>
             <p className="text-xs text-white/45 mt-3">Certification ID: ISO27-2026-A-SAMPLE1</p>
             <p className="text-xs text-white/45">Awarded On: 22 February 2026</p>
@@ -377,23 +377,6 @@ function CertificatesShowcase() {
             <p className="text-xs text-white/45 mt-3">Certification ID: ISO27-2026-P-SAMPLE1</p>
             <p className="text-xs text-white/45">Awarded On: 22 February 2026</p>
           </article>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function MockInterview() {
-  return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10 text-center">
-      <div className="max-w-3xl mx-auto">
-        <span className="inline-block text-xs text-gold border border-gold/40 rounded-full px-3 py-1 mb-5">New for 2026</span>
-        <h2 className="text-4xl font-serif font-bold text-white mb-4">ISO 27001 <span className="text-gold">Interview Prep</span> Questions</h2>
-        <p className="text-white/65 mb-8">Practice practical ISO 27001 scenarios used by recruiters, audit managers, and consulting interviews.</p>
-
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link to="/mock-interview" className="btn btn-gold">Browse Interview Questions</Link>
-          <Link to="/mock-exam" className="btn btn-outline border-white/30 text-white hover:bg-white/10">Take Mock Exam</Link>
         </div>
       </div>
     </section>
@@ -423,7 +406,7 @@ function BlogSection() {
         <p className="text-white/60 mt-3 mb-10">Stay updated with practical guides, implementation patterns, and audit readiness tips for ISO 27001.</p>
 
         <article className="rounded-xl border border-white/10 bg-white/5 p-6 text-left max-w-3xl mx-auto">
-          <p className="text-xs text-white/45 mb-2">27001certified · 3/17/2026</p>
+          <p className="text-xs text-white/45 mb-2">27001certified</p>
           <h3 className="text-white text-lg font-semibold mb-2">What is ISO 27001:2022? A Practical Guide for ISMS Teams</h3>
           <p className="text-sm text-white/65 mb-4">
             A practical walkthrough of ISO 27001 clauses, risk treatment workflow, Statement of Applicability, and internal audit readiness.
@@ -494,6 +477,20 @@ function FinalCta() {
   )
 }
 
+function Footer() {
+  return (
+    <footer className="bg-ink border-t border-white/10 py-6 px-6 text-center text-xs text-white/40">
+      <p className="mb-2">© {new Date().getFullYear()} 27001certified. All rights reserved.</p>
+      <div className="flex justify-center gap-4">
+        <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</Link>
+        <Link to="/terms" className="hover:text-white/70 transition-colors">Terms of Service</Link>
+        <Link to="/verify" className="hover:text-white/70 transition-colors">Verify Certificate</Link>
+        <Link to="/blog" className="hover:text-white/70 transition-colors">Blog</Link>
+      </div>
+    </footer>
+  )
+}
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-ink">
@@ -506,11 +503,11 @@ export default function LandingPage() {
       <TopicAreas />
       <Levels />
       <CertificatesShowcase />
-      {/* <MockInterview /> */}
       <Audience />
       <BlogSection />
       <Faq />
       <FinalCta />
+      <Footer />
     </div>
   )
 }

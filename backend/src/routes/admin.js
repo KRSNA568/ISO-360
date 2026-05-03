@@ -7,9 +7,16 @@ const router = require('express').Router()
 const crypto = require('crypto')
 const { authenticate } = require('../middlewares/authenticate')
 const { requireAdmin }  = require('../middlewares/requireAdmin')
+const { adminWriteLimiter } = require('../middlewares/rateLimiter')
 const pool = require('../config/db')
 
 router.use(authenticate, requireAdmin)
+
+// Apply write rate limit to all non-GET admin routes
+router.use((req, res, next) => {
+  if (req.method !== 'GET') {return adminWriteLimiter(req, res, next)}
+  next()
+})
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -47,8 +54,8 @@ router.get('/users', async (req, res, next) => {
       params.push(`%${search.trim()}%`)
       conds.push(`(u.email ILIKE $${params.length} OR u.full_name ILIKE $${params.length})`)
     }
-    if (blocked === 'true')  conds.push('u.blocked = TRUE')
-    if (blocked === 'false') conds.push('u.blocked = FALSE')
+    if (blocked === 'true')  {conds.push('u.blocked = TRUE')}
+    if (blocked === 'false') {conds.push('u.blocked = FALSE')}
 
     const where = 'WHERE ' + conds.join(' AND ')
     params.push(size, offset)
@@ -86,7 +93,7 @@ router.post('/users/:id/block', async (req, res, next) => {
        RETURNING id, full_name, email, blocked, blocked_at`,
       [reason, id]
     )
-    if (!rows.length) return res.status(404).json({ error: 'User not found or cannot block an admin.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found or cannot block an admin.' })}
     await auditLog(req.user.sub, 'block_user', 'user', id, { reason }, req.ip)
     res.json({ message: 'User blocked.', user: rows[0] })
   } catch (err) { next(err) }
@@ -102,7 +109,7 @@ router.post('/users/:id/unblock', async (req, res, next) => {
        RETURNING id, full_name, email, blocked`,
       [id]
     )
-    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found.' })}
     await auditLog(req.user.sub, 'unblock_user', 'user', id, {}, req.ip)
     res.json({ message: 'User unblocked.', user: rows[0] })
   } catch (err) { next(err) }
@@ -156,7 +163,7 @@ router.get('/sessions/:id', async (req, res, next) => {
       JOIN users u ON u.id = es.user_id
       WHERE es.id = $1
     `, [req.params.id])
-    if (!rows.length) return res.status(404).json({ error: 'Session not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'Session not found.' })}
     res.json(rows[0])
   } catch (err) { next(err) }
 })
@@ -171,7 +178,7 @@ router.post('/sessions/:id/flag', async (req, res, next) => {
        WHERE id = $2 RETURNING id, suspicious, suspicious_reason`,
       [suspicious_reason, id]
     )
-    if (!rows.length) return res.status(404).json({ error: 'Session not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'Session not found.' })}
     await auditLog(req.user.sub, 'flag_session', 'session', id, { suspicious_reason }, req.ip)
     res.json({ message: 'Session flagged.', session: rows[0] })
   } catch (err) { next(err) }
@@ -188,8 +195,8 @@ router.get('/certificates', async (req, res, next) => {
     const conds  = []
 
     if (track)             { params.push(track); conds.push(`c.track = $${params.length}`) }
-    if (revoked === 'true')  conds.push('c.revoked = TRUE')
-    if (revoked === 'false') conds.push('c.revoked = FALSE')
+    if (revoked === 'true')  {conds.push('c.revoked = TRUE')}
+    if (revoked === 'false') {conds.push('c.revoked = FALSE')}
 
     const where = conds.length ? 'WHERE ' + conds.join(' AND ') : ''
     params.push(size, offset)
@@ -254,7 +261,7 @@ router.patch('/flags/:id', async (req, res, next) => {
       WHERE id = $4
       RETURNING id, status, admin_note, reviewed_at
     `, [status, admin_note || null, req.user.sub, id])
-    if (!rows.length) return res.status(404).json({ error: 'Flag not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'Flag not found.' })}
     await auditLog(req.user.sub, `flag_${status}`, 'question_flag', id, { admin_note }, req.ip)
     res.json({ message: 'Flag updated.', flag: rows[0] })
   } catch (err) { next(err) }
@@ -277,13 +284,13 @@ router.post('/certificates/:id/revoke', async (req, res, next) => {
     const { sendRevocationEmail } = require('../services/emailService')
     pool.query('SELECT email FROM users WHERE id = $1', [cert.user_id])
       .then(({ rows }) => {
-        if (rows.length) return sendRevocationEmail(rows[0].email, cert.full_name, cert.certificate_id, reason)
+        if (rows.length) {return sendRevocationEmail(rows[0].email, cert.full_name, cert.certificate_id, reason)}
       })
       .catch(err => console.error('[Admin] revocation email failed:', err.message))
 
     res.json({ message: 'Certificate revoked.', certificateId: cert.certificate_id, revokedAt: cert.revoked_at })
   } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message })
+    if (err.status) {return res.status(err.status).json({ error: err.message })}
     next(err)
   }
 })
@@ -363,7 +370,7 @@ router.patch('/questions/:id', async (req, res, next) => {
     const { id } = req.params
     const allowed = ['stem','options','correct_option','explanation','clause_ref','difficulty','domain','source','tags']
     const fields  = Object.keys(req.body).filter(k => allowed.includes(k))
-    if (!fields.length) return res.status(400).json({ error: 'Nothing to update.' })
+    if (!fields.length) {return res.status(400).json({ error: 'Nothing to update.' })}
 
     const params = []
     const sets   = fields.map(f => {
@@ -378,7 +385,7 @@ router.patch('/questions/:id', async (req, res, next) => {
        RETURNING *`,
       params
     )
-    if (!rows.length) return res.status(404).json({ error: 'Question not found or already retired.' })
+    if (!rows.length) {return res.status(404).json({ error: 'Question not found or already retired.' })}
     await auditLog(req.user.sub, 'edit_question', 'question', id, { fields }, req.ip)
     res.json({ message: 'Question updated.', question: rows[0] })
   } catch (err) { next(err) }
@@ -392,7 +399,7 @@ router.delete('/questions/:id', async (req, res, next) => {
       'UPDATE buffer_questions SET retired = TRUE, updated_at = NOW() WHERE id = $1 RETURNING id, question_id',
       [id]
     )
-    if (!rows.length) return res.status(404).json({ error: 'Question not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'Question not found.' })}
     await auditLog(req.user.sub, 'retire_question', 'question', id, { question_id: rows[0].question_id }, req.ip)
     res.json({ message: 'Question retired.', questionId: rows[0].question_id })
   } catch (err) { next(err) }

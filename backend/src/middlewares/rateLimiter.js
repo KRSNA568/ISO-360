@@ -42,4 +42,34 @@ const resetLimiter = IS_TEST ? noLimit : rateLimit({
   message: { error: 'Too many password reset requests. Try again in an hour.' },
 })
 
-module.exports = { authLimiter, otpIpLimiter, resetLimiter }
+// ── Session create rate limit — 10 creates / hour per user ─────────────────────
+const sessionCreateLimiter = IS_TEST ? noLimit : rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many exam sessions created. Try again in an hour.' },
+  keyGenerator: (req) => req.user?.sub || req.ip,
+})
+
+// ── Refresh token rate limit — 30 req / 15 min per IP ─────────────────────────
+const refreshLimiter = IS_TEST ? noLimit : rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many token refresh requests. Please try again later.' },
+  keyGenerator: (req) => req.ip,
+})
+
+// ── Admin write rate limit — 60 mutations / 15 min per admin ──────────────────
+const adminWriteLimiter = IS_TEST ? noLimit : rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many admin write requests. Slow down.' },
+  keyGenerator: (req) => req.user?.sub || req.ip,
+})
+
+module.exports = { authLimiter, otpIpLimiter, resetLimiter, sessionCreateLimiter, refreshLimiter, adminWriteLimiter }

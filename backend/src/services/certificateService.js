@@ -217,7 +217,7 @@ async function uploadToStorage(path, buffer, contentType = 'image/jpeg') {
     .from(bucket)
     .upload(path, buffer, { contentType, upsert: true, cacheControl: '31536000' })
 
-  if (error) throw new Error(`Storage upload failed (${path}): ${error.message}`)
+  if (error) {throw new Error(`Storage upload failed (${path}): ${error.message}`)}
 
   const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path)
   return publicUrl
@@ -233,7 +233,7 @@ async function generateUniqueCertId(prefix) {
       'SELECT 1 FROM certificates WHERE certificate_id = $1',
       [certId]
     )
-    if (rows.length === 0) return certId
+    if (rows.length === 0) {return certId}
   }
   throw new Error('Failed to generate unique certificate ID after 10 attempts')
 }
@@ -358,8 +358,8 @@ async function revokeCertificate(certIdOrUuid, adminUserId, reason = '') {
       `SELECT * FROM certificates WHERE id::text = $1 OR certificate_id = $1`,
       [certIdOrUuid]
     )
-    if (check.length === 0) throw Object.assign(new Error('Certificate not found'), { status: 404 })
-    if (check[0].revoked)   throw Object.assign(new Error('Certificate already revoked'), { status: 409 })
+    if (check.length === 0) {throw Object.assign(new Error('Certificate not found'), { status: 404 })}
+    if (check[0].revoked)   {throw Object.assign(new Error('Certificate already revoked'), { status: 409 })}
     throw new Error('Revocation failed')
   }
 

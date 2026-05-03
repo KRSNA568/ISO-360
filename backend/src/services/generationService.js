@@ -58,7 +58,7 @@ function stemHash(stem) {
  * Validate that Groq returned well-formed questions.
  */
 function validateQuestions(questions, expectedCount) {
-  if (!Array.isArray(questions) || questions.length !== expectedCount) return false
+  if (!Array.isArray(questions) || questions.length !== expectedCount) {return false}
   return questions.every(
     (q) =>
       typeof q.stem === 'string' &&

@@ -1,5 +1,7 @@
+import { EXAM_CONFIG }                 from '@27001certified/shared/constants'
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate }      from 'react-router-dom'
+
 import api                             from '@/lib/api'
 
 /**
@@ -7,7 +9,7 @@ import api                             from '@/lib/api'
  * Cannot use axios here because the browser cancels async tasks on unload.
  */
 function fireAbort(sessionId) {
-  if (!sessionId) return
+  if (!sessionId) {return}
   const token = localStorage.getItem('token')
   fetch(`/api/session/${sessionId}/abort`, {
     method:    'POST',
@@ -26,8 +28,8 @@ const TRACK_LABELS = {
 }
 
 const TRACK_TOTALS = {
-  associate:    50,
-  professional: 100,
+  associate:    EXAM_CONFIG.associate.TOTAL_QUESTIONS,
+  professional: EXAM_CONFIG.professional.TOTAL_QUESTIONS,
 }
 
 // ISO wisdom tips shown while generating
@@ -93,7 +95,7 @@ export default function GenerationPage() {
   const { track }  = useParams()
   const navigate   = useNavigate()
 
-  const [sessionId, setSessionId] = useState(null)
+  const [, setSessionId] = useState(null)
   const [status,    setStatus]    = useState('idle')
   const [progress,  setProgress]  = useState({ questionsGenerated: 0, totalQuestions: TRACK_TOTALS[track] || 50, percent: 0 })
   const [tipIndex,  setTipIndex]  = useState(0)
@@ -134,7 +136,7 @@ export default function GenerationPage() {
     }
     // StrictMode in dev calls effects twice (mount → cleanup → remount).
     // This ref persists across the remount so we only ever fire one create.
-    if (creationStartedRef.current) return
+    if (creationStartedRef.current) {return}
     creationStartedRef.current = true
     createSession()
     return () => {

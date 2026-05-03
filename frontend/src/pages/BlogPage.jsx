@@ -1,6 +1,7 @@
+import { ArrowRight, Search, Calendar, User } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Search, Calendar, User } from 'lucide-react'
+
 import { blogPosts } from '@/data/blogs'
 
 // Simple shared Navbar for blog pages
@@ -103,7 +104,7 @@ function BlogFeed({ searchQuery, setSearchQuery }) {
             ))
           ) : (
             <div className="col-span-full py-10 text-center border-t border-b border-white/5 bg-white/5 rounded-2xl">
-              <p className="text-white/60 mb-2">No articles found matching "{searchQuery}".</p>
+              <p className="text-white/60 mb-2">No articles found matching &ldquo;{searchQuery}&rdquo;.</p>
               <button 
                 onClick={() => setSearchQuery('')}
                 className="text-gold text-sm font-medium hover:underline"

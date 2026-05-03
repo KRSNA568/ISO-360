@@ -77,11 +77,11 @@ async function generateReport(sessionId, track, score, passed, topicBreakdown) {
     })
 
     const raw    = response.choices[0]?.message?.content?.trim()
-    if (!raw) throw new Error('Empty response from Groq')
+    if (!raw) {throw new Error('Empty response from Groq')}
 
     // Strip any <think>…</think> reasoning blocks just in case
     const report = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-    if (!report) throw new Error('Report was empty after stripping reasoning block')
+    if (!report) {throw new Error('Report was empty after stripping reasoning block')}
 
     await pool.query(
       'UPDATE exam_sessions SET ai_report = $1 WHERE id = $2',

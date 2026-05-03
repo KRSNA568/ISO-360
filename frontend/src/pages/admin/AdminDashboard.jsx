@@ -1,7 +1,8 @@
+import { TrendingUp } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { adminApi } from '@/lib/apiServices'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { Users, ClipboardList, Award, BookOpen, Flag, TrendingUp } from 'lucide-react'
+
+import { adminApi } from '@/lib/apiServices'
 
 function Stat({ label, value, sub, color = 'text-ink' }) {
   return (
@@ -14,7 +15,7 @@ function Stat({ label, value, sub, color = 'text-ink' }) {
 }
 
 function pct(n, d) {
-  if (!d || d === '0') return '0%'
+  if (!d || d === '0') {return '0%'}
   return `${Math.round((parseInt(n) / parseInt(d)) * 100)}%`
 }
 
@@ -31,8 +32,8 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="p-10 text-ink-muted animate-pulse">Loading…</div>
-  if (error)   return <div className="p-10 text-red-600">{error}</div>
+  if (loading) {return <div className="p-10 text-ink-muted animate-pulse">Loading…</div>}
+  if (error)   {return <div className="p-10 text-red-600">{error}</div>}
 
   const u = kpis.users
   const s = kpis.sessions

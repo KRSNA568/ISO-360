@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, useParams }             from 'react-router-dom'
 import {
   CheckCircle2, XCircle, RotateCcw, LayoutDashboard,
   TrendingUp, FileText, AlertTriangle, BookOpen, Flag, Shield,
   Award, Download, Copy, ExternalLink, Check,
 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown                   from 'react-markdown'
+import { Link, useParams }             from 'react-router-dom'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   Radar, ResponsiveContainer,
 } from 'recharts'
+
 import AppNavbar    from '@/components/layout/AppNavbar'
 import { resultsApi } from '@/lib/apiServices'
 
@@ -27,78 +29,41 @@ function shortDomain(name = '') {
 
 /** Colour a % score for progress bars */
 function scoreColor(pct) {
-  if (pct >= 80) return 'bg-emerald-500'
-  if (pct >= 60) return 'bg-gold'
+  if (pct >= 80) {return 'bg-emerald-500'}
+  if (pct >= 60) {return 'bg-gold'}
   return 'bg-red-500'
 }
 
-/** Very simple markdown → JSX. Handles ##, ###, **bold**, - bullets */
+const MD_COMPONENTS = {
+  h2:     ({ children }) => (
+    <h2 className="text-base font-semibold text-ink mt-6 mb-2 pb-1.5 border-b border-border flex items-center gap-2">
+      <span className="w-1 h-4 rounded-full bg-gold flex-shrink-0" />
+      {children}
+    </h2>
+  ),
+  h3:     ({ children }) => (
+    <h3 className="text-sm font-semibold text-ink-secondary mt-4 mb-1.5">{children}</h3>
+  ),
+  p:      ({ children }) => (
+    <p className="text-sm text-ink-secondary leading-relaxed my-1.5">{children}</p>
+  ),
+  ul:     ({ children }) => <ul className="space-y-1.5 my-3 ml-4">{children}</ul>,
+  li:     ({ children }) => (
+    <li className="flex items-start gap-2 text-sm text-ink-secondary leading-relaxed">
+      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
+      <span>{children}</span>
+    </li>
+  ),
+  strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
+}
+
 function MarkdownBlock({ content }) {
-  if (!content) return null
-
-  function parseInline(str) {
-    const parts = str.split(/(\*\*[^*]+\*\*)/)
-    return parts.map((p, i) =>
-      p.startsWith('**') && p.endsWith('**')
-        ? <strong key={i} className="font-semibold text-ink">{p.slice(2, -2)}</strong>
-        : p
-    )
-  }
-
-  const elements = []
-  let listItems  = []
-  let key        = 0
-
-  const flushList = () => {
-    if (listItems.length) {
-      elements.push(
-        <ul key={key++} className="space-y-1.5 my-3 ml-4">
-          {listItems}
-        </ul>
-      )
-      listItems = []
-    }
-  }
-
-  for (const rawLine of content.split('\n')) {
-    const line = rawLine.trimEnd()
-
-    if (line.startsWith('## ')) {
-      flushList()
-      elements.push(
-        <h2 key={key++} className="text-base font-semibold text-ink mt-6 mb-2 pb-1.5 border-b border-border flex items-center gap-2">
-          <span className="w-1 h-4 rounded-full bg-gold flex-shrink-0" />
-          {parseInline(line.slice(3))}
-        </h2>
-      )
-    } else if (line.startsWith('### ')) {
-      flushList()
-      elements.push(
-        <h3 key={key++} className="text-sm font-semibold text-ink-secondary mt-4 mb-1.5">
-          {parseInline(line.slice(4))}
-        </h3>
-      )
-    } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      listItems.push(
-        <li key={key++} className="flex items-start gap-2 text-sm text-ink-secondary leading-relaxed">
-          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gold flex-shrink-0" />
-          <span>{parseInline(line.slice(2))}</span>
-        </li>
-      )
-    } else if (line === '') {
-      flushList()
-    } else {
-      flushList()
-      elements.push(
-        <p key={key++} className="text-sm text-ink-secondary leading-relaxed my-1.5">
-          {parseInline(line)}
-        </p>
-      )
-    }
-  }
-  flushList()
-
-  return <div className="markdown-body">{elements}</div>
+  if (!content) {return null}
+  return (
+    <div className="markdown-body">
+      <ReactMarkdown components={MD_COMPONENTS}>{content}</ReactMarkdown>
+    </div>
+  )
 }
 
 // ── Skeleton component ────────────────────────────────────────────────────────
@@ -140,7 +105,7 @@ function QuestionReview({ questions, sessionId }) {
   const [flagging, setFlagging] = useState({})
 
   async function handleFlag(q) {
-    if (flagged[q.id] || flagging[q.id]) return
+    if (flagged[q.id] || flagging[q.id]) {return}
     setFlagging(prev => ({ ...prev, [q.id]: true }))
     try {
       await resultsApi.flagQuestion(q.id, {
@@ -156,7 +121,7 @@ function QuestionReview({ questions, sessionId }) {
     }
   }
 
-  if (!questions?.length) return null
+  if (!questions?.length) {return null}
 
   const correctCount = questions.filter(q => q.correct).length
 
@@ -215,8 +180,8 @@ function QuestionReview({ questions, sessionId }) {
                         const isUser    = q.userAnswer    === key
                         const isCorrect = q.correctOption === key
                         let cls = 'border-border text-ink-secondary bg-transparent'
-                        if (isCorrect)                cls = 'border-emerald-400 bg-emerald-50 text-emerald-800'
-                        else if (isUser && !isCorrect) cls = 'border-red-400 bg-red-50 text-red-800'
+                        if (isCorrect)                {cls = 'border-emerald-400 bg-emerald-50 text-emerald-800'}
+                        else if (isUser && !isCorrect) {cls = 'border-red-400 bg-red-50 text-red-800'}
                         return (
                           <div
                             key={key}
@@ -359,7 +324,7 @@ function CertificateCard({ certificate, trackLabel, sessionId }) {
   const verifyUrl    = certificate ? `${FRONTEND_URL}/verify/${certificate.certificateId}` : ''
 
   function handleCopy() {
-    if (!verifyUrl) return
+    if (!verifyUrl) {return}
     navigator.clipboard.writeText(verifyUrl).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -367,7 +332,7 @@ function CertificateCard({ certificate, trackLabel, sessionId }) {
   }
 
   function linkedInShare() {
-    if (!certificate) return
+    if (!certificate) {return}
     const params = new URLSearchParams({
       startTask:             'CERTIFICATION_NAME',
       name:                  `ISO 27001 — ${trackLabel}`,
@@ -400,6 +365,13 @@ function CertificateCard({ certificate, trackLabel, sessionId }) {
           <Skeleton className="h-10 w-full rounded-lg mt-3" />
           <p className="text-xs text-ink-muted text-center pt-1">
             Certificate is being generated — usually ready in under 30 seconds.
+          </p>
+        </div>
+      ) : certificate.status === 'failed' ? (
+        <div className="py-4 text-center space-y-2">
+          <p className="text-sm text-red-600 font-medium">Certificate generation failed.</p>
+          <p className="text-xs text-ink-muted">
+            Please contact <a href="mailto:support@27001certified.app" className="underline hover:text-ink">support@27001certified.app</a> with your session ID: <span className="font-mono">{sessionId}</span>
           </p>
         </div>
       ) : (
@@ -544,9 +516,9 @@ export default function ResultsPage() {
       setData(d)
       setPhase('ready')
 
-      // Stop polling once aiReport AND certificate (if passed) have arrived
-      const certReady = !d.passed || d.certificate !== null
-      if (d.aiReport && certReady && pollRef.current) {
+      // Stop polling once aiReport AND certificate (if passed) have arrived or failed
+      const certSettled = !d.passed || d.certificate !== null
+      if (d.aiReport && certSettled && pollRef.current) {
         clearInterval(pollRef.current)
         pollRef.current = null
         if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null }
@@ -573,14 +545,14 @@ export default function ResultsPage() {
       }
       // Only mark failed if we still don't have the report
       setData(prev => {
-        if (prev && !prev.aiReport) setReportFailed(true)
+        if (prev && !prev.aiReport) {setReportFailed(true)}
         return prev
       })
     }, AI_REPORT_TIMEOUT)
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (pollRef.current) {clearInterval(pollRef.current)}
+      if (timeoutRef.current) {clearTimeout(timeoutRef.current)}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId])

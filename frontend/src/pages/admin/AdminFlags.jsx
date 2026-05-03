@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '@/lib/apiServices'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+
+import { adminApi } from '@/lib/apiServices'
 
 function Badge({ children, color }) {
   const map = { green: 'bg-green-100 text-green-700', red: 'bg-red-100 text-red-700', gray: 'bg-surface text-ink-muted', yellow: 'bg-yellow-100 text-yellow-700', blue: 'bg-blue-100 text-blue-700', purple: 'bg-purple-100 text-purple-700' }
@@ -22,7 +23,7 @@ function ReviewModal({ flag, onClose, onDone }) {
   const [err, setErr]       = useState(null)
 
   async function submit() {
-    if (!action) return setErr('Select an action.')
+    if (!action) {return setErr('Select an action.')}
     setSaving(true)
     try {
       await adminApi.updateFlag(flag.id, { status: action, admin_note: note })
@@ -42,7 +43,7 @@ function ReviewModal({ flag, onClose, onDone }) {
           <p className="font-medium text-ink">{flag.user_full_name} <span className="text-ink-muted font-normal">({flag.user_email})</span></p>
           <p className="text-ink-muted text-xs">{flag.session_track?.toUpperCase()} session</p>
           <p className="text-ink mt-1 leading-snug">Q: {flag.question_stem?.slice(0, 120)}{flag.question_stem?.length > 120 ? '…' : ''}</p>
-          <p className="text-ink-muted italic mt-1">"{flag.flag_reason}"</p>
+          <p className="text-ink-muted italic mt-1">&ldquo;{flag.flag_reason}&rdquo;</p>
         </div>
 
         {err && <p className="text-sm text-red-600 mb-3">{err}</p>}
@@ -94,7 +95,7 @@ export default function AdminFlags() {
   const load = useCallback(() => {
     setLoading(true)
     const p = { page, limit: PAGE_SIZE }
-    if (status) p.status = status
+    if (status) {p.status = status}
     adminApi.getFlags(p)
       .then(r => { setFlags(r.data.flags); setTotal(r.data.total) })
       .catch(() => {})

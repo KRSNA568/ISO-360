@@ -151,17 +151,25 @@ describe('Session — State Machine Enforcement', () => {
   })
 
   it('should return 400 when trying to submit an already-completed session', async () => {
-    pool.query.mockResolvedValueOnce({
-      rows: [{
-        id:           SESSION_B_ID,
-        track:        'associate',
-        status:       'completed',
-        questions:    [],
-        answers:      [],
-        tab_violations: 0,
-        started_at:   new Date(),
-      }],
-    })
+    // Submit uses a pg transaction — mock the client returned by pool.connect()
+    const mockClient = {
+      query: jest.fn()
+        .mockResolvedValueOnce({})  // BEGIN
+        .mockResolvedValueOnce({    // SELECT ... FOR UPDATE
+          rows: [{
+            id:             SESSION_B_ID,
+            track:          'associate',
+            status:         'completed',
+            questions:      [],
+            answers:        [],
+            tab_violations: 0,
+            started_at:     new Date(),
+          }],
+        })
+        .mockResolvedValueOnce({}), // ROLLBACK (idempotent early-return path)
+      release: jest.fn(),
+    }
+    pool.connect.mockResolvedValueOnce(mockClient)
 
     const res = await request(app)
       .post(`/api/session/${SESSION_B_ID}/submit`)
@@ -171,6 +179,7 @@ describe('Session — State Machine Enforcement', () => {
     // The route returns 200 with alreadyScored: true (idempotent design)
     expect(res.status).toBe(200)
     expect(res.body.alreadyScored).toBe(true)
+    expect(mockClient.release).toHaveBeenCalled()
   })
 })
 

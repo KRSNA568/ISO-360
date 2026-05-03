@@ -14,34 +14,36 @@ if (isHttpUrl || !url) {
    *      → fix: use  rediss://:<token>@<host>.upstash.io:6379
    */
   redis = {
-    incr:   () => Promise.reject(new Error('Redis not configured (HTTP URL)')),
-    expire: () => Promise.reject(new Error('Redis not configured')),
-    ttl:    () => Promise.reject(new Error('Redis not configured')),
-    get:    () => Promise.reject(new Error('Redis not configured')),
-    set:    () => Promise.reject(new Error('Redis not configured')),
-    del:    () => Promise.reject(new Error('Redis not configured')),
-    on:     () => {},
+    healthy: false,
+    incr:    () => Promise.reject(new Error('Redis not configured (HTTP URL)')),
+    expire:  () => Promise.reject(new Error('Redis not configured')),
+    ttl:     () => Promise.reject(new Error('Redis not configured')),
+    get:     () => Promise.reject(new Error('Redis not configured')),
+    set:     () => Promise.reject(new Error('Redis not configured')),
+    del:     () => Promise.reject(new Error('Redis not configured')),
+    on:      () => {},
   }
   console.warn(
     isHttpUrl
-      ? '⚠  Redis: REDIS_URL is HTTP/HTTPS (Upstash REST). ioredis needs rediss://:<token>@host:6379. Rate limits fail-open.'
-      : '⚠  Redis: REDIS_URL not set. Running without Redis — rate limits fail-open.',
+      ? '⚠  Redis: REDIS_URL is HTTP/HTTPS (Upstash REST). ioredis needs rediss://:<token>@host:6379. OTP rate limits will fail-closed in production.'
+      : '⚠  Redis: REDIS_URL not set. Running without Redis — OTP rate limits will fail-closed in production.',
   )
 } else {
-  redis = new Redis(url, {
-    // lazyConnect=false so we get a startup warning immediately on bad credentials
+  const client = new Redis(url, {
     lazyConnect:          false,
     enableReadyCheck:     true,
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
-      if (times > 5) return null          // stop retrying after 5 attempts
-      return Math.min(times * 300, 3000)  // exponential back-off up to 3s
+      if (times > 5) {return null}
+      return Math.min(times * 300, 3000)
     },
     tls: url.startsWith('rediss://') ? {} : undefined,
   })
-  redis.on('ready',  () => console.log('✅  Redis connected'))
-  redis.on('error',  (err) => console.warn('⚠  Redis error:', err.message))
-  redis.on('close',  () => console.warn('⚠  Redis connection closed'))
+  client.healthy = false
+  client.on('ready',  () => { client.healthy = true;  console.log('✅  Redis connected') })
+  client.on('error',  (err) => { client.healthy = false; console.warn('⚠  Redis error:', err.message) })
+  client.on('close',  () => { client.healthy = false; console.warn('⚠  Redis connection closed') })
+  redis = client
 }
 
 module.exports = redis

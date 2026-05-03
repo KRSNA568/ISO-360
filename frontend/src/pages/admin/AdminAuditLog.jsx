@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '@/lib/apiServices'
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRt } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+
+import { adminApi } from '@/lib/apiServices'
 
 const ACTION_COLOR = {
   block_user:    'bg-red-100 text-red-700',
@@ -19,7 +20,7 @@ const PAGE_SIZE = 50
 
 function MetaCell({ meta }) {
   const [open, setOpen] = useState(false)
-  if (!meta || Object.keys(meta).length === 0) return <span className="text-ink-muted">—</span>
+  if (!meta || Object.keys(meta).length === 0) {return <span className="text-ink-muted">—</span>}
   return (
     <div>
       <button onClick={() => setOpen(o => !o)} className="text-xs text-ink-muted hover:text-ink flex items-center gap-0.5">
@@ -47,8 +48,8 @@ export default function AdminAuditLog() {
   const load = useCallback(() => {
     setLoading(true)
     const p = { page, limit: PAGE_SIZE }
-    if (action)     p.action = action
-    if (targetType) p.target_type = targetType
+    if (action)     {p.action = action}
+    if (targetType) {p.target_type = targetType}
     adminApi.getAuditLog(p)
       .then(r => { setRows(r.data.logs); setTotal(r.data.total) })
       .catch(() => {})

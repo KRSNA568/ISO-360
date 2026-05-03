@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '@/lib/apiServices'
 import { Plus, Pencil, Archive, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+
+import { adminApi } from '@/lib/apiServices'
 
 function Badge({ children, color }) {
   const map = { green: 'bg-green-100 text-green-700', red: 'bg-red-100 text-red-700', gray: 'bg-surface text-ink-muted', yellow: 'bg-yellow-100 text-yellow-700', blue: 'bg-blue-100 text-blue-700' }
@@ -22,7 +23,7 @@ function QuestionModal({ initial, onSave, onClose }) {
 
   async function submit(e) {
     e.preventDefault()
-    if (!form.stem.trim()) return setErr('Stem is required.')
+    if (!form.stem.trim()) {return setErr('Stem is required.')}
     setSaving(true)
     try { await onSave(form) }
     catch (e) { setErr(e?.response?.data?.error || 'Failed to save.'); setSaving(false) }
@@ -145,11 +146,11 @@ export default function AdminQuestions() {
   const load = useCallback(() => {
     setLoading(true)
     const p = { page, limit: PAGE_SIZE }
-    if (track)      p.track = track
-    if (domain)     p.domain = domain
-    if (difficulty) p.difficulty = difficulty
-    if (search)     p.search = search
-    if (showRetired) p.retired = 'true'
+    if (track)      {p.track = track}
+    if (domain)     {p.domain = domain}
+    if (difficulty) {p.difficulty = difficulty}
+    if (search)     {p.search = search}
+    if (showRetired) {p.retired = 'true'}
     adminApi.getQuestions(p)
       .then(r => { setQuestions(r.data.questions); setTotal(r.data.total) })
       .catch(() => {})
@@ -171,7 +172,7 @@ export default function AdminQuestions() {
   }
 
   async function handleRetire(id) {
-    if (!confirm('Archive/retire this question? It will no longer appear in new exams.')) return
+    if (!confirm('Archive/retire this question? It will no longer appear in new exams.')) {return}
     try {
       await adminApi.retireQuestion(id)
       flash$('Question archived.')

@@ -1,6 +1,8 @@
+import DOMPurify from 'dompurify'
+import { ArrowLeft, Calendar, User, Clock, Share2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, User, Clock, Share2 } from 'lucide-react'
+
 import { blogPosts } from '@/data/blogs'
 import { BlogNavbar } from '@/pages/BlogPage'
 
@@ -75,7 +77,7 @@ export default function BlogPostPage() {
           prose-ol:list-decimal prose-ol:pl-6
           prose-li:mb-2
           "
-          dangerouslySetInnerHTML={{ __html: post.content }} 
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
         />
         
         {/* Footer actions */}

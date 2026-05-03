@@ -1,10 +1,13 @@
+import { EXAM_CONFIG } from '@27001certified/shared/constants'
+import { Clock, Award, BookOpen, Zap, ChevronRight, RotateCcw, Download, ExternalLink } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Clock, Award, BookOpen, Zap, ChevronRight, RotateCcw, Download, ExternalLink } from 'lucide-react'
+
+import AppNavbar from '@/components/layout/AppNavbar'
 import { useAuth } from '@/context/AuthContext'
 import { userApi } from '@/lib/apiServices'
-import AppNavbar from '@/components/layout/AppNavbar'
 import { cn } from '@/lib/cn'
+
 
 // ─── Track data ─────────────────────────────────────────────────────────────────────────
 
@@ -17,9 +20,9 @@ const TRACKS = [
     accentClass: 'border-blue-200 bg-blue-50',
     iconClass:   'text-blue-600 bg-blue-100',
     icon:        BookOpen,
-    questions:   50,
-    time:        '15 min',
-    pass:        '80%',
+    questions:   EXAM_CONFIG.associate.TOTAL_QUESTIONS,
+    time:        `${EXAM_CONFIG.associate.EXAM_DURATION_SECONDS / 60} min`,
+    pass:        `${EXAM_CONFIG.associate.PASS_THRESHOLD_PCT}%`,
   },
   {
     slug:        'professional',
@@ -29,9 +32,9 @@ const TRACKS = [
     accentClass: 'border-amber-200 bg-amber-50',
     iconClass:   'text-amber-700 bg-amber-100',
     icon:        Zap,
-    questions:   100,
-    time:        '30 min',
-    pass:        '80%',
+    questions:   EXAM_CONFIG.professional.TOTAL_QUESTIONS,
+    time:        `${EXAM_CONFIG.professional.EXAM_DURATION_SECONDS / 60} min`,
+    pass:        `${EXAM_CONFIG.professional.PASS_THRESHOLD_PCT}%`,
   },
 ]
 
@@ -93,7 +96,7 @@ function CertificatesSection({ certs, loading }) {
     )
   }
 
-  if (!certs.length) return null  // Don't show section if no certs yet
+  if (!certs.length) {return null}  // Don't show section if no certs yet
 
   const TRACK_LABEL = { associate: 'Associate', professional: 'Professional' }
 

@@ -9,7 +9,7 @@ router.get('/verify/:certId', async (req, res, next) => {
     const { certId } = req.params
 
     const { rows } = await pool.query(
-      `SELECT certificate_id, full_name, track, score, awarded_on,
+      `SELECT certificate_id, track, awarded_on,
               revoked, revoked_reason, revoked_at
        FROM certificates
        WHERE certificate_id = $1`,
@@ -23,12 +23,10 @@ router.get('/verify/:certId', async (req, res, next) => {
     const cert = rows[0]
     return res.json({
       certificateId: cert.certificate_id,
-      fullName:      cert.full_name,
       track:         cert.track,
       trackLabel:    cert.track === 'associate'
                        ? 'Associate — ISMS Foundation'
                        : 'Professional — Lead Auditor',
-      score:         cert.score,
       awardedOn:     cert.awarded_on,
       valid:         !cert.revoked,
       revoked:       cert.revoked,

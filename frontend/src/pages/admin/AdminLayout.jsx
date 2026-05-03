@@ -1,9 +1,10 @@
-import { NavLink, Outlet, Navigate, Link } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
 import {
   LayoutDashboard, Users, ClipboardList, Award,
   BookOpen, Flag, ScrollText, ArrowLeft, ShieldAlert,
 } from 'lucide-react'
+import { NavLink, Outlet, Navigate, Link } from 'react-router-dom'
+
+import { useAuth } from '@/context/AuthContext'
 
 const NAV = [
   { to: '/admin',              label: 'Dashboard',    icon: LayoutDashboard, end: true },
@@ -25,8 +26,8 @@ export default function AdminLayout() {
       </div>
     )
   }
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
+  if (!isAuthenticated) {return <Navigate to="/login" replace />}
+  if (user?.role !== 'admin') {return <Navigate to="/dashboard" replace />}
 
   return (
     <div className="flex min-h-screen bg-surface">

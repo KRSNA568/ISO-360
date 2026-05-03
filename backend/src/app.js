@@ -15,17 +15,32 @@ const { errorHandler } = require('./middlewares/errorHandler')
 const app = express()
 
 // ── Security & Parsing ──────────────────────────────────────────────────────
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+}))
 const ALLOWED_ORIGINS = (process.env.FRONTEND_URL || 'http://localhost:3000')
   .split(',')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean)
 
+const IS_PROD = process.env.NODE_ENV === 'production'
+
 app.use(cors({
   origin(origin, callback) {
-    // Allow server-to-server requests and tools without an Origin header.
-    if (!origin) return callback(null, true)
-    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true)
+    if (!origin) {
+      if (!IS_PROD) {return callback(null, true)}
+      return callback(new Error('CORS: origin required'))
+    }
+    // In dev, allow any localhost port so Vite port-shifts don't break the API
+    if (!IS_PROD && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+      return callback(null, true)
+    }
+    if (ALLOWED_ORIGINS.includes(origin)) {return callback(null, true)}
     return callback(new Error('CORS: origin not allowed'))
   },
   credentials: true,
@@ -38,15 +53,21 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'))
 }
 
-// ── Health check (includes live DB probe) ──────────────────────────────────
-app.get('/api/health', async (_req, res) => {
+// ── Health checks ───────────────────────────────────────────────────────────
+app.get('/api/live', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+async function readyHandler(_req, res) {
   try {
     await require('./config/db').query('SELECT 1')
     res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() })
-  } catch (err) {
-    res.status(503).json({ status: 'degraded', db: 'error', error: err.message, timestamp: new Date().toISOString() })
+  } catch {
+    res.status(503).json({ status: 'degraded', db: 'error', timestamp: new Date().toISOString() })
   }
-})
+}
+app.get('/api/ready',  readyHandler)
+app.get('/api/health', readyHandler)  // backward-compat alias
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRouter)

@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+
 import { cn } from '@/lib/cn'
 
 /**
@@ -26,7 +27,7 @@ export default function OtpInput({ value = '', onChange, disabled = false, error
   function handleChange(i, e) {
     const ch = e.target.value.replace(/\D/g, '').slice(-1)
     updateChar(i, ch || ' ')
-    if (ch && i < 5) inputsRef.current[i + 1]?.focus()
+    if (ch && i < 5) {inputsRef.current[i + 1]?.focus()}
   }
 
   function handleKeyDown(i, e) {

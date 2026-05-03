@@ -45,7 +45,7 @@ router.get('/me', async (req, res, next) => {
       [req.user.sub]
     )
 
-    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found.' })}
 
     const u = rows[0]
     res.json({
@@ -96,7 +96,7 @@ router.patch('/me', async (req, res, next) => {
       [...values, req.user.sub]
     )
 
-    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found.' })}
     res.json(rows[0])
   } catch (err) { next(err) }
 })
@@ -112,7 +112,7 @@ router.delete('/me', async (req, res, next) => {
        RETURNING id`,
       [req.user.sub]
     )
-    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found.' })}
 
     await revokeAllRefreshTokens(req.user.sub)
 

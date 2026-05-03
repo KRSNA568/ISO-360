@@ -3,6 +3,7 @@ const { z }  = require('zod')
 
 const pool               = require('../config/db')
 const { authenticate }   = require('../middlewares/authenticate')
+const { sessionCreateLimiter } = require('../middlewares/rateLimiter')
 // const { generate }       = require('../services/generationService')  // AI generation — kept but disabled; switch back by uncommenting
 const { generateReport } = require('../services/reportService')
 const { drawQuestions }  = require('../services/questionBankService')
@@ -25,7 +26,7 @@ function stripAnswers(q) {
 function buildAnswerMap(answersArray) {
   const map = {}
   for (const a of (answersArray || [])) {
-    if (a.question_id && a.selected_option) map[a.question_id] = a.selected_option
+    if (a.question_id && a.selected_option) {map[a.question_id] = a.selected_option}
   }
   return map
 }
@@ -66,7 +67,7 @@ const createSchema = z.object({
   track: z.enum(['associate', 'professional']),
 })
 
-router.post('/create', async (req, res, next) => {
+router.post('/create', sessionCreateLimiter, async (req, res, next) => {
   try {
     const parsed = createSchema.safeParse(req.body)
     if (!parsed.success) {
@@ -254,12 +255,15 @@ router.post('/:id/start', async (req, res, next) => {
       [id, userId],
     )
 
-    if (rows.length === 0) return res.status(404).json({ error: 'Session not found.' })
+    if (rows.length === 0) {return res.status(404).json({ error: 'Session not found.' })}
 
     const session = rows[0]
 
     // Resume: already active (e.g. page refresh)
     if (session.status === 'active') {
+      if ((session.remaining || 0) <= 0) {
+        return res.status(410).json({ error: 'Session has expired.', redirect: `/results/${id}` })
+      }
       return res.json({
         questions:        (session.questions || []).map(stripAnswers),
         remaining:        Math.max(0, session.remaining || 0),
@@ -368,28 +372,40 @@ router.post('/:id/answer', async (req, res, next) => {
 
 // ── POST /api/session/:id/submit ──────────────────────────────────────────────
 // Scores the exam, marks completed, fires AI report generation async.
+// Wrapped in a transaction with SELECT FOR UPDATE to prevent double-scoring.
 router.post('/:id/submit', async (req, res, next) => {
+  let client
   try {
+    client = await pool.connect()
     const { id } = req.params
     const userId = req.user.sub
 
-    const { rows } = await pool.query(
+    await client.query('BEGIN')
+
+    // Lock the session row — prevents concurrent submits from double-scoring
+    const { rows } = await client.query(
       `SELECT id, track, status, questions, answers, tab_violations, started_at
        FROM exam_sessions
-       WHERE id = $1 AND user_id = $2`,
+       WHERE id = $1 AND user_id = $2
+       FOR UPDATE`,
       [id, userId],
     )
 
-    if (rows.length === 0) return res.status(404).json({ error: 'Session not found.' })
+    if (rows.length === 0) {
+      await client.query('ROLLBACK')
+      return res.status(404).json({ error: 'Session not found.' })
+    }
 
     const session = rows[0]
 
-    // Idempotent: already scored
+    // Idempotent: already scored — safe to return without re-scoring
     if (session.status === 'completed') {
+      await client.query('ROLLBACK')
       return res.json({ sessionId: id, alreadyScored: true })
     }
 
     if (!['active', 'expired'].includes(session.status)) {
+      await client.query('ROLLBACK')
       return res.status(400).json({ error: `Cannot submit a session with status "${session.status}".` })
     }
 
@@ -435,11 +451,11 @@ router.post('/:id/submit', async (req, res, next) => {
 
     const suspiciousReasons = []
     if (avgSecsPerQ < INTEGRITY_THRESHOLDS.SUSPICIOUS_AVG_SECONDS_PER_Q)
-      suspiciousReasons.push(`avg ${avgSecsPerQ.toFixed(1)}s/question (threshold: ${INTEGRITY_THRESHOLDS.SUSPICIOUS_AVG_SECONDS_PER_Q}s)`)
+      {suspiciousReasons.push(`avg ${avgSecsPerQ.toFixed(1)}s/question (threshold: ${INTEGRITY_THRESHOLDS.SUSPICIOUS_AVG_SECONDS_PER_Q}s)`)}
     if (tabViolations >= INTEGRITY_THRESHOLDS.SUSPICIOUS_TAB_VIOLATIONS)
-      suspiciousReasons.push(`${tabViolations} tab violations`)
+      {suspiciousReasons.push(`${tabViolations} tab violations`)}
     if (durationSecs < INTEGRITY_THRESHOLDS.SUSPICIOUS_TOTAL_SECONDS)
-      suspiciousReasons.push(`completed in ${durationSecs}s (threshold: ${INTEGRITY_THRESHOLDS.SUSPICIOUS_TOTAL_SECONDS}s)`)
+      {suspiciousReasons.push(`completed in ${durationSecs}s (threshold: ${INTEGRITY_THRESHOLDS.SUSPICIOUS_TOTAL_SECONDS}s)`)}
 
     const suspicious       = suspiciousReasons.length > 0
     const suspiciousReason = suspicious ? suspiciousReasons.join('; ') : null
@@ -458,8 +474,8 @@ router.post('/:id/submit', async (req, res, next) => {
       thread:        q.thread,
     }))
 
-    // ── Persist ────────────────────────────────────────────────────────────
-    await pool.query(
+    // ── Persist within transaction ─────────────────────────────────────────
+    await client.query(
       `UPDATE exam_sessions
        SET status             = 'completed',
            score              = $2,
@@ -474,18 +490,19 @@ router.post('/:id/submit', async (req, res, next) => {
       [id, correctCount, passed, JSON.stringify(topicBreakdown), suspicious, suspiciousReason, JSON.stringify(reviews)],
     )
 
+    await client.query('COMMIT')
+
     console.log(
       `[Session] ✅ ${id} completed — ${correctCount}/${config.TOTAL_QUESTIONS} ` +
       `(${scorePct}%) ${passed ? 'PASS' : 'FAIL'}` +
       (suspicious ? ' ⚠ flagged suspicious' : ''),
     )
 
-    // Fire AI report async (non-blocking)
+    // Fire AI report async (non-blocking, after commit)
     generateReport(id, session.track, correctCount, passed, topicBreakdown).catch(() => {})
 
     // Fire certificate generation async if candidate passed
     if (passed) {
-      // Fetch user full_name + email for the certificate
       pool.query('SELECT full_name, email FROM users WHERE id = $1', [userId])
         .then(async ({ rows: uRows }) => {
           const fullName  = uRows.length > 0 ? uRows[0].full_name : 'Candidate'
@@ -494,29 +511,38 @@ router.post('/:id/submit', async (req, res, next) => {
           const { generateCertificate }  = require('../services/certificateService')
           const { sendCertificateEmail } = require('../services/emailService')
 
-          const cert = await generateCertificate({
-            sessionId:      id,
-            userId,
-            track:          session.track,
-            fullName,
-            score:          correctCount,
-            totalQuestions: config.TOTAL_QUESTIONS,
-            awardedOn:      new Date(),
-          })
+          try {
+            const cert = await generateCertificate({
+              sessionId:      id,
+              userId,
+              track:          session.track,
+              fullName,
+              score:          correctCount,
+              totalQuestions: config.TOTAL_QUESTIONS,
+              awardedOn:      new Date(),
+            })
 
-          if (cert && userEmail) {
-            const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')
-            const verifyUrl   = `${frontendUrl}/verify/${cert.certificate_id}`
-            const trackLabel  = session.track === 'associate'
-              ? 'Associate — ISMS Foundation'
-              : 'Professional — Lead Auditor'
-            await sendCertificateEmail(
-              userEmail, fullName, cert.certificate_id,
-              trackLabel, cert.r2_url_landscape, verifyUrl
+            if (cert && userEmail) {
+              const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '')
+              const verifyUrl   = `${frontendUrl}/verify/${cert.certificate_id}`
+              const trackLabel  = session.track === 'associate'
+                ? 'Associate — ISMS Foundation'
+                : 'Professional — Lead Auditor'
+              await sendCertificateEmail(
+                userEmail, fullName, cert.certificate_id,
+                trackLabel, cert.r2_url_landscape, verifyUrl
+              ).catch(() => {})
+            }
+          } catch (certErr) {
+            console.error('[Cert] async generation failed for session', id, ':', certErr.message)
+            // Mark cert as failed so frontend can show status instead of infinite spinner
+            pool.query(
+              'UPDATE exam_sessions SET cert_failed = TRUE WHERE id = $1',
+              [id],
             ).catch(() => {})
           }
         })
-        .catch(err => console.error('[Cert] async generation error:', err.message))
+        .catch(err => console.error('[Cert] user lookup failed for session', id, ':', err.message))
     }
 
     return res.json({
@@ -527,7 +553,12 @@ router.post('/:id/submit', async (req, res, next) => {
       passPct:        scorePct,
       passThreshold:  config.PASS_THRESHOLD,
     })
-  } catch (err) { next(err) }
+  } catch (err) {
+    await client?.query('ROLLBACK').catch(() => {})
+    next(err)
+  } finally {
+    client?.release()
+  }
 })
 
 // ── POST /api/session/:id/heartbeat ──────────────────────────────────────────
@@ -559,7 +590,7 @@ router.get('/:id/report', async (req, res, next) => {
     const { rows } = await pool.query(
       `SELECT s.id, s.track, s.status, s.score, s.passed,
               s.topic_breakdown, s.ai_report, s.completed_at,
-              s.suspicious, s.suspicious_reason, s.answers,
+              s.suspicious, s.suspicious_reason, s.answers, s.cert_failed,
               c.certificate_id, c.r2_url_landscape, c.r2_url_square, c.revoked
        FROM exam_sessions s
        LEFT JOIN certificates c ON c.exam_session_id = s.id
@@ -567,7 +598,7 @@ router.get('/:id/report', async (req, res, next) => {
       [id, userId],
     )
 
-    if (rows.length === 0) return res.status(404).json({ error: 'Session not found.' })
+    if (rows.length === 0) {return res.status(404).json({ error: 'Session not found.' })}
 
     const s = rows[0]
     if (s.status !== 'completed') {
@@ -591,13 +622,18 @@ router.get('/:id/report', async (req, res, next) => {
       suspicious:       s.suspicious       || false,
       suspiciousReason: s.suspicious_reason || null,
       questionReviews:  s.answers          || [],     // full per-question review with revealed answers
-      // Certificate (null until generated, ~5s after submit)
-      certificate: s.certificate_id ? {
-        certificateId: s.certificate_id,
-        landscapeUrl:  s.r2_url_landscape || null,
-        squareUrl:     s.r2_url_square    || null,
-        revoked:       s.revoked          || false,
-      } : null,
+      // Certificate — null=still generating, status:'failed'=generation error
+      certificate: s.certificate_id
+        ? {
+            certificateId: s.certificate_id,
+            landscapeUrl:  s.r2_url_landscape || null,
+            squareUrl:     s.r2_url_square    || null,
+            revoked:       s.revoked          || false,
+            status:        'issued',
+          }
+        : s.cert_failed
+          ? { status: 'failed' }
+          : null,
     })
   } catch (err) { next(err) }
 })

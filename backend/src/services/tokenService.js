@@ -57,32 +57,51 @@ async function saveRefreshToken(userId, hash, ip, userAgent) {
 
 /**
  * Validate a raw refresh token, revoke it, issue a new one (rotation).
+ * Runs inside a transaction with SELECT FOR UPDATE to prevent concurrent
+ * refresh requests from both succeeding with the same token.
  * @returns {{ userId: string, newRaw: string }} or throws
  */
 async function rotateRefreshToken(rawToken, ip, userAgent) {
-  const hash = crypto.createHash('sha256').update(rawToken).digest('hex')
+  const hash   = crypto.createHash('sha256').update(rawToken).digest('hex')
+  const client = await pool.connect()
 
-  const { rows } = await pool.query(
-    `SELECT id, user_id, expires_at, revoked
-     FROM refresh_tokens
-     WHERE token_hash = $1`,
-    [hash]
-  )
+  try {
+    await client.query('BEGIN')
 
-  if (rows.length === 0) throw Object.assign(new Error('Refresh token not found'), { status: 401 })
-  const record = rows[0]
+    const { rows } = await client.query(
+      `SELECT id, user_id, expires_at, revoked
+       FROM refresh_tokens
+       WHERE token_hash = $1
+       FOR UPDATE`,
+      [hash]
+    )
 
-  if (record.revoked)                         throw Object.assign(new Error('Refresh token revoked'), { status: 401 })
-  if (new Date(record.expires_at) < new Date()) throw Object.assign(new Error('Refresh token expired'), { status: 401 })
+    if (rows.length === 0) {throw Object.assign(new Error('Refresh token not found'), { status: 401 })}
+    const record = rows[0]
 
-  // Revoke old token
-  await pool.query('UPDATE refresh_tokens SET revoked = TRUE WHERE id = $1', [record.id])
+    if (record.revoked)                           {throw Object.assign(new Error('Refresh token revoked'),  { status: 401 })}
+    if (new Date(record.expires_at) < new Date()) {throw Object.assign(new Error('Refresh token expired'),  { status: 401 })}
 
-  // Issue new token
-  const { raw: newRaw, hash: newHash } = generateRefreshToken()
-  await saveRefreshToken(record.user_id, newHash, ip, userAgent)
+    // Revoke old token within the transaction
+    await client.query('UPDATE refresh_tokens SET revoked = TRUE WHERE id = $1', [record.id])
 
-  return { userId: record.user_id, newRaw }
+    // Issue new token within the same transaction
+    const { raw: newRaw, hash: newHash } = generateRefreshToken()
+    const expiresAt = new Date(Date.now() + REFRESH_TTL_MS)
+    await client.query(
+      `INSERT INTO refresh_tokens (user_id, token_hash, expires_at, ip_address, user_agent)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [record.user_id, newHash, expiresAt, ip || null, userAgent || null]
+    )
+
+    await client.query('COMMIT')
+    return { userId: record.user_id, newRaw }
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 /**

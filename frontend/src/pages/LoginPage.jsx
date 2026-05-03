@@ -1,12 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
+
+import OtpInput from '@/components/ui/OtpInput'
 import { useAuth } from '@/context/AuthContext'
 import { authApi } from '@/lib/apiServices'
-import OtpInput from '@/components/ui/OtpInput'
 import { cn } from '@/lib/cn'
 
 // ─── Zod schemas ─────────────────────────────────────────────────────────────
@@ -52,20 +53,25 @@ const forgotSchema = z.object({
 
 const resetSchema = z.object({
   new_password: z.string()
-    .min(8, 'At least 8 characters')
+    .min(12, 'At least 12 characters')
     .regex(/[A-Z]/, 'Must contain an uppercase letter')
-    .regex(/[0-9]/, 'Must contain a number'),
+    .regex(/[0-9]/, 'Must contain a number')
+    .regex(/[^A-Za-z0-9]/, 'Must contain a symbol'),
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+}).refine((d) => d.new_password === d.confirm_password, {
+  message: 'Passwords do not match',
+  path:    ['confirm_password'],
 })
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 
 function FieldError({ msg }) {
-  if (!msg) return null
+  if (!msg) {return null}
   return <p className="text-xs text-red-600 mt-1">{msg}</p>
 }
 
 function ApiError({ msg }) {
-  if (!msg) return null
+  if (!msg) {return null}
   return (
     <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
       {msg}
@@ -119,7 +125,7 @@ function useResendTimer(seconds = 60) {
 // ─── Screen: Register ─────────────────────────────────────────────────────────
 
 function PasswordStrength({ password }) {
-  if (!password) return null
+  if (!password) {return null}
   const hasLen   = password.length >= 8
   const hasUpper = /[A-Z]/.test(password)
   const hasNum   = /[0-9]/.test(password)
@@ -244,7 +250,7 @@ function OtpScreen({ userId, email, purpose = 'email_verify', onSuccess, onBack 
   useEffect(() => { start() }, []) // eslint-disable-line
 
   async function submit() {
-    if (code.trim().length < 6) return setApiError('Enter the full 6-digit code.')
+    if (code.trim().length < 6) {return setApiError('Enter the full 6-digit code.')}
     setLoading(true)
     setApiError('')
     try {
@@ -252,9 +258,9 @@ function OtpScreen({ userId, email, purpose = 'email_verify', onSuccess, onBack 
       onSuccess(res.data)
     } catch (e) {
       const ec = e.response?.data?.code
-      if (ec === 'OTP_EXPIRED')      setApiError('Code has expired. Click resend to get a new one.')
-      else if (ec === 'INVALID_OTP') setApiError('Incorrect code. Please try again.')
-      else setApiError(e.response?.data?.error || 'Verification failed.')
+      if (ec === 'OTP_EXPIRED')      {setApiError('Code has expired. Click resend to get a new one.')}
+      else if (ec === 'INVALID_OTP') {setApiError('Incorrect code. Please try again.')}
+      else {setApiError(e.response?.data?.error || 'Verification failed.')}
       setCode('')
     } finally {
       setLoading(false)
@@ -262,7 +268,7 @@ function OtpScreen({ userId, email, purpose = 'email_verify', onSuccess, onBack 
   }
 
   async function resend() {
-    if (!canResend) return
+    if (!canResend) {return}
     setApiError('')
     try {
       await authApi.resendOtp({ email, purpose })
@@ -314,11 +320,14 @@ function OtpScreen({ userId, email, purpose = 'email_verify', onSuccess, onBack 
 function LoginScreen({ onSuccess, onForgot, onRegister }) {
   const [apiError, setApiError]                     = useState('')
   const [unverifiedId, setUnverifiedId]             = useState(null) // for auto-resend OTP flow
+  const submitInFlightRef                           = useRef(false)
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(loginSchema),
   })
 
   async function onSubmit(data) {
+    if (submitInFlightRef.current) {return}
+    submitInFlightRef.current = true
     setApiError('')
     try {
       const res = await authApi.login(data)
@@ -335,6 +344,8 @@ function LoginScreen({ onSuccess, onForgot, onRegister }) {
       } else {
         setApiError(e.response?.data?.error || 'Login failed.')
       }
+    } finally {
+      submitInFlightRef.current = false
     }
   }
 
@@ -409,7 +420,7 @@ function ForgotScreen({ onSuccess, onBack }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <p className="text-sm text-ink-muted">
-        Enter your registered email and we'll send a reset code.
+        Enter your registered email and we&apos;ll send a reset code.
       </p>
       <div>
         <input
@@ -447,20 +458,20 @@ function ResetScreen({ email, onSuccess, onBack }) {
   useEffect(() => { start() }, []) // eslint-disable-line
 
   async function onSubmit(data) {
-    if (code.trim().length < 6) return setApiError('Enter the full 6-digit code.')
+    if (code.trim().length < 6) {return setApiError('Enter the full 6-digit code.')}
     setApiError('')
     try {
       await authApi.resetPassword({ email, code: code.trim(), new_password: data.new_password })
       onSuccess()
     } catch (e) {
       const ec = e.response?.data?.code
-      if (ec === 'INVALID_OTP') setApiError('Incorrect or expired code.')
-      else setApiError(e.response?.data?.error || 'Reset failed. Please try again.')
+      if (ec === 'INVALID_OTP') {setApiError('Incorrect or expired code.')}
+      else {setApiError(e.response?.data?.error || 'Reset failed. Please try again.')}
     }
   }
 
   async function resend() {
-    if (!canResend) return
+    if (!canResend) {return}
     try {
       await authApi.forgotPassword({ email })
       start()
@@ -478,6 +489,11 @@ function ResetScreen({ email, onSuccess, onBack }) {
       <div>
         <PasswordInput registration={register('new_password')} placeholder="New Password" error={errors.new_password} />
         <FieldError msg={errors.new_password?.message} />
+      </div>
+
+      <div>
+        <PasswordInput registration={register('confirm_password')} placeholder="Confirm Password" error={errors.confirm_password} />
+        <FieldError msg={errors.confirm_password?.message} />
       </div>
 
       <ApiError msg={apiError} />

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+
 import api from '@/lib/api'
 
 const AuthContext = createContext(null)
@@ -14,9 +15,13 @@ export function AuthProvider({ children }) {
     try {
       const res = await api.get('/user/me')
       setUser(res.data)
-    } catch {
+    } catch (err) {
       _clearStorage()
       setUser(null)
+      if (err?.response?.status === 401) {
+        window.location.href = '/login'
+        return
+      }
     } finally {
       setLoading(false)
     }
@@ -32,7 +37,7 @@ export function AuthProvider({ children }) {
 
   function login(accessToken, refreshToken, userData) {
     localStorage.setItem(AT_KEY, accessToken)
-    if (refreshToken) localStorage.setItem(RT_KEY, refreshToken)
+    if (refreshToken) {localStorage.setItem(RT_KEY, refreshToken)}
     setUser(userData)
   }
 
@@ -72,6 +77,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  if (!ctx) {throw new Error('useAuth must be used within AuthProvider')}
   return ctx
 }

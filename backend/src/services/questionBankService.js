@@ -59,7 +59,7 @@ function drawQuestions(track) {
   const byThread = {}
   for (const q of bank) {
     const t = q.thread
-    if (!byThread[t]) byThread[t] = []
+    if (!byThread[t]) {byThread[t] = []}
     byThread[t].push(q)
   }
 

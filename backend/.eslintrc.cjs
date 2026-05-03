@@ -18,8 +18,10 @@ module.exports = {
   rules: {
     // Node.js
     'node/no-unsupported-features/es-syntax': 'off',   // we control node version
-    'node/no-missing-require': 'error',
+    'node/no-missing-require': 'off',          // workspace symlinks not resolved by this rule
+    'node/no-unpublished-require': 'off',      // dotenv is fine in devDependencies
     'node/no-extraneous-require': 'error',
+    'no-process-exit': 'off',                  // server startup/shutdown needs process.exit
 
     // General quality
     'no-console': 'off',                       // console.log is fine in Node services

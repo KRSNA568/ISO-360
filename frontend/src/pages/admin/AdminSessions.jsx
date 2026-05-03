@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import { adminApi } from '@/lib/apiServices'
 import { X, ChevronLeft, ChevronRight, AlertTriangle, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+
+import { adminApi } from '@/lib/apiServices'
 
 function Badge({ children, color }) {
   const map = { green: 'bg-green-100 text-green-700', red: 'bg-red-100 text-red-700', gray: 'bg-surface text-ink-muted', yellow: 'bg-yellow-100 text-yellow-700', blue: 'bg-blue-100 text-blue-700' }
@@ -26,9 +27,9 @@ export default function AdminSessions() {
   const load = useCallback(() => {
     setLoading(true)
     const p = { page, limit: PAGE_SIZE }
-    if (track)      p.track = track
-    if (status)     p.status = status
-    if (suspicious) p.suspicious = suspicious
+    if (track)      {p.track = track}
+    if (status)     {p.status = status}
+    if (suspicious) {p.suspicious = suspicious}
     adminApi.getSessions(p)
       .then(r => { setSessions(r.data.sessions); setTotal(r.data.total) })
       .catch(() => {})

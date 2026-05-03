@@ -1,27 +1,61 @@
+import { useEffect, Component } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect } from 'react'
-import LandingPage from '@/pages/LandingPage'
-import LoginPage from '@/pages/LoginPage'
-import Dashboard from '@/pages/Dashboard'
-import ProfilePage from '@/pages/ProfilePage'
-import GenerationPage from '@/pages/GenerationPage'
-import ExamPage from '@/pages/ExamPage'
-import ResultsPage from '@/pages/ResultsPage'
-import VerifyLandingPage from '@/pages/VerifyLandingPage'
-import VerifyPage from '@/pages/VerifyPage'
-import BlogPage from '@/pages/BlogPage'
-import BlogPostPage from '@/pages/BlogPostPage'
-import NotFoundPage from '@/pages/NotFoundPage'
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(err, info) {
+    console.error('[ErrorBoundary]', err, info)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-ink flex items-center justify-center text-white text-center px-6">
+          <div>
+            <h1 className="text-2xl font-semibold mb-2">Something went wrong</h1>
+            <p className="text-white/60 mb-6">Please refresh the page or try again later.</p>
+            <button
+              onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+              className="btn btn-gold"
+            >
+              Reload page
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
-import AdminLayout from '@/pages/admin/AdminLayout'
-import AdminDashboard from '@/pages/admin/AdminDashboard'
-import AdminUsers from '@/pages/admin/AdminUsers'
-import AdminSessions from '@/pages/admin/AdminSessions'
-import AdminCertificates from '@/pages/admin/AdminCertificates'
-import AdminQuestions from '@/pages/admin/AdminQuestions'
-import AdminFlags from '@/pages/admin/AdminFlags'
 import AdminAuditLog from '@/pages/admin/AdminAuditLog'
+import AdminCertificates from '@/pages/admin/AdminCertificates'
+import AdminDashboard from '@/pages/admin/AdminDashboard'
+import AdminFlags from '@/pages/admin/AdminFlags'
+import AdminLayout from '@/pages/admin/AdminLayout'
+import AdminQuestions from '@/pages/admin/AdminQuestions'
+import AdminSessions from '@/pages/admin/AdminSessions'
+import AdminUsers from '@/pages/admin/AdminUsers'
+import BlogPage from '@/pages/BlogPage'
+import BlogPostPage from '@/pages/BlogPostPage'
+import Dashboard from '@/pages/Dashboard'
+import ExamPage from '@/pages/ExamPage'
+import GenerationPage from '@/pages/GenerationPage'
+import LandingPage from '@/pages/LandingPage'
+import LoginPage from '@/pages/LoginPage'
+import NotFoundPage from '@/pages/NotFoundPage'
+import PrivacyPage from '@/pages/PrivacyPage'
+import ProfilePage from '@/pages/ProfilePage'
+import ResultsPage from '@/pages/ResultsPage'
+import TermsPage from '@/pages/TermsPage'
+import VerifyLandingPage from '@/pages/VerifyLandingPage'
+import VerifyPage from '@/pages/VerifyPage'
 
 /** Injects <meta name="robots" content="noindex"> while the component is mounted.
  *  Prevents search engines from indexing private app pages. */
@@ -38,7 +72,8 @@ function NoIndex() {
 
 export default function App() {
   return (
-    <AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           {/* Public */}
@@ -49,6 +84,8 @@ export default function App() {
           <Route path="/verify/:certificateId" element={<VerifyPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           {/* Protected */}
           <Route element={<ProtectedRoute />}>
@@ -73,7 +110,8 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

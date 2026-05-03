@@ -7,7 +7,7 @@ const { Resend } = require('resend')
 
 let _resend = null
 function getResend() {
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  if (!_resend) {_resend = new Resend(process.env.RESEND_API_KEY)}
   return _resend
 }
 

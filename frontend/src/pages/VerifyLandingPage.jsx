@@ -1,6 +1,6 @@
+import { Shield, Search, ArrowRight } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Shield, Search, ArrowRight } from 'lucide-react'
 
 export default function VerifyLandingPage() {
   const [certId, setCertId]   = useState('')
@@ -40,7 +40,7 @@ export default function VerifyLandingPage() {
           Verify a Certificate
         </h1>
         <p className="text-sm text-ink-muted mb-8 leading-relaxed">
-          Enter the certificate ID to instantly verify its authenticity and view the holder's details.
+          Enter the certificate ID to instantly verify its authenticity and view the holder&apos;s details.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +78,7 @@ export default function VerifyLandingPage() {
 
       {/* CTA */}
       <p className="mt-8 text-sm text-ink-muted text-center">
-        Don't have a certificate yet?{' '}
+        Don&apos;t have a certificate yet?{' '}
         <Link to="/login?register=1" className="text-gold hover:underline font-medium">
           Take the free exam →
         </Link>

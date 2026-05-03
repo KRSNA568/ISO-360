@@ -1,6 +1,7 @@
+import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams, Link }    from 'react-router-dom'
-import { CheckCircle2, XCircle, AlertTriangle, Loader2, Shield } from 'lucide-react'
+
 import { certificateApi } from '@/lib/apiServices'
 
 export default function VerifyPage() {
@@ -20,8 +21,8 @@ export default function VerifyPage() {
         setPhase(c.revoked ? 'revoked' : 'valid')
       })
       .catch(err => {
-        if (err?.response?.status === 404) setPhase('notfound')
-        else                               setPhase('error')
+        if (err?.response?.status === 404) {setPhase('notfound')}
+        else                               {setPhase('error')}
       })
   }, [certificateId])
 

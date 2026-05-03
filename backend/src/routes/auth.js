@@ -24,7 +24,7 @@ const {
   rotateRefreshToken,
   revokeAllRefreshTokens,
 } = require('../services/tokenService')
-const { authLimiter, otpIpLimiter, resetLimiter } = require('../middlewares/rateLimiter')
+const { authLimiter, otpIpLimiter, resetLimiter, refreshLimiter } = require('../middlewares/rateLimiter')
 const { authenticate } = require('../middlewares/authenticate')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -51,10 +51,18 @@ function validate(schema, body) {
 }
 
 async function checkEmailOtpLimit(email) {
+  // In production, if Redis is unhealthy we cannot enforce per-email OTP limits —
+  // fail closed to prevent spam rather than silently allowing unlimited OTPs.
+  if (!redis.healthy && process.env.NODE_ENV === 'production') {
+    const err = new Error('OTP service temporarily unavailable. Please try again in a moment.')
+    err.status = 503
+    throw err
+  }
+
   try {
     const key   = `otp_count:${email.toLowerCase()}`
     const count = await redis.incr(key)
-    if (count === 1) await redis.expire(key, 3600)
+    if (count === 1) {await redis.expire(key, 3600)}
     if (count > OTP_EMAIL_MAX) {
       const ttl = await redis.ttl(key)
       const err = new Error(`OTP limit reached. Try again in ${Math.ceil(ttl / 60)} minutes.`)
@@ -62,8 +70,8 @@ async function checkEmailOtpLimit(email) {
       throw err
     }
   } catch (err) {
-    if (err.status === 429) throw err
-    // Redis unavailable — fail open, IP-level rate limit still applies
+    if (err.status === 429 || err.status === 503) {throw err}
+    // Redis unavailable in non-production — fail open, IP-level rate limit still applies
     console.warn('[auth] Redis unavailable for OTP rate limit, skipping per-email check:', err.message)
   }
 }
@@ -116,7 +124,7 @@ const forgotSchema = z.object({
 const resetSchema = z.object({
   email:        z.string().email(),
   code:         z.string().length(6).regex(/^\d{6}$/),
-  new_password: z.string().min(8).max(128),
+  new_password: z.string().min(12).max(128),
 })
 
 // ── 1.1  POST /register ───────────────────────────────────────────────────────
@@ -185,10 +193,10 @@ router.post('/verify-otp', authLimiter, async (req, res, next) => {
 
     const fail = (msg, status = 400) => { const e = new Error(msg); e.status = status; throw e }
 
-    if (!otps.length)               fail('No active code found. Please request a new one.')
+    if (!otps.length)               {fail('No active code found. Please request a new one.')}
     const otp = otps[0]
-    if (new Date(otp.expires_at) < new Date()) fail('Code has expired. Please request a new one.')
-    if (otp.attempts >= OTP_MAX_ATTEMPTS)       fail('Too many incorrect attempts. Request a new code.')
+    if (new Date(otp.expires_at) < new Date()) {fail('Code has expired. Please request a new one.')}
+    if (otp.attempts >= OTP_MAX_ATTEMPTS)       {fail('Too many incorrect attempts. Request a new code.')}
 
     if (otp.code !== data.code) {
       await pool.query('UPDATE otps SET attempts = attempts + 1 WHERE id = $1', [otp.id])
@@ -209,7 +217,7 @@ router.post('/verify-otp', authLimiter, async (req, res, next) => {
        WHERE id = $1 AND deleted_at IS NULL RETURNING *`,
       [data.user_id]
     )
-    if (!rows.length) fail('User not found.', 404)
+    if (!rows.length) {fail('User not found.', 404)}
     const user = rows[0]
 
     const accessToken = signAccessToken(user)
@@ -237,7 +245,7 @@ router.post('/resend-otp', otpIpLimiter, async (req, res, next) => {
       [data.email.toLowerCase()]
     )
 
-    if (!users.length) return res.json({ message: 'If an account exists, a new code has been sent.' })
+    if (!users.length) {return res.json({ message: 'If an account exists, a new code has been sent.' })}
     const user = users[0]
 
     if (data.purpose === 'email_verify' && user.email_verified) {
@@ -278,7 +286,7 @@ async function checkLoginBruteForce(userId) {
   try {
     const key   = `login_fail:${userId}`
     const count = await redis.incr(key)
-    if (count === 1) await redis.expire(key, LOGIN_LOCKOUT_SECS)
+    if (count === 1) {await redis.expire(key, LOGIN_LOCKOUT_SECS)}
     if (count > LOGIN_MAX_FAILURES) {
       const ttl = await redis.ttl(key)
       const err = new Error(`Too many failed login attempts. Try again in ${Math.ceil(ttl / 60)} minutes.`)
@@ -286,7 +294,7 @@ async function checkLoginBruteForce(userId) {
       throw err
     }
   } catch (err) {
-    if (err.status === 429) throw err
+    if (err.status === 429) {throw err}
     // Redis unavailable — fail open, IP-level rate limit still protects
     console.warn('[auth] Redis unavailable for brute-force check, failing open:', err.message)
   }
@@ -307,13 +315,13 @@ router.post('/login', authLimiter, async (req, res, next) => {
       `SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL`,
       [data.email.toLowerCase()]
     )
-    if (!rows.length) return res.status(401).json({ error: INVALID })
+    if (!rows.length) {return res.status(401).json({ error: INVALID })}
     const user = rows[0]
 
     if (user.blocked) {
       return res.status(403).json({ error: 'Your account has been suspended. Contact support.' })
     }
-    if (!user.password_hash) return res.status(401).json({ error: INVALID })
+    if (!user.password_hash) {return res.status(401).json({ error: INVALID })}
 
     const match = await bcrypt.compare(data.password, user.password_hash)
     if (!match) {
@@ -362,10 +370,10 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
 // ── 1.5  POST /refresh ────────────────────────────────────────────────────────
 
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', refreshLimiter, async (req, res, next) => {
   try {
     const { refresh_token } = req.body
-    if (!refresh_token) return res.status(400).json({ error: 'refresh_token is required.' })
+    if (!refresh_token) {return res.status(400).json({ error: 'refresh_token is required.' })}
 
     const { userId, newRaw } = await rotateRefreshToken(refresh_token, req.ip, req.headers['user-agent'])
 
@@ -373,7 +381,7 @@ router.post('/refresh', async (req, res, next) => {
       `SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL AND blocked = FALSE`,
       [userId]
     )
-    if (!rows.length) return res.status(401).json({ error: 'User not found or suspended.' })
+    if (!rows.length) {return res.status(401).json({ error: 'User not found or suspended.' })}
 
     res.json({
       access_token:  signAccessToken(rows[0]),
@@ -402,7 +410,7 @@ router.post('/forgot-password', resetLimiter, async (req, res, next) => {
       `SELECT id, full_name, email FROM users WHERE email = $1 AND deleted_at IS NULL`,
       [data.email.toLowerCase()]
     )
-    if (!rows.length) return res.json(OK)
+    if (!rows.length) {return res.json(OK)}
     const user = rows[0]
 
     try { await checkEmailOtpLimit(user.email) } catch (_) { return res.json(OK) }
@@ -417,7 +425,13 @@ router.post('/forgot-password', resetLimiter, async (req, res, next) => {
       `INSERT INTO otps (user_id, code, purpose, expires_at, ip_address) VALUES ($1,$2,'password_reset',$3,$4)`,
       [user.id, code, expiresAt, req.ip]
     )
-    await sendPasswordResetEmail(user.email, user.full_name, code)
+    try {
+      await sendPasswordResetEmail(user.email, user.full_name, code)
+    } catch (emailErr) {
+      const e = new Error('Failed to send reset email. Please try again later.')
+      e.status = 503
+      return next(e)
+    }
 
     res.json({ ...OK, user_id: user.id })
   } catch (err) { next(err) }
@@ -435,7 +449,7 @@ router.post('/reset-password', resetLimiter, async (req, res, next) => {
       `SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL LIMIT 1`,
       [data.email.toLowerCase()]
     )
-    if (!users.length) fail('Invalid or expired reset code.')
+    if (!users.length) {fail('Invalid or expired reset code.')}
     const userId = users[0].id
 
     const { rows: otps } = await pool.query(
@@ -445,9 +459,9 @@ router.post('/reset-password', resetLimiter, async (req, res, next) => {
       [userId]
     )
 
-    if (!otps.length)                             fail('No active reset code. Please request a new one.')
-    if (new Date(otps[0].expires_at) < new Date()) fail('Reset code has expired.')
-    if (otps[0].attempts >= OTP_MAX_ATTEMPTS)      fail('Too many incorrect attempts. Request a new code.')
+    if (!otps.length)                             {fail('No active reset code. Please request a new one.')}
+    if (new Date(otps[0].expires_at) < new Date()) {fail('Reset code has expired.')}
+    if (otps[0].attempts >= OTP_MAX_ATTEMPTS)      {fail('Too many incorrect attempts. Request a new code.')}
 
     if (otps[0].code !== data.code) {
       await pool.query('UPDATE otps SET attempts = attempts + 1 WHERE id = $1', [otps[0].id])
@@ -484,14 +498,14 @@ router.post('/change-password', authenticate, async (req, res, next) => {
       'SELECT password_hash FROM users WHERE id = $1 AND deleted_at IS NULL',
       [req.user.sub]
     )
-    if (!rows.length) return res.status(404).json({ error: 'User not found.' })
+    if (!rows.length) {return res.status(404).json({ error: 'User not found.' })}
 
     const match = await bcrypt.compare(data.current_password, rows[0].password_hash)
-    if (!match) return res.status(400).json({ error: 'Current password is incorrect.', code: 'WRONG_CURRENT_PASSWORD' })
+    if (!match) {return res.status(400).json({ error: 'Current password is incorrect.', code: 'WRONG_CURRENT_PASSWORD' })}
 
     // Prevent reuse of the same password
     const same = await bcrypt.compare(data.new_password, rows[0].password_hash)
-    if (same) return res.status(400).json({ error: 'New password must be different from your current password.', code: 'SAME_PASSWORD' })
+    if (same) {return res.status(400).json({ error: 'New password must be different from your current password.', code: 'SAME_PASSWORD' })}
 
     const newHash = await bcrypt.hash(data.new_password, BCRYPT_ROUNDS)
     await pool.query(

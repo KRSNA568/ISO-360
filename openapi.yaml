@@ -1,19 +1,19 @@
 openapi: 3.1.0
 info:
-  title: ISO-Audit360 API
+  title: 27001certified API
   version: 1.0.0
   description: |
-    Backend API for ISO-Audit360.com — ISO 27001:2022 AI-Certification Portal.
+    Backend API for 27001certified.app — ISO 27001:2022 AI-Certification Portal.
     All protected endpoints require a JWT Bearer token unless marked as public.
   contact:
-    name: ISO-Audit360 Platform
-    url: https://iso-audit360.com
+    name: 27001certified Platform
+    url: https://27001certified.app
 
 servers:
-  - url: https://api.iso-audit360.com
-    description: Production (Fly.io)
-  - url: https://api-staging.iso-audit360.com
-    description: Staging (Fly.io)
+  - url: https://api.27001certified.app
+    description: Production
+  - url: https://api-staging.27001certified.app
+    description: Staging
   - url: http://localhost:5000
     description: Local development
 
@@ -737,29 +737,40 @@ paths:
                             time_taken_ms: { type: integer }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
-  /api/results/{sessionId}/flag-question:
+  /api/questions/{questionId}/flag:
     post:
-      summary: Flag a question as inaccurate (from results screen)
+      summary: Flag a question as inaccurate (from results review screen)
       tags: [Results]
       parameters:
         - in: path
-          name: sessionId
+          name: questionId
           required: true
-          schema: { type: string, format: uuid }
+          schema: { type: string }
+          description: Question ID from the exam session review
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [question_id, flag_reason]
+              required: [sessionId]
               properties:
-                question_id:  { type: string }
-                flag_reason:  { type: string, maxLength: 500 }
+                sessionId:     { type: string, format: uuid, description: Completed exam session ID }
+                questionStem:  { type: string, maxLength: 1000, description: Question text (for admin context) }
+                reason:        { type: string, maxLength: 500, default: 'Inaccuracy reported by candidate' }
       responses:
-        '201':
-          description: Flag recorded
+        '200':
+          description: Flag recorded (or duplicate silently acknowledged)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:        { type: boolean }
+                  duplicate: { type: boolean }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   # ══════════════════════════════════════════
   #  CERTIFICATES
@@ -802,13 +813,13 @@ paths:
                   valid:        { type: boolean }
                   certificate:
                     type: object
+                    description: Public fields only — full_name and score are omitted to protect candidate privacy
                     properties:
                       certificate_id: { type: string }
-                      full_name:      { type: string }
-                      track:          { type: string }
-                      score:          { type: integer }
-                      awarded_on:     { type: string, format: date-time }
-                      revoked:        { type: boolean }
+                      track:          { type: string, enum: [associate, professional] }
+                      issued_at:      { type: string, format: date-time }
+                      valid_until:    { type: string, format: date-time, nullable: true }
+                      status:         { type: string, enum: [active, revoked] }
         '404': { $ref: '#/components/responses/NotFound' }
 
   # ══════════════════════════════════════════

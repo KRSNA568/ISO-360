@@ -33,8 +33,8 @@ let failedQueue  = []
 
 function processQueue(error, token = null) {
   failedQueue.forEach(({ resolve, reject }) => {
-    if (error) reject(error)
-    else       resolve(token)
+    if (error) {reject(error)}
+    else       {resolve(token)}
   })
   failedQueue = []
 }
@@ -85,7 +85,7 @@ api.interceptors.response.use(
       const { access_token, refresh_token: newRefresh } = res.data
 
       localStorage.setItem('token', access_token)
-      if (newRefresh) localStorage.setItem('rf_token', newRefresh)
+      if (newRefresh) {localStorage.setItem('rf_token', newRefresh)}
 
       api.defaults.headers.common.Authorization = `Bearer ${access_token}`
       processQueue(null, access_token)

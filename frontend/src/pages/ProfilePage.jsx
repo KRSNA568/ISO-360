@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Loader2, AlertTriangle, Eye, EyeOff } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
+import { z } from 'zod'
+
+import AppNavbar from '@/components/layout/AppNavbar'
 import { useAuth } from '@/context/AuthContext'
 import { userApi, authApi } from '@/lib/apiServices'
-import AppNavbar from '@/components/layout/AppNavbar'
 import { cn } from '@/lib/cn'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -25,12 +26,12 @@ function Label({ children }) {
 }
 
 function FieldError({ msg }) {
-  if (!msg) return null
+  if (!msg) {return null}
   return <p className="text-xs text-red-600 mt-1">{msg}</p>
 }
 
 function Flash({ type, msg }) {
-  if (!msg) return null
+  if (!msg) {return null}
   const styles = type === 'success'
     ? 'bg-green-50 border-green-200 text-green-800'
     : 'bg-red-50 border-red-200 text-red-700'

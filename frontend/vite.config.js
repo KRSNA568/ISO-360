@@ -1,9 +1,13 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 import path from 'path'
+
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ['@27001certified/shared/constants'],
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -21,5 +25,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    commonjsOptions: {
+      include: [/packages\/shared/, /node_modules/],
+    },
   },
 })
