@@ -50,15 +50,16 @@ const IS_PROD = process.env.NODE_ENV === 'production'
 app.use(cors({
   origin(origin, callback) {
     if (!origin) {
-      if (!IS_PROD) {return callback(null, true)}
-      return callback(new Error('CORS: origin required'))
+      // No Origin = infra probe / server-to-server. Allow in dev; silently
+      // deny CORS headers in prod (request still reaches the route handler).
+      return callback(null, !IS_PROD)
     }
     // In dev, allow any localhost port so Vite port-shifts don't break the API
     if (!IS_PROD && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
       return callback(null, true)
     }
     if (ALLOWED_ORIGINS.includes(origin)) {return callback(null, true)}
-    return callback(new Error('CORS: origin not allowed'))
+    return callback(null, false)
   },
   credentials: true,
 }))
