@@ -198,7 +198,9 @@ router.post('/verify-otp', authLimiter, async (req, res, next) => {
     if (new Date(otp.expires_at) < new Date()) {fail('Code has expired. Please request a new one.')}
     if (otp.attempts >= OTP_MAX_ATTEMPTS)       {fail('Too many incorrect attempts. Request a new code.')}
 
-    if (otp.code !== data.code) {
+    // Dev/test magic bypass: accept '000000' in non-production so E2E tests don't need real email
+    const devBypass = process.env.NODE_ENV !== 'production' && data.code === '000000'
+    if (!devBypass && otp.code !== data.code) {
       await pool.query('UPDATE otps SET attempts = attempts + 1 WHERE id = $1', [otp.id])
       const remaining = OTP_MAX_ATTEMPTS - (otp.attempts + 1)
       return res.status(400).json({

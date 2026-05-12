@@ -82,17 +82,3 @@ runMigrations()
     process.exit(1)
   })
 
-// ── Graceful shutdown ────────────────────────────────────────────────────────
-function shutdown(signal) {
-  console.log(`\n[server] ${signal} received — shutting down gracefully…`)
-  server.close(async () => {
-    try { await pool.end() } catch { /* ignore */ }
-    console.log('[server] All connections closed. Bye.')
-    process.exit(0)
-  })
-  // Force-exit if graceful close takes longer than 10 s
-  setTimeout(() => { console.error('[server] Forced exit after timeout.'); process.exit(1) }, 10_000)
-}
-
-process.on('SIGTERM', () => shutdown('SIGTERM'))
-process.on('SIGINT',  () => shutdown('SIGINT'))

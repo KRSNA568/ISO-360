@@ -31,10 +31,11 @@ function formatTime(secs) {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-function OptionButton({ letter, text, selected, onClick }) {
+function OptionButton({ letter, text, selected, onClick, dataOption }) {
   return (
     <button
       onClick={onClick}
+      data-option={dataOption}
       className={[
         'w-full text-left flex items-start gap-4 px-5 py-4 rounded-lg border transition-all duration-150',
         selected
@@ -554,7 +555,7 @@ export default function ExamPage() {
               )}
 
               {/* Stem */}
-              <p className="text-white text-base leading-relaxed font-medium">
+              <p data-testid="question-stem" className="text-white text-base leading-relaxed font-medium">
                 {q.stem}
               </p>
 
@@ -567,6 +568,7 @@ export default function ExamPage() {
                     text={q.options[idx]}
                     selected={answers[q.id] === letter}
                     onClick={() => selectAnswer(q.id, letter)}
+                    dataOption={letter}
                   />
                 ))}
               </div>

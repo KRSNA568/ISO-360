@@ -231,10 +231,10 @@ describe('POST /api/auth/verify-otp', () => {
       // 2nd call: UPDATE otps SET attempts = attempts + 1
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })
 
-    // Submit a wrong code
+    // Submit a wrong code (000000 is the dev magic bypass, use a different wrong code)
     const res = await request(app).post('/api/auth/verify-otp').send({
       user_id: FAKE_USER.id,
-      code:    '000000',
+      code:    '111111',
     })
     expect(res.status).toBe(400)
     expect(res.body.error).toMatch(/incorrect code/i)
