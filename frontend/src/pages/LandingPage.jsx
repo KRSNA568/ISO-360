@@ -14,13 +14,16 @@ import {
   AlertTriangle,
   Briefcase,
   Users,
+  Sparkles,
+  QrCode,
+  CheckCircle2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 const STATS = [
-  { value: '2', label: 'Certification Levels' },
+  { value: '2',    label: 'Certification Levels' },
   { value: '300+', label: 'ISO 27001 Questions' },
-  { value: '100%', label: 'Free Forever' },
+  { value: '<30s', label: 'Certificate Verification' },
   { value: '2022', label: 'Standard Edition' },
 ]
 
@@ -29,31 +32,37 @@ const FEATURES = [
     icon: Shield,
     title: 'Industry Recognized',
     body: 'Demonstrate ISO 27001 knowledge to employers, clients, and audit teams. Stand out in ISMS, compliance, and risk roles.',
+    highlight: false,
   },
   {
     icon: Lock,
     title: 'Free Forever',
-    body: 'Both Beginner and Professional exams are completely free. No hidden fees, no subscriptions.',
+    body: 'Both Associate and Professional exams are completely free. No hidden fees, no subscriptions, no credit card required.',
+    highlight: true,
   },
   {
     icon: Clock,
     title: 'Quick & Challenging',
     body: 'Associate: 50 questions in 15 minutes. Professional: 100 questions in 30 minutes. Timed format tests practical competence.',
+    highlight: false,
   },
   {
     icon: Globe,
     title: 'Global Verification',
     body: 'Every certificate has a unique ID and public verification URL. Share it on LinkedIn and validate your achievement instantly.',
+    highlight: true,
   },
   {
     icon: Target,
     title: 'Real-World Coverage',
     body: 'Questions cover clauses 4–10, risk treatment, Statement of Applicability, Annex A controls, and audit evidence handling.',
+    highlight: false,
   },
   {
     icon: TrendingUp,
     title: 'Career Advancement',
     body: 'ISO 27001 skills are essential for ISMS lead, compliance analyst, internal auditor, cybersecurity, and GRC career paths.',
+    highlight: false,
   },
 ]
 
@@ -124,34 +133,52 @@ const LEVELS = [
 ]
 
 const FAQS = [
-  'What is ISO 27001:2022 certification and who is it for?',
-  'What is the difference between Associate and Professional tracks?',
-  'How do I get ISO 27001 certified for free on this platform?',
-  'Which ISO 27001 clauses and control areas are covered?',
-  'What is the passing score for each exam?',
-  'How is exam integrity enforced during attempts?',
-  'Is this certificate recognized by employers?',
-  'How can someone verify my certificate?',
-  'Can I add this certificate to LinkedIn?',
-  'How often is the question bank updated?',
-  'Can I retake the exam if I fail?',
-  'Is there any fee for exam or certificate issuance?',
-  'Do I need work experience before attempting Professional track?',
-  'What is included in the exam performance report?',
-  'Can organizations use this platform to benchmark teams?',
-  'How do I contact support for exam or account issues?',
+  {
+    q: 'Is the exam and certificate completely free?',
+    a: 'Yes. Both Associate and Professional exams are free to attempt. Certificates are issued at no cost upon passing.',
+  },
+  {
+    q: 'What is the difference between Associate and Professional tracks?',
+    a: 'Associate focuses on core clauses and fundamentals. Professional covers Annex A controls, audit depth, and scenario-based judgment requiring deeper ISMS experience.',
+  },
+  {
+    q: 'What ISO 27001 areas are covered?',
+    a: 'Clauses 4–10, risk treatment workflow, Statement of Applicability, and Annex A organizational, people, physical, and technological controls.',
+  },
+  {
+    q: 'What are the passing scores?',
+    a: 'Associate requires 40 out of 50 correct answers (80%). Professional requires 80 out of 100 (80%).',
+  },
+  {
+    q: 'How does certificate verification work?',
+    a: 'Each certificate has a unique ID and a public verification URL. Anyone can verify authenticity in under 30 seconds — no account needed.',
+  },
+  {
+    q: 'Can I add this certificate to LinkedIn?',
+    a: 'Yes. Add the credential ID and public verification URL directly to the Licenses & Certifications section of your LinkedIn profile.',
+  },
+  {
+    q: 'Can I retake the exam if I fail?',
+    a: 'Yes. Retakes are permitted according to the platform retake policy. You can review your performance report to identify weak areas before retrying.',
+  },
+  {
+    q: 'How is exam integrity maintained?',
+    a: 'The platform uses timed attempts, tab-switch detection, and server-side integrity checks to ensure results reflect genuine competence.',
+  },
 ]
 
 const AUDIENCE = [
-  'Information Security Analysts & Managers',
-  'GRC (Governance, Risk & Compliance) Professionals',
-  'ISO 27001 Implementers & ISMS Owners',
-  'Cybersecurity Analysts, Engineers & Architects',
-  'Compliance Officers & Auditors',
-  'IT Risk Managers, Heads of Security & CISOs',
-  'Business Continuity Professionals',
-  'Students pursuing careers in Information Security',
+  { role: 'Information Security Analysts & Managers',  benefit: 'Validate ISMS governance skills employers actively look for.' },
+  { role: 'GRC Professionals',                         benefit: 'Demonstrate cross-domain compliance and risk alignment.' },
+  { role: 'ISO 27001 Implementers & ISMS Owners',      benefit: 'Benchmark practical implementation depth against the 2022 standard.' },
+  { role: 'Cybersecurity Analysts & Engineers',         benefit: 'Add a verifiable credential to your security profile.' },
+  { role: 'Compliance Officers & Internal Auditors',   benefit: 'Sharpen audit evidence and nonconformity handling skills.' },
+  { role: 'IT Risk Managers & CISOs',                  benefit: 'Align your team to a common ISO 27001 baseline quickly.' },
+  { role: 'Business Continuity Professionals',          benefit: 'Understand information security controls that intersect with BCM.' },
+  { role: 'Students in Information Security',           benefit: 'Earn a free, verifiable credential before your first role.' },
 ]
+
+// ─── Components ──────────────────────────────────────────────────────────────
 
 function Navbar() {
   return (
@@ -163,9 +190,9 @@ function Navbar() {
         </Link>
 
         <div className="flex items-center gap-5 text-sm">
-          <Link to="/blog" className="text-white/70 hover:text-white transition-colors">Blog</Link>
-          <Link to="/verify" className="text-white/70 hover:text-white transition-colors">Verify Certificate</Link>
-          <Link to="/login" className="text-white/70 hover:text-white transition-colors">Sign In</Link>
+          <Link to="/blog"   className="text-white/70 hover:text-white transition-colors hidden sm:block">Blog</Link>
+          <Link to="/verify" className="text-white/70 hover:text-white transition-colors hidden sm:block">Verify Certificate</Link>
+          <Link to="/login"  className="text-white/70 hover:text-white transition-colors">Sign In</Link>
           <Link to="/login?register=1" className="btn btn-gold btn-sm">Get Started</Link>
         </div>
       </div>
@@ -177,31 +204,33 @@ function Hero() {
   return (
     <section className="min-h-[820px] bg-ink pt-28 pb-20 px-6 text-center flex items-center">
       <div className="max-w-4xl mx-auto">
-        <span className="inline-flex items-center rounded-full border border-gold/50 px-4 py-1 text-xs text-gold mb-6">
-          ⭐ Free Certification — 2026
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 px-4 py-1 text-xs text-gold mb-8">
+          <Sparkles size={12} /> Free ISO 27001 Certification — 2026 Edition
         </span>
 
         <h1 className="text-5xl md:text-6xl font-serif font-bold text-white leading-tight">
-          Become an <span className="text-gold">ISO 27001 Professional</span>
+          Prove Your <span className="text-gold">ISO 27001</span> Expertise
         </h1>
 
-        <p className="mt-5 text-gold uppercase text-xs tracking-[0.2em]">Integrity-Checked ISO 27001 Certification</p>
-
-        <h2 className="mt-5 text-3xl md:text-4xl font-serif font-bold text-white">Think You Know ISO 27001?</h2>
-
-        <p className="mt-6 text-white/70 max-w-3xl mx-auto leading-relaxed">
-          A free but rigorous ISO 27001:2022 exam portal. Associate track: 50 questions in 15 minutes. Professional track:
-          100 questions in 30 minutes. Timed, integrity-monitored, and built to test real ISMS understanding.
+        <p className="mt-6 text-white/65 text-lg max-w-2xl mx-auto leading-relaxed">
+          Rigorous, timed, integrity-monitored exams on the ISO 27001:2022 standard.
+          Pass, earn a verifiable certificate, and share it anywhere — completely free.
         </p>
 
-        <p className="mt-5 text-lg text-white font-semibold">Are you ready to validate your ISMS expertise?</p>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link to="/login?register=1" className="btn btn-gold btn-lg">Start Certification</Link>
-          <Link to="/verify" className="btn btn-outline btn-lg border-white/30 text-white hover:bg-white/10">Verify Certificate</Link>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link to="/login?register=1" className="btn btn-gold btn-lg">Start Free Certification</Link>
+          <Link to="/verify" className="btn btn-outline btn-lg border-white/30 text-white hover:bg-white/10">Verify a Certificate</Link>
         </div>
 
-        <p className="mt-8 text-sm text-white/40">No credit card required · 100% Free · Instant verification</p>
+        <p className="mt-8 text-sm text-white/35">No credit card · No subscription · Instant verification</p>
+
+        {/* Quick proof strip */}
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-xs text-white/45">
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={12} className="text-gold" /> ISO 27001:2022 aligned</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={12} className="text-gold" /> Publicly verifiable certificates</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={12} className="text-gold" /> Integrity-monitored exams</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={12} className="text-gold" /> LinkedIn shareable</span>
+        </div>
       </div>
     </section>
   )
@@ -209,7 +238,7 @@ function Hero() {
 
 function Stats() {
   return (
-    <section className="bg-ink border-y border-white/10">
+    <section className="bg-white/[0.03] border-y border-white/10">
       <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
         {STATS.map(({ value, label }) => (
           <div key={label}>
@@ -222,7 +251,7 @@ function Stats() {
   )
 }
 
-function WhatIsTprm() {
+function WhatIsISO() {
   return (
     <section className="bg-ink py-20 px-6 border-b border-white/10">
       <div className="max-w-4xl mx-auto">
@@ -236,11 +265,11 @@ function WhatIsTprm() {
             Information Security Management System (ISMS) aligned with internationally accepted standards.
           </p>
           <p>
-            Strong ISO 27001 practitioners understand <strong className="text-white">risk assessment and treatment</strong>,
-            <strong className="text-white"> SoA and Annex A control selection</strong>, internal audit evidence, and corrective action workflows.
+            Strong ISO 27001 practitioners understand <strong className="text-white">risk assessment and treatment</strong>,{' '}
+            <strong className="text-white">SoA and Annex A control selection</strong>, internal audit evidence, and corrective action workflows.
           </p>
           <p>
-            This platform simulates exam pressure to ensure candidates can apply concepts in scenarios — not just recall definitions.
+            This platform simulates exam pressure to ensure candidates can apply concepts in real scenarios — not just recall definitions.
           </p>
         </div>
       </div>
@@ -250,9 +279,9 @@ function WhatIsTprm() {
 
 function WhyCertified() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="bg-white/[0.03] py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
+        <div className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-white">Why Get <span className="text-gold">ISO 27001 Certified?</span></h2>
           <p className="text-white/60 mt-3 max-w-2xl mx-auto">
             Organizations increasingly demand demonstrable ISMS capability across compliance, audit readiness, and security governance roles.
@@ -260,8 +289,15 @@ function WhyCertified() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">
-          {FEATURES.map(({ icon: Icon, title, body }) => (
-            <article key={title} className="rounded-xl border border-white/10 bg-white/5 p-5">
+          {FEATURES.map(({ icon: Icon, title, body, highlight }) => (
+            <article
+              key={title}
+              className={`rounded-xl border p-5 ${
+                highlight
+                  ? 'border-gold/40 bg-gold/5'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
               <Icon size={18} className="text-gold mb-3" />
               <h3 className="text-white font-semibold mb-2">{title}</h3>
               <p className="text-sm text-white/65 leading-relaxed">{body}</p>
@@ -273,19 +309,58 @@ function WhyCertified() {
   )
 }
 
-function Testimonials() {
+function Levels() {
   return (
     <section className="bg-ink py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">Why Teams Choose <span className="text-gold">27001certified</span></h2>
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-serif font-bold text-white">Choose Your <span className="text-gold">Certification Level</span></h2>
+          <p className="text-white/60 mt-3">Start with Associate to master fundamentals, then advance to Professional for deep control and audit expertise.</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {LEVELS.map((l) => (
+            <article key={l.label} className="rounded-xl border border-white/10 bg-white/5 p-6 flex flex-col">
+              <div className="inline-flex mb-3 text-[10px] uppercase tracking-wider font-semibold text-gold border border-gold/40 rounded px-2 py-1 w-fit">
+                {l.label} Level
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-white mb-3">{l.title}</h3>
+              <p className="text-sm text-white/65 mb-5">{l.desc}</p>
+
+              <ul className="space-y-2 text-sm text-white/70 mb-6 flex-1">
+                {l.details.map((d) => (
+                  <li key={d} className="flex items-center gap-2">
+                    <BadgeCheck size={14} className="text-gold flex-shrink-0" /> {d}
+                  </li>
+                ))}
+              </ul>
+
+              <Link to="/login?register=1" className="btn btn-gold w-full justify-center">Get Started Free</Link>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Testimonials() {
+  return (
+    <section className="bg-white/[0.03] py-20 px-6 border-b border-white/10">
+      <div className="max-w-6xl mx-auto">
+        <h2 className="text-4xl font-serif font-bold text-white text-center mb-12">
+          What Professionals <span className="text-gold">Are Saying</span>
+        </h2>
 
         <div className="grid md:grid-cols-3 gap-5">
           {TESTIMONIALS.map((t) => (
-            <article key={t.name} className="rounded-xl border border-white/10 bg-white/5 p-5">
-              <Quote size={16} className="text-gold mb-3" />
-              <p className="text-sm text-white/70 leading-relaxed mb-4">{t.quote}</p>
-              <p className="text-white font-medium text-sm">{t.name}</p>
-              <p className="text-white/45 text-xs">{t.role}</p>
+            <article key={t.name} className="rounded-xl border border-white/10 bg-white/5 p-5 flex flex-col">
+              <Quote size={16} className="text-gold mb-3 flex-shrink-0" />
+              <p className="text-sm text-white/70 leading-relaxed mb-4 flex-1">{t.quote}</p>
+              <div className="border-t border-white/10 pt-3 mt-auto">
+                <p className="text-white font-medium text-sm">{t.name}</p>
+                <p className="text-white/45 text-xs mt-0.5">{t.role}</p>
+              </div>
             </article>
           ))}
         </div>
@@ -298,7 +373,7 @@ function TopicAreas() {
   return (
     <section className="bg-ink py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
+        <div className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-white">Exam <span className="text-gold">Topic Areas</span></h2>
           <p className="text-white/60 mt-3">Our ISO 27001 certification exams test practical knowledge across these core ISMS domains.</p>
         </div>
@@ -317,66 +392,65 @@ function TopicAreas() {
   )
 }
 
-function Levels() {
-  return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h2 className="text-4xl font-serif font-bold text-white">Choose Your <span className="text-gold">Certification Level</span></h2>
-          <p className="text-white/60 mt-3">Start with Associate to master fundamentals, then advance to Professional for deep control and audit expertise.</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {LEVELS.map((l) => (
-            <article key={l.label} className="rounded-xl border border-white/10 bg-white/5 p-6 flex flex-col">
-              <div className="inline-flex mb-3 text-[10px] uppercase tracking-wider font-semibold text-gold border border-gold/40 rounded px-2 py-1 w-fit">
-                {l.label} Level
-              </div>
-              <h3 className="text-2xl font-serif font-bold text-white mb-3">{l.title}</h3>
-              <p className="text-sm text-white/65 mb-5">{l.desc}</p>
-
-              <ul className="space-y-2 text-sm text-white/70 mb-6 flex-1">
-                {l.details.map((d) => (
-                  <li key={d} className="flex items-center gap-2">
-                    <BadgeCheck size={14} className="text-gold" /> {d}
-                  </li>
-                ))}
-              </ul>
-
-              <Link to="/login?register=1" className="btn btn-gold w-full justify-center">Get Started Free</Link>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function CertificatesShowcase() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
+    <section className="bg-white/[0.03] py-20 px-6 border-b border-white/10">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-white">Your Certificate <span className="text-gold">Awaits</span></h2>
-          <p className="text-white/60 mt-3">Pass the exam and receive an instantly downloadable, premium digital certificate.</p>
+          <p className="text-white/60 mt-3">Pass the exam and receive an instantly downloadable, publicly verifiable digital certificate.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <article className="rounded-xl border border-white/10 bg-white/5 p-6">
-            <p className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Certificate of Achievement</p>
-            <h3 className="text-white font-semibold mb-2">Issued to: Alex Johnson</h3>
-            <p className="text-sm text-white/65">Certified ISO 27001 Associate</p>
-            <p className="text-xs text-white/45 mt-3">Certification ID: ISO27-2026-A-SAMPLE1</p>
-            <p className="text-xs text-white/45">Awarded On: 22 February 2026</p>
-          </article>
+        {/* Certificate mockup */}
+        <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 via-white/5 to-white/[0.02] p-8 md:p-12 max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <p className="text-gold text-xs uppercase tracking-[0.25em] font-semibold mb-1">27001certified</p>
+              <p className="text-white/40 text-xs">ISO 27001:2022 Certification Portal</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/40 text-xs">Certificate ID</p>
+              <p className="text-gold font-mono text-sm font-semibold mt-0.5">ISO27-2026-A-XXXXXX</p>
+            </div>
+          </div>
 
-          <article className="rounded-xl border border-white/10 bg-white/5 p-6">
-            <p className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Integrity-Checked ISO 27001 Certification</p>
-            <h3 className="text-white font-semibold mb-2">Issued to: Jane Smith</h3>
-            <p className="text-sm text-white/65">Certified ISO 27001 Professional</p>
-            <p className="text-xs text-white/45 mt-3">Certification ID: ISO27-2026-P-SAMPLE1</p>
-            <p className="text-xs text-white/45">Awarded On: 22 February 2026</p>
-          </article>
+          {/* Body */}
+          <div className="text-center mb-8">
+            <p className="text-white/50 text-sm uppercase tracking-widest mb-3">This certifies that</p>
+            <p className="text-3xl font-serif font-bold text-white mb-1">Alex Johnson</p>
+            <p className="text-white/50 text-sm mb-6">has successfully demonstrated competence in</p>
+            <p className="text-xl font-serif font-semibold text-gold">Certified ISO 27001 Associate</p>
+            <p className="text-white/45 text-xs mt-2">ISO 27001:2022 Information Security Management Systems</p>
+          </div>
+
+          {/* Footer row */}
+          <div className="flex items-center justify-between pt-6 border-t border-white/10">
+            <div>
+              <p className="text-white/40 text-xs">Awarded On</p>
+              <p className="text-white text-sm font-medium mt-0.5">22 February 2026</p>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+              <QrCode size={28} className="text-gold" />
+              <div>
+                <p className="text-white/40 text-[10px] uppercase tracking-wider">Verify at</p>
+                <p className="text-white text-xs font-medium">27001certified.app/verify</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-white/40 text-xs">Status</p>
+              <p className="text-green-400 text-sm font-medium mt-0.5 flex items-center gap-1 justify-end">
+                <CheckCircle2 size={12} /> Valid
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Below mockup */}
+        <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-white/50">
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-gold" /> Landscape + square formats</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-gold" /> Publicly verifiable by QR or URL</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={13} className="text-gold" /> LinkedIn-ready credential ID</span>
         </div>
       </div>
     </section>
@@ -385,14 +459,19 @@ function CertificatesShowcase() {
 
 function Audience() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-serif font-bold text-white text-center mb-8">Who Should Get <span className="text-gold">ISO 27001 Certified?</span></h2>
-        <ul className="grid md:grid-cols-2 gap-3 text-sm text-white/70">
-          {AUDIENCE.map((a) => (
-            <li key={a} className="rounded-lg border border-white/10 bg-white/5 px-4 py-3">{a}</li>
+    <section className="bg-ink py-20 px6 border-b border-white/10 px-6">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">
+          Who Should Get <span className="text-gold">ISO 27001 Certified?</span>
+        </h2>
+        <div className="grid md:grid-cols-2 gap-3">
+          {AUDIENCE.map(({ role, benefit }) => (
+            <div key={role} className="rounded-lg border border-white/10 bg-white/5 px-5 py-4">
+              <p className="text-white text-sm font-medium mb-0.5">{role}</p>
+              <p className="text-white/50 text-xs">{benefit}</p>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   )
@@ -400,62 +479,48 @@ function Audience() {
 
 function BlogSection() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="bg-white/[0.03] py-20 px-6 border-b border-white/10">
       <div className="max-w-5xl mx-auto text-center">
         <h2 className="text-4xl font-serif font-bold text-white">Latest from Our <span className="text-gold">Blog</span></h2>
-        <p className="text-white/60 mt-3 mb-10">Stay updated with practical guides, implementation patterns, and audit readiness tips for ISO 27001.</p>
+        <p className="text-white/60 mt-3 mb-10">Practical guides, implementation patterns, and audit readiness tips for ISO 27001.</p>
 
-        <article className="rounded-xl border border-white/10 bg-white/5 p-6 text-left max-w-3xl mx-auto">
-          <p className="text-xs text-white/45 mb-2">27001certified</p>
+        <article className="rounded-xl border border-white/10 bg-white/5 p-6 text-left max-w-3xl mx-auto hover:border-white/20 transition-colors">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs text-gold border border-gold/40 rounded px-2 py-0.5 uppercase tracking-wider">Guide</span>
+            <span className="text-xs text-white/35">5 min read</span>
+          </div>
           <h3 className="text-white text-lg font-semibold mb-2">What is ISO 27001:2022? A Practical Guide for ISMS Teams</h3>
-          <p className="text-sm text-white/65 mb-4">
+          <p className="text-sm text-white/60 mb-4 leading-relaxed">
             A practical walkthrough of ISO 27001 clauses, risk treatment workflow, Statement of Applicability, and internal audit readiness.
           </p>
-          <Link to="/blog" className="text-gold text-sm font-medium hover:underline">Read Article</Link>
+          <Link to="/blog" className="text-gold text-sm font-medium hover:underline">Read Article →</Link>
         </article>
 
-        <Link to="/blog" className="inline-block mt-6 text-gold text-sm font-medium hover:underline">View All Blogs</Link>
+        <Link to="/blog" className="inline-block mt-6 text-white/50 text-sm hover:text-white transition-colors">View All Articles →</Link>
       </div>
     </section>
   )
 }
 
 function Faq() {
-  const answers = {
-    'What is ISO 27001:2022 certification and who is it for?': 'It validates practical ISMS knowledge and is useful for security, GRC, audit, compliance, and risk professionals.',
-    'What is the difference between Associate and Professional tracks?': 'Associate focuses on core clauses and fundamentals; Professional focuses on Annex A controls, audit depth, and scenario-based judgment.',
-    'How do I get ISO 27001 certified for free on this platform?': 'Create an account, verify email, choose a track, pass the timed exam, and get a verifiable certificate.',
-    'Which ISO 27001 clauses and control areas are covered?': 'Coverage includes clauses 4–10, risk treatment, SoA concepts, and Annex A organizational, people, physical, and technological controls.',
-    'What is the passing score for each exam?': 'Associate requires 40/50. Professional requires 80/100.',
-    'How is exam integrity enforced during attempts?': 'The exam uses timed attempts, session checks, and integrity signals to discourage unfair behavior.',
-    'Is this certificate recognized by employers?': 'It is a platform-issued skills credential designed to showcase applied ISO 27001 competence with public verification.',
-    'How can someone verify my certificate?': 'Each certificate has a unique ID and verification page that can be shared publicly.',
-    'Can I add this certificate to LinkedIn?': 'Yes. You can add the credential ID and verification URL to your LinkedIn profile.',
-    'How often is the question bank updated?': 'The question bank is reviewed and expanded regularly to keep coverage practical and current.',
-    'Can I retake the exam if I fail?': 'Yes, retakes are allowed according to the platform retake policy.',
-    'Is there any fee for exam or certificate issuance?': 'No. The exam and certificate are free on this platform.',
-    'Do I need work experience before attempting Professional track?': 'Experience helps, but you can attempt Professional directly if you are comfortable with control and audit scenarios.',
-    'What is included in the exam performance report?': 'You receive score details, topic-level performance, and question review insights.',
-    'Can organizations use this platform to benchmark teams?': 'Yes. Teams often use it for baseline capability checks and readiness tracking.',
-    'How do I contact support for exam or account issues?': 'Use the support/contact channel provided in the application footer or dashboard.',
-  }
-
   return (
     <section className="bg-ink py-20 px-6 border-b border-white/10">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">Frequently Asked <span className="text-gold">Questions</span></h2>
+        <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">
+          Frequently Asked <span className="text-gold">Questions</span>
+        </h2>
 
         <Accordion.Root type="single" collapsible className="space-y-2">
-          {FAQS.map((q, i) => (
-            <Accordion.Item key={q} value={String(i)} className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
+          {FAQS.map((item, i) => (
+            <Accordion.Item key={item.q} value={String(i)} className="rounded-lg border border-white/10 bg-white/5 overflow-hidden">
               <Accordion.Header>
-                <Accordion.Trigger className="group w-full px-4 py-3 flex items-center justify-between text-left text-sm font-medium text-white hover:text-gold">
-                  {q}
-                  <ChevronDown size={16} className="text-white/45 transition-transform group-data-[state=open]:rotate-180" />
+                <Accordion.Trigger className="group w-full px-5 py-4 flex items-center justify-between text-left text-sm font-medium text-white hover:text-gold transition-colors">
+                  {item.q}
+                  <ChevronDown size={16} className="text-white/45 transition-transform flex-shrink-0 ml-4 group-data-[state=open]:rotate-180" />
                 </Accordion.Trigger>
               </Accordion.Header>
-              <Accordion.Content className="px-4 pb-4 text-sm text-white/60">
-                {answers[q]}
+              <Accordion.Content className="px-5 pb-4 text-sm text-white/60 leading-relaxed">
+                {item.a}
               </Accordion.Content>
             </Accordion.Item>
           ))}
@@ -467,11 +532,17 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="bg-ink py-20 px-6 text-center">
-      <div className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-white/5 p-10">
-        <h2 className="text-4xl font-serif font-bold text-white mb-4">Ready to Prove Your <span className="text-gold">ISO 27001 Expertise?</span></h2>
-        <p className="text-white/65 mb-7">Join professionals using 27001certified to validate practical ISMS capability and showcase it with a verifiable certificate.</p>
+    <section className="bg-white/[0.03] py-20 px-6">
+      <div className="max-w-3xl mx-auto rounded-2xl border border-gold/25 bg-gradient-to-b from-gold/10 to-white/[0.03] p-10 text-center">
+        <h2 className="text-4xl font-serif font-bold text-white mb-4">
+          Ready to Prove Your <span className="text-gold">ISO 27001 Expertise?</span>
+        </h2>
+        <p className="text-white/60 mb-8 leading-relaxed">
+          Join professionals using 27001certified to validate practical ISMS capability
+          and showcase it with a publicly verifiable certificate — completely free.
+        </p>
         <Link to="/login?register=1" className="btn btn-gold btn-lg">Create Free Account</Link>
+        <p className="mt-4 text-xs text-white/30">No credit card · Both tracks free · Instant certificate on pass</p>
       </div>
     </section>
   )
@@ -479,13 +550,16 @@ function FinalCta() {
 
 function Footer() {
   return (
-    <footer className="bg-ink border-t border-white/10 py-6 px-6 text-center text-xs text-white/40">
-      <p className="mb-2">© {new Date().getFullYear()} 27001certified. All rights reserved.</p>
-      <div className="flex justify-center gap-4">
-        <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy Policy</Link>
-        <Link to="/terms" className="hover:text-white/70 transition-colors">Terms of Service</Link>
-        <Link to="/verify" className="hover:text-white/70 transition-colors">Verify Certificate</Link>
-        <Link to="/blog" className="hover:text-white/70 transition-colors">Blog</Link>
+    <footer className="bg-ink border-t border-white/10 py-8 px-6">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <p className="text-xs text-white/35">© {new Date().getFullYear()} 27001certified. All rights reserved.</p>
+        <div className="flex flex-wrap justify-center gap-5 text-xs text-white/40">
+          <Link to="/privacy"  className="hover:text-white/70 transition-colors">Privacy Policy</Link>
+          <Link to="/terms"    className="hover:text-white/70 transition-colors">Terms of Service</Link>
+          <Link to="/verify"   className="hover:text-white/70 transition-colors">Verify Certificate</Link>
+          <Link to="/blog"     className="hover:text-white/70 transition-colors">Blog</Link>
+          <a href="mailto:support@27001certified.app" className="hover:text-white/70 transition-colors">Support</a>
+        </div>
       </div>
     </footer>
   )
@@ -497,11 +571,11 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <Stats />
-      <WhatIsTprm />
+      <WhatIsISO />
       <WhyCertified />
+      <Levels />
       <Testimonials />
       <TopicAreas />
-      <Levels />
       <CertificatesShowcase />
       <Audience />
       <BlogSection />
