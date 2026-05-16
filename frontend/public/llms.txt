@@ -1,0 +1,35 @@
+# 27001certified
+
+> Free ISO 27001:2022 certification platform offering proctored online exams and a publicly verifiable digital credential. Operated independently — not affiliated with ISO, BSI, PECB, or any accreditation body.
+
+27001certified provides a fully online certification experience targeting information security, GRC, audit, and compliance professionals. Two tracks are offered, both free of charge:
+
+- **Associate** — 50 questions, 15 minutes, 80% passing score. Covers core ISO 27001:2022 clauses 4–10 and fundamentals.
+- **Professional** — 100 questions, 30 minutes, 80% passing score. Covers Annex A controls (organisational, people, physical, technological), internal audit practice, and scenario-based judgment.
+
+Exams are timed, proctored via tab-violation detection and integrity heuristics, and each attempt draws randomised questions from a curated question bank. Upon passing, candidates receive an instantly generated certificate with a unique ID and a public verification URL suitable for LinkedIn and CVs. Revoked or expired certificates remain publicly inspectable with their revocation status.
+
+The platform also issues an AI-generated performance report after submission, summarising domain-by-domain strengths and weaknesses, and provides retake support subject to the published retake policy.
+
+## Pricing
+
+Free. No paid tiers exist at launch. No credit card required.
+
+## Key URLs
+
+- [Landing page](https://27001certified.in/iso-27001): overview of tracks, format, and certificate details
+- [Public certificate verification](https://27001certified.in/verify): look up any issued certificate by ID
+- [Blog](https://27001certified.in/blog): practical ISO 27001 implementation and audit guides
+- [Privacy Policy](https://27001certified.in/privacy)
+- [Terms of Service](https://27001certified.in/terms)
+
+## Contact
+
+- General / support: support@27001certified.in
+- Privacy / data requests: privacy@27001certified.in
+
+## What this platform is not
+
+- Not an accredited certification body. The certificate validates practical knowledge of ISO 27001:2022 but does not substitute for ISO 27001 organisational certification (which only accredited bodies like BSI, DNV, or TÜV can issue).
+- Not affiliated with ISO, IAF, or any national accreditation forum.
+- Not a training course — there are no video lectures or study modules; the platform tests existing knowledge.
