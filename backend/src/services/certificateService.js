@@ -275,7 +275,7 @@ async function generateCertificate({ sessionId, userId, track, fullName, score, 
   const dateLabel  = new Date(awardedOn).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
-  const verifyUrl  = `${(process.env.FRONTEND_URL || 'https://27001certified.app').replace(/\/$/, '')}/verify/${certId}`
+  const verifyUrl  = `${(process.env.FRONTEND_URL || 'https://27001certified.in').replace(/\/$/, '')}/verify/${certId}`
 
   console.log(`[Cert] 🏆 Generating certificate ${certId} for session ${sessionId}`)
 

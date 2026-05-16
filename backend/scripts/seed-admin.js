@@ -19,7 +19,7 @@ const pool = new Pool({
 })
 
 async function seedAdmin() {
-  const email    = process.env.ADMIN_EMAIL    || 'admin@27001certified.app'
+  const email    = process.env.ADMIN_EMAIL    || 'admin@27001certified.in'
   const password = process.env.ADMIN_PASSWORD || 'ChangeMe!2026'
   const name     = process.env.ADMIN_NAME     || 'Platform Admin'
 

@@ -3,16 +3,16 @@ info:
   title: 27001certified API
   version: 1.0.0
   description: |
-    Backend API for 27001certified.app — ISO 27001:2022 AI-Certification Portal.
+    Backend API for 27001certified.in — ISO 27001:2022 AI-Certification Portal.
     All protected endpoints require a JWT Bearer token unless marked as public.
   contact:
     name: 27001certified Platform
-    url: https://27001certified.app
+    url: https://27001certified.in
 
 servers:
-  - url: https://api.27001certified.app
+  - url: https://api.27001certified.in
     description: Production
-  - url: https://api-staging.27001certified.app
+  - url: https://api-staging.27001certified.in
     description: Staging
   - url: http://localhost:5000
     description: Local development

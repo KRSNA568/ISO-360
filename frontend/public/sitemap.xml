@@ -3,42 +3,42 @@
 
   <!-- Primary landing page -->
   <url>
-    <loc>https://27001certified.app/iso-27001</loc>
+    <loc>https://27001certified.in/iso-27001</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- Login / Register -->
   <url>
-    <loc>https://27001certified.app/login</loc>
+    <loc>https://27001certified.in/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Blog index -->
   <url>
-    <loc>https://27001certified.app/blog</loc>
+    <loc>https://27001certified.in/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Certificate verification landing -->
   <url>
-    <loc>https://27001certified.app/verify</loc>
+    <loc>https://27001certified.in/verify</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Privacy Policy -->
   <url>
-    <loc>https://27001certified.app/privacy</loc>
+    <loc>https://27001certified.in/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <!-- Terms of Service -->
   <url>
-    <loc>https://27001certified.app/terms</loc>
+    <loc>https://27001certified.in/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

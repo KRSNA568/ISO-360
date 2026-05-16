@@ -434,7 +434,7 @@ function CertificatesShowcase() {
               <QrCode size={28} className="text-gold" />
               <div>
                 <p className="text-white/40 text-[10px] uppercase tracking-wider">Verify at</p>
-                <p className="text-white text-xs font-medium">27001certified.app/verify</p>
+                <p className="text-white text-xs font-medium">27001certified.in/verify</p>
               </div>
             </div>
             <div className="text-right">
@@ -558,7 +558,7 @@ function Footer() {
           <Link to="/terms"    className="hover:text-white/70 transition-colors">Terms of Service</Link>
           <Link to="/verify"   className="hover:text-white/70 transition-colors">Verify Certificate</Link>
           <Link to="/blog"     className="hover:text-white/70 transition-colors">Blog</Link>
-          <a href="mailto:support@27001certified.app" className="hover:text-white/70 transition-colors">Support</a>
+          <a href="mailto:support@27001certified.in" className="hover:text-white/70 transition-colors">Support</a>
         </div>
       </div>
     </footer>

@@ -7,7 +7,7 @@
 #   npx artillery run backend/tests/load/artillery.yml
 #
 # Run against production (PRE-LAUNCH only, with warning):
-#   E2E_BASE_URL=https://api.27001certified.com npx artillery run backend/tests/load/artillery.yml --environment production
+#   E2E_BASE_URL=https://api.27001certified.in npx artillery run backend/tests/load/artillery.yml --environment production
 #
 # Requires: npx artillery@latest (install globally: npm i -g artillery)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -18,9 +18,9 @@ config:
   # ── Environment overrides ─────────────────────────────────────────────────
   environments:
     staging:
-      target: "https://api-staging.27001certified.app"
+      target: "https://api-staging.27001certified.in"
     production:
-      target: "https://api.27001certified.app"
+      target: "https://api.27001certified.in"
       phases:
         - duration: 30
           arrivalRate: 5

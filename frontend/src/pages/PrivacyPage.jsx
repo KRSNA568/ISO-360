@@ -13,7 +13,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-white text-xl font-semibold mb-3">Data Controller</h2>
-            <p>27001certified (operated by Krishna Mahajan). Contact: <a href="mailto:privacy@27001certified.app" className="text-gold hover:underline">privacy@27001certified.app</a></p>
+            <p>27001certified (operated by Krishna Mahajan). Contact: <a href="mailto:privacy@27001certified.in" className="text-gold hover:underline">privacy@27001certified.in</a></p>
           </section>
 
           <section>
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-white text-xl font-semibold mb-3">Your Rights</h2>
-            <p>Under India&apos;s DPDP Act 2023, you can request access to, correction of, or erasure of your personal data. Email <a href="mailto:privacy@27001certified.app" className="text-gold hover:underline">privacy@27001certified.app</a>. We will acknowledge within 48 hours and resolve within 30 days.</p>
+            <p>Under India&apos;s DPDP Act 2023, you can request access to, correction of, or erasure of your personal data. Email <a href="mailto:privacy@27001certified.in" className="text-gold hover:underline">privacy@27001certified.in</a>. We will acknowledge within 48 hours and resolve within 30 days.</p>
           </section>
 
           <section>

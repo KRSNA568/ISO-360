@@ -18,4 +18,4 @@ Disallow: /generate/
 Disallow: /results/
 Disallow: /login
 
-Sitemap: https://27001certified.app/sitemap.xml
+Sitemap: https://27001certified.in/sitemap.xml

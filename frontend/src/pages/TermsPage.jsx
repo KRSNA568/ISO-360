@@ -18,7 +18,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-white text-xl font-semibold mb-3">2. Account Responsibility</h2>
-            <p>You are responsible for maintaining the confidentiality of your login credentials. Notify us immediately at <a href="mailto:support@27001certified.app" className="text-gold hover:underline">support@27001certified.app</a> if you suspect unauthorised access.</p>
+            <p>You are responsible for maintaining the confidentiality of your login credentials. Notify us immediately at <a href="mailto:support@27001certified.in" className="text-gold hover:underline">support@27001certified.in</a> if you suspect unauthorised access.</p>
           </section>
 
           <section>

@@ -23,7 +23,7 @@ const SESSION_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const MOCK_USER = {
   id:             'user-uuid-0001',
   full_name:      'QA Candidate',
-  email:          'qa@27001certified.app',
+  email:          'qa@27001certified.in',
   email_verified: true,
   role:           'user',
 };

@@ -371,7 +371,7 @@ function CertificateCard({ certificate, trackLabel, sessionId }) {
         <div className="py-4 text-center space-y-2">
           <p className="text-sm text-red-600 font-medium">Certificate generation failed.</p>
           <p className="text-xs text-ink-muted">
-            Please contact <a href="mailto:support@27001certified.app" className="underline hover:text-ink">support@27001certified.app</a> with your session ID: <span className="font-mono">{sessionId}</span>
+            Please contact <a href="mailto:support@27001certified.in" className="underline hover:text-ink">support@27001certified.in</a> with your session ID: <span className="font-mono">{sessionId}</span>
           </p>
         </div>
       ) : (
