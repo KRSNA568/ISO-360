@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Top reasons internal audits fail">
+  <defs>
+    <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#13131a"/>
+    </linearGradient>
+    <radialGradient id="glow3" cx="35%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#c9a961" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#c9a961" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8cf8a"/>
+      <stop offset="100%" stop-color="#b8923f"/>
+    </linearGradient>
+    <pattern id="grid3" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#c9a961" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg3)"/>
+  <rect width="1200" height="630" fill="url(#grid3)"/>
+  <rect width="1200" height="630" fill="url(#glow3)"/>
+
+  <!-- Clipboard / audit document on the left -->
+  <g transform="translate(180 110)">
+    <!-- Clipboard back -->
+    <rect x="0" y="20" width="320" height="420" rx="14" fill="#16161e" stroke="url(#gold3)" stroke-width="2"/>
+    <!-- Clip -->
+    <rect x="110" y="0" width="100" height="40" rx="8" fill="#0f0f15" stroke="url(#gold3)" stroke-width="2"/>
+    <rect x="130" y="-8" width="60" height="16" rx="4" fill="#c9a961"/>
+
+    <!-- Header -->
+    <text x="30" y="80" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#c9a961" letter-spacing="3">INTERNAL AUDIT REPORT</text>
+    <line x1="30" y1="92" x2="290" y2="92" stroke="#c9a961" stroke-opacity="0.25"/>
+
+    <!-- 5 finding rows -->
+    <g font-family="Inter, system-ui, sans-serif" font-size="13" fill="#ffffff" fill-opacity="0.8">
+      <!-- Row 1: fail -->
+      <g transform="translate(30 125)">
+        <rect x="0" y="-12" width="18" height="18" rx="4" fill="#0f0f15" stroke="#e06b6b" stroke-width="1.5"/>
+        <path d="M 4 -8 L 14 2 M 14 -8 L 4 2" stroke="#e06b6b" stroke-width="2" stroke-linecap="round"/>
+        <text x="30" y="2">Management review</text>
+      </g>
+      <g transform="translate(30 165)">
+        <rect x="0" y="-12" width="18" height="18" rx="4" fill="#0f0f15" stroke="#e06b6b" stroke-width="1.5"/>
+        <path d="M 4 -8 L 14 2 M 14 -8 L 4 2" stroke="#e06b6b" stroke-width="2" stroke-linecap="round"/>
+        <text x="30" y="2">Asset register</text>
+      </g>
+      <g transform="translate(30 205)">
+        <rect x="0" y="-12" width="18" height="18" rx="4" fill="#0f0f15" stroke="#e06b6b" stroke-width="1.5"/>
+        <path d="M 4 -8 L 14 2 M 14 -8 L 4 2" stroke="#e06b6b" stroke-width="2" stroke-linecap="round"/>
+        <text x="30" y="2">Access reviews</text>
+      </g>
+      <g transform="translate(30 245)">
+        <rect x="0" y="-12" width="18" height="18" rx="4" fill="#0f0f15" stroke="#e06b6b" stroke-width="1.5"/>
+        <path d="M 4 -8 L 14 2 M 14 -8 L 4 2" stroke="#e06b6b" stroke-width="2" stroke-linecap="round"/>
+        <text x="30" y="2">Incident response test</text>
+      </g>
+      <g transform="translate(30 285)">
+        <rect x="0" y="-12" width="18" height="18" rx="4" fill="#0f0f15" stroke="#e06b6b" stroke-width="1.5"/>
+        <path d="M 4 -8 L 14 2 M 14 -8 L 4 2" stroke="#e06b6b" stroke-width="2" stroke-linecap="round"/>
+        <text x="30" y="2">Supplier risk</text>
+      </g>
+    </g>
+
+    <!-- Verdict -->
+    <line x1="30" y1="335" x2="290" y2="335" stroke="#c9a961" stroke-opacity="0.25"/>
+    <text x="30" y="365" font-family="Inter, system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff" fill-opacity="0.5" letter-spacing="2">VERDICT</text>
+    <text x="30" y="400" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#e06b6b">5 NONCONFORMITIES</text>
+  </g>
+
+  <!-- Stamp on top right of clipboard -->
+  <g transform="translate(440 200) rotate(-12)">
+    <circle r="55" fill="none" stroke="#e06b6b" stroke-width="3" stroke-opacity="0.85"/>
+    <circle r="48" fill="none" stroke="#e06b6b" stroke-width="1" stroke-opacity="0.6"/>
+    <text y="-6" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="700" fill="#e06b6b" letter-spacing="2">MAJOR</text>
+    <text y="18" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="9" font-weight="700" fill="#e06b6b" letter-spacing="3">NCR</text>
+  </g>
+
+  <!-- Right side: title + number callout -->
+  <g transform="translate(640 200)">
+    <text x="0" y="0" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" fill="#c9a961" letter-spacing="4">AUDIT READINESS</text>
+    <text x="0" y="60" font-family="Georgia, serif" font-size="56" font-weight="700" fill="#ffffff">Top 5 Reasons</text>
+    <text x="0" y="115" font-family="Georgia, serif" font-size="36" font-weight="400" fill="#ffffff" fill-opacity="0.7">ISMS Audits Fail</text>
+
+    <line x1="0" y1="160" x2="80" y2="160" stroke="url(#gold3)" stroke-width="3"/>
+
+    <text x="0" y="200" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#ffffff" fill-opacity="0.55">Avoid the five findings that cost</text>
+    <text x="0" y="222" font-family="Inter, system-ui, sans-serif" font-size="15" fill="#ffffff" fill-opacity="0.55">most organizations their certification.</text>
+
+    <!-- 5 number chips -->
+    <g transform="translate(0 270)" font-family="Inter, system-ui, sans-serif">
+      <g><circle cx="20" cy="20" r="20" fill="#0f0f15" stroke="url(#gold3)" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#c9a961">01</text></g>
+      <g transform="translate(58 0)"><circle cx="20" cy="20" r="20" fill="#0f0f15" stroke="url(#gold3)" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#c9a961">02</text></g>
+      <g transform="translate(116 0)"><circle cx="20" cy="20" r="20" fill="#0f0f15" stroke="url(#gold3)" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#c9a961">03</text></g>
+      <g transform="translate(174 0)"><circle cx="20" cy="20" r="20" fill="#0f0f15" stroke="url(#gold3)" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#c9a961">04</text></g>
+      <g transform="translate(232 0)"><circle cx="20" cy="20" r="20" fill="#0f0f15" stroke="url(#gold3)" stroke-width="1.5"/><text x="20" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#c9a961">05</text></g>
+    </g>
+  </g>
+
+  <!-- Corner marks -->
+  <g stroke="#c9a961" stroke-opacity="0.4" stroke-width="1.5" fill="none">
+    <path d="M 50 50 L 50 90 M 50 50 L 90 50"/>
+    <path d="M 1150 50 L 1150 90 M 1150 50 L 1110 50"/>
+    <path d="M 50 580 L 50 540 M 50 580 L 90 580"/>
+    <path d="M 1150 580 L 1150 540 M 1150 580 L 1110 580"/>
+  </g>
+</svg>

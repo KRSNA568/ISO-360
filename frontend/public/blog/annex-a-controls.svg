@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Annex A: The 93 Controls">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#13131a"/>
+    </linearGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#c9a961" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#c9a961" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8cf8a"/>
+      <stop offset="100%" stop-color="#b8923f"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg2)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Title -->
+  <text x="600" y="95" text-anchor="middle" font-family="Georgia, serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="1">Annex A — The 93 Controls</text>
+  <text x="600" y="125" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="500" fill="#c9a961" letter-spacing="4">FOUR THEMES · ONE STANDARD</text>
+
+  <!-- Four columns -->
+  <g font-family="Inter, system-ui, sans-serif">
+    <!-- Column template: x, label, count, dot rows -->
+    <!-- ORGANIZATIONAL · 37 -->
+    <g transform="translate(140 180)">
+      <rect width="200" height="320" rx="12" fill="#0f0f15" stroke="#c9a961" stroke-opacity="0.35" stroke-width="1.5"/>
+      <text x="100" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#c9a961" letter-spacing="3">ORGANIZATIONAL</text>
+      <text x="100" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="700" fill="#ffffff">37</text>
+      <text x="100" y="115" text-anchor="middle" font-size="11" fill="#ffffff" fill-opacity="0.45" letter-spacing="2">CONTROLS</text>
+      <g fill="url(#gold2)">
+        <!-- 37 dots, 8 per row -->
+        <g id="dots37"/>
+      </g>
+    </g>
+
+    <!-- PEOPLE · 8 -->
+    <g transform="translate(380 180)">
+      <rect width="200" height="320" rx="12" fill="#0f0f15" stroke="#c9a961" stroke-opacity="0.35" stroke-width="1.5"/>
+      <text x="100" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#c9a961" letter-spacing="3">PEOPLE</text>
+      <text x="100" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="700" fill="#ffffff">8</text>
+      <text x="100" y="115" text-anchor="middle" font-size="11" fill="#ffffff" fill-opacity="0.45" letter-spacing="2">CONTROLS</text>
+    </g>
+
+    <!-- PHYSICAL · 14 -->
+    <g transform="translate(620 180)">
+      <rect width="200" height="320" rx="12" fill="#0f0f15" stroke="#c9a961" stroke-opacity="0.35" stroke-width="1.5"/>
+      <text x="100" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#c9a961" letter-spacing="3">PHYSICAL</text>
+      <text x="100" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="700" fill="#ffffff">14</text>
+      <text x="100" y="115" text-anchor="middle" font-size="11" fill="#ffffff" fill-opacity="0.45" letter-spacing="2">CONTROLS</text>
+    </g>
+
+    <!-- TECHNOLOGICAL · 34 -->
+    <g transform="translate(860 180)">
+      <rect width="200" height="320" rx="12" fill="#0f0f15" stroke="#c9a961" stroke-opacity="0.35" stroke-width="1.5"/>
+      <text x="100" y="38" text-anchor="middle" font-size="11" font-weight="700" fill="#c9a961" letter-spacing="3">TECHNOLOGICAL</text>
+      <text x="100" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="58" font-weight="700" fill="#ffffff">34</text>
+      <text x="100" y="115" text-anchor="middle" font-size="11" fill="#ffffff" fill-opacity="0.45" letter-spacing="2">CONTROLS</text>
+    </g>
+  </g>
+
+  <!-- Dot grids inside each column (placed individually for precision) -->
+  <g fill="url(#gold2)">
+    <!-- Organizational: 37 dots in 7 rows x ~6 -->
+    <g transform="translate(160 320)">
+      <!-- row helper: 6 dots width 160, spacing 28 -->
+      <g>
+        <!-- generate via repetition -->
+      </g>
+    </g>
+  </g>
+
+  <!-- Simple uniform dot pattern for visual cohesion (decorative) -->
+  <g fill="#c9a961" fill-opacity="0.55">
+    <!-- Org column dots: 37 dots in 5 cols × 8 rows minus 3 -->
+    <g transform="translate(165 325)">
+      <!-- 8 rows x 5 cols = 40, remove last 3 -->
+      <!-- rows -->
+      <g><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 22)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 44)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 66)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 88)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 110)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 132)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 154)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/></g>
+    </g>
+
+    <!-- People: 8 dots in 4 cols x 2 rows -->
+    <g transform="translate(420 360)">
+      <g><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/></g>
+      <g transform="translate(0 22)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/></g>
+    </g>
+
+    <!-- Physical: 14 dots in 5 cols x 3 rows minus 1 -->
+    <g transform="translate(645 340)">
+      <g><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 22)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 44)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/></g>
+    </g>
+
+    <!-- Technological: 34 dots in 5 cols x 7 rows minus 1 -->
+    <g transform="translate(885 325)">
+      <g><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 22)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 44)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 66)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 88)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 110)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/><circle cx="140" cy="0" r="4"/></g>
+      <g transform="translate(0 132)"><circle cx="0" cy="0" r="4"/><circle cx="35" cy="0" r="4"/><circle cx="70" cy="0" r="4"/><circle cx="105" cy="0" r="4"/></g>
+    </g>
+  </g>
+
+  <!-- Footer sum -->
+  <g transform="translate(600 555)">
+    <line x1="-180" y1="0" x2="-50" y2="0" stroke="#c9a961" stroke-opacity="0.4"/>
+    <line x1="50" y1="0" x2="180" y2="0" stroke="#c9a961" stroke-opacity="0.4"/>
+    <text x="0" y="6" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="13" fill="#ffffff" fill-opacity="0.7" letter-spacing="4">37 + 8 + 14 + 34 = 93</text>
+  </g>
+</svg>
