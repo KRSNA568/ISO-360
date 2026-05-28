@@ -23,6 +23,8 @@ import {
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import LandingBackground from '../components/layout/LandingBackground'
+
 const STATS = [
   { value: '2',    label: 'Certification Levels' },
   { value: '300+', label: 'ISO 27001 Questions' },
@@ -246,7 +248,7 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="min-h-[820px] bg-ink pt-28 pb-20 px-6 text-center flex items-center">
+    <section className="min-h-[820px] pt-28 pb-20 px-6 text-center flex items-center">
       <div className="max-w-4xl mx-auto">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 px-4 py-1 text-xs text-gold mb-8">
           <Sparkles size={12} /> Free ISO 27001 Certification — 2026 Edition
@@ -297,7 +299,7 @@ function Stats() {
 
 function WhatIsISO() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="py-20 px-6 border-b border-white/10">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">
           What is <span className="text-gold">ISO 27001:2022 Certification?</span>
@@ -355,7 +357,7 @@ function WhyCertified() {
 
 function Levels() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-white">Choose Your <span className="text-gold">Certification Level</span></h2>
@@ -415,7 +417,7 @@ function Testimonials() {
 
 function TopicAreas() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="py-20 px-6 border-b border-white/10">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-serif font-bold text-white">Exam <span className="text-gold">Topic Areas</span></h2>
@@ -503,7 +505,7 @@ function CertificatesShowcase() {
 
 function Audience() {
   return (
-    <section className="bg-ink py-20 px6 border-b border-white/10 px-6">
+    <section className="py-20 border-b border-white/10 px-6">
       <div className="max-w-5xl mx-auto">
         <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">
           Who Should Get <span className="text-gold">ISO 27001 Certified?</span>
@@ -548,7 +550,7 @@ function BlogSection() {
 
 function Faq() {
   return (
-    <section className="bg-ink py-20 px-6 border-b border-white/10">
+    <section className="py-20 px-6 border-b border-white/10">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-4xl font-serif font-bold text-white text-center mb-10">
           Frequently Asked <span className="text-gold">Questions</span>
@@ -594,7 +596,7 @@ function FinalCta() {
 
 function Footer() {
   return (
-    <footer className="bg-ink border-t border-white/10 py-8 px-6">
+    <footer className="border-t border-white/10 py-8 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-white/35">© {new Date().getFullYear()} 27001certified. All rights reserved.</p>
         <div className="flex flex-wrap justify-center gap-5 text-xs text-white/40">
@@ -611,7 +613,8 @@ function Footer() {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-ink">
+    <div className="relative z-0 min-h-screen">
+      <LandingBackground />
       <Navbar />
       <Hero />
       <Stats />

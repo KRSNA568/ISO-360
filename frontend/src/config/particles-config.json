@@ -1,0 +1,9 @@
+{
+  "count": 48,
+  "minDesktopWidth": 768,
+  "colors": ["#E7D08A", "#F8F6F1"],
+  "size": { "min": 0.8, "max": 2.5 },
+  "opacity": { "min": 0.06, "max": 0.12 },
+  "speed": { "min": 0.05, "max": 0.35 },
+  "links": { "enable": true, "distance": 130, "color": "#C9A227", "opacity": 0.05, "width": 0.5 }
+}

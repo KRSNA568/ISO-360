@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900"
+     preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <!-- ============================================================
+       QUICK EDITS:
+       * Colors  -> change the three <stop> hexes below.
+       * Blur    -> change stdDeviation (80-220 typical).
+       * Opacity -> change each blob group's "opacity" (0.06-0.18).
+       * Motion  -> tweak the @keyframes durations/amplitude in <style>.
+       Animation auto-disables under prefers-reduced-motion.
+       ============================================================ -->
+  <defs>
+    <filter id="soft1" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="120" />
+    </filter>
+    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="160" />
+    </filter>
+    <filter id="soft3" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="100" />
+    </filter>
+    <radialGradient id="gGold" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#C9A227" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gIndigo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#2B2A5A"/>
+      <stop offset="100%" stop-color="#2B2A5A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gMuted" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#E7D08A"/>
+      <stop offset="100%" stop-color="#E7D08A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <style>
+    .blob { transform-box: fill-box; transform-origin: center; will-change: transform; }
+    .b1 { animation: drift1 32s ease-in-out infinite; }
+    .b2 { animation: drift2 38s ease-in-out infinite; }
+    .b3 { animation: drift3 26s ease-in-out infinite; }
+    @keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1)}   50%{transform:translate(28px,-22px) scale(1.06)} }
+    @keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1)}   50%{transform:translate(-24px,18px) scale(1.05)} }
+    @keyframes drift3 { 0%,100%{transform:translate(0,0) scale(1)}   50%{transform:translate(16px,24px)  scale(1.04)} }
+    @media (prefers-reduced-motion: reduce) { .b1,.b2,.b3 { animation: none; } }
+  </style>
+
+  <!-- Blob 1 - Dark Gold (top-right) -->
+  <g class="blob b1" opacity="0.16" filter="url(#soft1)">
+    <ellipse cx="1120" cy="220" rx="420" ry="360" fill="url(#gGold)"/>
+  </g>
+  <!-- Blob 2 - Deep Indigo (bottom-left) -->
+  <g class="blob b2" opacity="0.18" filter="url(#soft2)">
+    <ellipse cx="260" cy="720" rx="480" ry="420" fill="url(#gIndigo)"/>
+  </g>
+  <!-- Blob 3 - Muted Gold (center, faint) -->
+  <g class="blob b3" opacity="0.08" filter="url(#soft3)">
+    <ellipse cx="720" cy="500" rx="380" ry="300" fill="url(#gMuted)"/>
+  </g>
+</svg>
