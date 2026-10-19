@@ -21,9 +21,10 @@ const path = require('path')
 const associateBank    = require(path.resolve(__dirname, '../../backend/src/data/associate-questions'))
 const professionalBank = require(path.resolve(__dirname, '../../backend/src/data/professional-questions'))
 
+// Options are shuffled per session, so map stem → correct option TEXT, not letter.
 const ANSWER_MAP = {}
 ;[...associateBank, ...professionalBank].forEach((q) => {
-  ANSWER_MAP[q.stem.trim()] = q.correct_option
+  ANSWER_MAP[q.stem.trim()] = q.options[['A', 'B', 'C', 'D'].indexOf(q.correct_option)].trim()
 })
 
 // ── Test account ──────────────────────────────────────────────────────────────
@@ -120,13 +121,16 @@ test('Full certification journey — Associate track', async ({ page }) => {
     await expect(page.getByTestId('question-stem')).toBeVisible({ timeout: 8_000 })
     const stemText = (await page.getByTestId('question-stem').textContent())?.trim() || ''
     const answer   = ANSWER_MAP[stemText]
+    const optionTexts = (await page.locator('[data-option] > span:last-child').allTextContents())
+      .map((t) => t.trim())
+    const answerIdx = answer ? optionTexts.indexOf(answer) : -1
 
-    if (answer) {
-      await page.locator(`[data-option="${answer}"]`).click()
+    if (answerIdx >= 0) {
+      await page.locator('[data-option]').nth(answerIdx).click()
       correct++
     } else {
-      console.warn(`  ⚠ Q${i + 1} not in bank — defaulting to A`)
-      await page.locator('[data-option="A"]').first().click()
+      console.warn(`  ⚠ Q${i + 1} not in bank — defaulting to first option`)
+      await page.locator('[data-option]').first().click()
       fallback++
     }
 

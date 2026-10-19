@@ -18,8 +18,10 @@ router.use(authenticate)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function stripAnswers(q) {
+  // clause_ref is withheld too: for many questions it names the correct option.
+  // It is still revealed post-submit in the per-question review.
   // eslint-disable-next-line no-unused-vars
-  const { correct_option, explanation, ...safe } = q
+  const { correct_option, explanation, clause_ref, ...safe } = q
   return safe
 }
 

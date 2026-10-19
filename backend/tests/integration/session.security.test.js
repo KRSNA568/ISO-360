@@ -150,6 +150,43 @@ describe('Session — State Machine Enforcement', () => {
     expect(res.body.error).toMatch(/cannot start/i)
   })
 
+  it('should not leak correct_option, explanation or clause_ref when starting', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id:           SESSION_B_ID,
+          track:        'associate',
+          status:       'ready',
+          questions:    [{
+            id:             'A-T1-001',
+            thread:         1,
+            stem:           'Which clause requires determining internal and external issues?',
+            options:        ['Clause 6.1', 'Clause 4.1', 'Clause 5.1', 'Clause 7.1'],
+            correct_option: 'B',
+            explanation:    'Clause 4.1 covers context of the organisation.',
+            clause_ref:     'Clause 4.1',
+            difficulty:     'easy',
+          }],
+          answers:      [],
+          tab_violations: 0,
+          device_fingerprint: null,
+        }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 }) // UPDATE → active
+
+    const res = await request(app)
+      .post(`/api/session/${SESSION_B_ID}/start`)
+      .set('Authorization', `Bearer ${makeToken(USER_B_ID)}`)
+      .send({})
+
+    expect(res.status).toBe(200)
+    expect(res.body.questions).toHaveLength(1)
+    expect(res.body.questions[0]).not.toHaveProperty('correct_option')
+    expect(res.body.questions[0]).not.toHaveProperty('explanation')
+    expect(res.body.questions[0]).not.toHaveProperty('clause_ref')
+    expect(res.body.questions[0].options).toHaveLength(4)
+  })
+
   it('should return 400 when trying to submit an already-completed session', async () => {
     // Submit uses a pg transaction — mock the client returned by pool.connect()
     const mockClient = {

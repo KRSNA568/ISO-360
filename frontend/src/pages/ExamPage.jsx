@@ -549,11 +549,6 @@ export default function ExamPage() {
                 </span>
               </div>
 
-              {/* Clause ref */}
-              {q.clause_ref && (
-                <p className="text-xs text-ink-muted font-mono">{q.clause_ref}</p>
-              )}
-
               {/* Stem */}
               <p data-testid="question-stem" className="text-white text-base leading-relaxed font-medium">
                 {q.stem}

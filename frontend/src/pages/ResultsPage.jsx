@@ -27,6 +27,15 @@ function shortDomain(name = '') {
   return words.slice(0, 2).join(' ') || clean.split(' ').slice(0, 2).join(' ')
 }
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D']
+
+/** Options are stored as an array; key them by letter to match userAnswer / correctOption */
+function optionEntries(options) {
+  return Array.isArray(options)
+    ? options.map((text, i) => [OPTION_LETTERS[i], text])
+    : Object.entries(options || {})
+}
+
 /** Colour a % score for progress bars */
 function scoreColor(pct) {
   if (pct >= 80) {return 'bg-emerald-500'}
@@ -174,9 +183,9 @@ function QuestionReview({ questions, sessionId }) {
                   <p className="text-sm text-ink leading-relaxed">{q.stem}</p>
 
                   {/* Options */}
-                  {Object.keys(q.options || {}).length > 0 && (
+                  {optionEntries(q.options).length > 0 && (
                     <div className="space-y-2">
-                      {Object.entries(q.options).map(([key, val]) => {
+                      {optionEntries(q.options).map(([key, val]) => {
                         const isUser    = q.userAnswer    === key
                         const isCorrect = q.correctOption === key
                         let cls = 'border-border text-ink-secondary bg-transparent'

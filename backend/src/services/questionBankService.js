@@ -9,7 +9,9 @@
  *   Professional → 20 questions per thread × 5 threads = 100 total
  *
  * Each call shuffles the per-thread pool independently so every session
- * sees a different subset and ordering.
+ * sees a different subset and ordering. Answer options are also shuffled per
+ * question (the bank stores every correct answer at position A), and
+ * correct_option is remapped to the option's new position.
  */
 
 const associateBank    = require('../data/associate-questions')
@@ -31,6 +33,22 @@ function shuffle(arr) {
     ;[a[i], a[j]] = [a[j], a[i]]
   }
   return a
+}
+
+const LETTERS = ['A', 'B', 'C', 'D']
+
+/**
+ * Return a copy of the question with its options in random order and
+ * correct_option pointing at the correct answer's new position.
+ */
+function shuffleOptions(q) {
+  const correctIdx = LETTERS.indexOf(q.correct_option)
+  const order      = shuffle(q.options.map((_, i) => i))
+  return {
+    ...q,
+    options:        order.map((i) => q.options[i]),
+    correct_option: LETTERS[order.indexOf(correctIdx)],
+  }
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────────
@@ -67,7 +85,7 @@ function drawQuestions(track) {
   const drawn = []
   for (const threadNum of Object.keys(byThread).sort((a, b) => Number(a) - Number(b))) {
     const shuffled = shuffle(byThread[threadNum])
-    drawn.push(...shuffled.slice(0, perThread))
+    drawn.push(...shuffled.slice(0, perThread).map(shuffleOptions))
   }
 
   // Final full shuffle so thread grouping is not visible to users.
