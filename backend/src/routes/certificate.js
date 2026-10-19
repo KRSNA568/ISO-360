@@ -9,7 +9,7 @@ router.get('/verify/:certId', async (req, res, next) => {
     const { certId } = req.params
 
     const { rows } = await pool.query(
-      `SELECT certificate_id, track, awarded_on,
+      `SELECT certificate_id, full_name, track, awarded_on,
               revoked, revoked_reason, revoked_at
        FROM certificates
        WHERE certificate_id = $1`,
@@ -23,6 +23,9 @@ router.get('/verify/:certId', async (req, res, next) => {
     const cert = rows[0]
     return res.json({
       certificateId: cert.certificate_id,
+      // Holder name is public so a verifier can match the certificate to a person;
+      // score and email stay private.
+      fullName:      cert.full_name,
       track:         cert.track,
       trackLabel:    cert.track === 'associate'
                        ? 'Associate — ISMS Foundation'

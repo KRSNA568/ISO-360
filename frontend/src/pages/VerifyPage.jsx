@@ -62,19 +62,13 @@ export default function VerifyPage() {
               <p className="text-base font-semibold text-gold mt-1">ISO 27001 — {cert.trackLabel}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-left bg-surface rounded-lg p-4">
-              <div>
-                <p className="text-xs text-ink-muted">Score</p>
-                <p className="text-base font-semibold text-ink">{cert.score}%</p>
-              </div>
-              <div>
-                <p className="text-xs text-ink-muted">Date awarded</p>
-                <p className="text-base font-semibold text-ink">
-                  {new Date(cert.awardedOn).toLocaleDateString('en-GB', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })}
-                </p>
-              </div>
+            <div className="bg-surface rounded-lg px-4 py-3">
+              <p className="text-xs text-ink-muted mb-1">Date awarded</p>
+              <p className="text-base font-semibold text-ink">
+                {new Date(cert.awardedOn).toLocaleDateString('en-GB', {
+                  day: 'numeric', month: 'long', year: 'numeric'
+                })}
+              </p>
             </div>
 
             <div className="bg-surface rounded-lg px-4 py-3">
