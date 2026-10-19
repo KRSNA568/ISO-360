@@ -136,8 +136,24 @@ router.post('/create', sessionCreateLimiter, async (req, res, next) => {
       }
     }
 
-    // 4. Draw questions synchronously from the static question bank
-    const drawnQuestions = drawQuestions(track)
+    // 4. Draw questions from the static bank, avoiding questions from the
+    //    user's last 2 attempts on this track where the bank allows.
+    //    Completed sessions keep their question ids in the answers review;
+    //    others still hold them in questions. Must run before step 6 wipes them.
+    const { rows: seenRows } = await pool.query(
+      `SELECT DISTINCT q->>'id' AS id
+       FROM (
+         SELECT status, answers, questions FROM exam_sessions
+         WHERE user_id = $1 AND track = $2 AND status <> 'aborted'
+         ORDER BY created_at DESC LIMIT 2
+       ) s
+       CROSS JOIN LATERAL jsonb_array_elements(
+         CASE WHEN s.status = 'completed' THEN s.answers ELSE s.questions END
+       ) q
+       WHERE q->>'id' IS NOT NULL`,
+      [userId, track],
+    )
+    const drawnQuestions = drawQuestions(track, { excludeIds: seenRows.map((r) => r.id) })
 
     // 5. Create the session row with questions pre-filled and status=ready
     const { rows } = await pool.query(

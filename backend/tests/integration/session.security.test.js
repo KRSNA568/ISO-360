@@ -222,6 +222,33 @@ describe('Session — State Machine Enforcement', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+describe('Session — Create avoids recently seen questions', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('passes question ids from recent attempts to drawQuestions as excludeIds', async () => {
+    const { drawQuestions } = require('../../src/services/questionBankService')
+
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })                                      // no generating/ready session
+      .mockResolvedValueOnce({ rows: [{ cnt: '1' }] })                          // retake count
+      .mockResolvedValueOnce({ rows: [{ cnt: '1' }] })                          // same-IP users
+      .mockResolvedValueOnce({ rows: [{ id: 'A-T1-001' }, { id: 'A-T2-004' }] }) // recently seen ids
+      .mockResolvedValueOnce({ rows: [{ id: 'sess-new-0001' }] })               // INSERT
+      .mockResolvedValueOnce({ rowCount: 0 })                                   // wipe old questions
+
+    const res = await request(app)
+      .post('/api/session/create')
+      .set('Authorization', `Bearer ${TOKEN_A}`)
+      .send({ track: 'associate' })
+
+    expect(res.status).toBe(202)
+    expect(pool.query.mock.calls[3][1]).toEqual([USER_A_ID, 'associate'])
+    expect(drawQuestions).toHaveBeenCalledWith('associate', { excludeIds: ['A-T1-001', 'A-T2-004'] })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 describe('Session — Answer Validation', () => {
   const TOKEN_B = makeToken(USER_B_ID)
 

@@ -51,6 +51,24 @@ describe.each(Object.keys(BANKS))('drawQuestions(%s)', (track) => {
     }
   })
 
+  it('prefers questions not in excludeIds, filling from them only when a thread runs short', () => {
+    const first  = drawQuestions(track)
+    const second = drawQuestions(track, { excludeIds: first.map((q) => q.id) })
+    const firstIds = new Set(first.map((q) => q.id))
+    const overlap  = second.filter((q) => firstIds.has(q.id)).length
+
+    // 30 per thread. Associate draws 10 → 20 unseen left, so no overlap.
+    // Professional draws 20 → only 10 unseen left, so 10 per thread repeat.
+    const perThread = SIZES[track] / 5
+    const expected  = 5 * Math.max(0, perThread - (30 - perThread))
+    expect(overlap).toBe(expected)
+    expect(second).toHaveLength(SIZES[track])
+  })
+
+  it('ignores unknown ids in excludeIds', () => {
+    expect(drawQuestions(track, { excludeIds: ['NOT-A-QUESTION'] })).toHaveLength(SIZES[track])
+  })
+
   it('does not mutate the bank', () => {
     const snapshot = JSON.stringify(BANKS[track])
     drawQuestions(track)

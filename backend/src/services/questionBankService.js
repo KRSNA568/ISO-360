@@ -55,13 +55,17 @@ function shuffleOptions(q) {
 
 /**
  * Draw a randomised set of exam questions from the static bank.
- * Returns questions grouped by thread (thread 1 first, then 2, …).
  *
- * @param {string} track  'associate' | 'professional'
+ * Questions whose ids are in `excludeIds` (e.g. seen in the candidate's recent
+ * attempts) are only used once a thread runs out of unseen questions.
+ *
+ * @param {string}   track                'associate' | 'professional'
+ * @param {Object}   [opts]
+ * @param {string[]} [opts.excludeIds=[]] Question ids to avoid where possible.
  * @returns {Object[]}    Flat array of question objects.
  * @throws {Error}        If track is unknown or bank is empty.
  */
-function drawQuestions(track) {
+function drawQuestions(track, { excludeIds = [] } = {}) {
   const bank = track === 'associate' ? associateBank : professionalBank
 
   if (!Array.isArray(bank) || bank.length === 0) {
@@ -81,11 +85,17 @@ function drawQuestions(track) {
     byThread[t].push(q)
   }
 
-  // Shuffle each thread's pool and draw the required count, then flatten.
+  // Per thread: unseen questions first (shuffled), then seen ones (shuffled)
+  // to fill any shortfall. Draw the required count, then flatten.
+  const seen  = new Set(excludeIds)
   const drawn = []
   for (const threadNum of Object.keys(byThread).sort((a, b) => Number(a) - Number(b))) {
-    const shuffled = shuffle(byThread[threadNum])
-    drawn.push(...shuffled.slice(0, perThread).map(shuffleOptions))
+    const pool    = byThread[threadNum]
+    const ordered = [
+      ...shuffle(pool.filter((q) => !seen.has(q.id))),
+      ...shuffle(pool.filter((q) => seen.has(q.id))),
+    ]
+    drawn.push(...ordered.slice(0, perThread).map(shuffleOptions))
   }
 
   // Final full shuffle so thread grouping is not visible to users.
