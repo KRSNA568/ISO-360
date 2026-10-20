@@ -13,6 +13,10 @@
  *   - every toolkit template has its guidance, columns and cross-links, every
  *     clause requirement has an audit question, worked example rows are the
  *     right width, and the generated download exists in public/toolkit/
+ *   - practice drills are well formed, every section has enough questions, and
+ *     neither answer position nor option length gives the answer away
+ *   - no practice question has leaked into (or out of) the exam banks
+ *   - interview prep questions carry their model answer, follow-ups and red flags
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -22,6 +26,8 @@ import { CONTROLS, THEMES } from '../src/data/annexA.js'
 import { CLAUSES } from '../src/data/clauses.js'
 import { TEMPLATES } from '../src/data/toolkit.js'
 import { CLAUSE_CHECKS, NC_EXAMPLES, RISK_EXAMPLES, THEME_CHECKS } from '../src/data/toolkitRows.js'
+import { CATEGORIES, QUESTIONS as INTERVIEW_QUESTIONS } from '../src/data/interviewPrep.js'
+import { QUESTIONS as PRACTICE_QUESTIONS, SECTIONS } from '../src/data/practice.js'
 
 const errors = []
 const fail = (msg) => errors.push(msg)
@@ -186,11 +192,136 @@ for (const [slug, rows] of exampleSets) {
   }
 }
 
+// ───────────────────────────── Practice drills ─────────────────────────────
+
+const MIN_PER_SECTION = 5
+
+// Same limits the exam bank enforces (backend/tests/unit/questionBank.quality.test.js):
+// if the correct option is usually the longest, "pick the longest" beats knowing
+// the answer. A share far BELOW chance is its own tell, so the floor matters too.
+const MAX_LONGEST_SHARE  = 0.35
+const MIN_LONGEST_SHARE  = 0.12
+const MAX_OUTSIZED_SHARE = 0.15
+const OUTSIZED_RATIO     = 1.5
+
+const sectionSlugs = new Set()
+for (const section of SECTIONS) {
+  const where = `practice section ${section.slug ?? '(no slug)'}`
+  if (!/^[a-z0-9-]+$/.test(section.slug || '')) {fail(`${where}: slug must be lower-case kebab-case`)}
+  if (sectionSlugs.has(section.slug)) {fail(`${where}: duplicate slug`)}
+  sectionSlugs.add(section.slug)
+  for (const field of ['label', 'short', 'intro', 'library']) {
+    if (typeof section[field] !== 'string' || !section[field].trim()) {fail(`${where}: missing ${field}`)}
+  }
+  if (!section.library?.startsWith('/')) {fail(`${where}: library must be a root-relative path`)}
+  const count = PRACTICE_QUESTIONS.filter((q) => q.section === section.slug).length
+  if (count < MIN_PER_SECTION) {fail(`${where}: ${count} questions, needs at least ${MIN_PER_SECTION}`)}
+}
+
+for (const q of PRACTICE_QUESTIONS) {
+  const where = `practice question ${q.id ?? '(no id)'}`
+  if (!sectionSlugs.has(q.section)) {fail(`${where}: section "${q.section}" does not exist`)}
+  if (!q.stem?.trim()) {fail(`${where}: missing stem`)}
+  if (!q.explanation?.trim()) {fail(`${where}: missing explanation`)}
+  if (!Array.isArray(q.options) || q.options.length !== 4) {
+    fail(`${where}: needs exactly 4 options`)
+    continue
+  }
+  if (q.options.some((o) => typeof o !== 'string' || !o.trim())) {fail(`${where}: has an empty option`)}
+  if (new Set(q.options.map((o) => o.trim().toLowerCase())).size !== 4) {fail(`${where}: options are not distinct`)}
+  if (!Number.isInteger(q.correct) || q.correct < 0 || q.correct > 3) {fail(`${where}: correct must be an index 0-3`)}
+}
+if (new Set(PRACTICE_QUESTIONS.map((q) => q.id)).size !== PRACTICE_QUESTIONS.length) {
+  fail('practice questions: duplicate ids')
+}
+if (new Set(PRACTICE_QUESTIONS.map((q) => q.stem?.trim().toLowerCase())).size !== PRACTICE_QUESTIONS.length) {
+  fail('practice questions: duplicate stems')
+}
+
+const wellFormed = PRACTICE_QUESTIONS.filter((q) => q.options?.length === 4 && Number.isInteger(q.correct))
+const lengths = (q) => {
+  const correct = q.options[q.correct].length
+  const others  = q.options.filter((_, i) => i !== q.correct).map((o) => o.length)
+  return { correct, others }
+}
+const longest = wellFormed.filter((q) => {
+  const { correct, others } = lengths(q)
+  return others.every((l) => correct > l)
+}).length
+const outsized = wellFormed.filter((q) => {
+  const { correct, others } = lengths(q)
+  return correct > OUTSIZED_RATIO * (others.reduce((a, b) => a + b, 0) / others.length)
+}).length
+const pct = (n) => `${Math.round((n / wellFormed.length) * 100)}%`
+
+if (longest / wellFormed.length > MAX_LONGEST_SHARE) {
+  fail(`practice questions: correct option is longest in ${longest}/${wellFormed.length} (${pct(longest)}) - lengthen distractors`)
+}
+if (longest / wellFormed.length < MIN_LONGEST_SHARE) {
+  fail(`practice questions: correct option is longest in only ${longest}/${wellFormed.length} (${pct(longest)}) - "never the longest" is a tell too`)
+}
+if (outsized / wellFormed.length > MAX_OUTSIZED_SHARE) {
+  fail(`practice questions: correct option is > ${OUTSIZED_RATIO}x the distractor average in ${outsized}/${wellFormed.length} (${pct(outsized)})`)
+}
+for (let i = 0; i < 4; i++) {
+  const share = wellFormed.filter((q) => q.correct === i).length / wellFormed.length
+  if (share > 0.4) {fail(`practice questions: answer ${'ABCD'[i]} is correct in ${pct(share * wellFormed.length)} of questions`)}
+}
+
+// The drills must never show a candidate an exam question. Skipped when the
+// backend is not checked out alongside the frontend.
+const normalise = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+try {
+  const banks = await Promise.all([
+    import('../../backend/src/data/associate-questions.js'),
+    import('../../backend/src/data/professional-questions.js'),
+  ])
+  const examStems = new Set(banks.flatMap((b) => (b.default || []).map((q) => normalise(q.stem))))
+  for (const q of PRACTICE_QUESTIONS) {
+    if (examStems.has(normalise(q.stem))) {
+      fail(`practice question ${q.id}: this stem is in an exam bank - drills must never share questions with the exam`)
+    }
+  }
+} catch {
+  console.warn('⚠  Skipped the practice/exam overlap check: backend question banks not available')
+}
+
+// ─────────────────────────── Interview preparation ───────────────────────────
+
+const categorySlugs = new Set()
+for (const c of CATEGORIES) {
+  if (categorySlugs.has(c.slug)) {fail(`interview category ${c.slug}: duplicate slug`)}
+  categorySlugs.add(c.slug)
+  for (const field of ['label', 'intro']) {
+    if (!c[field]?.trim()) {fail(`interview category ${c.slug}: missing ${field}`)}
+  }
+  if (!INTERVIEW_QUESTIONS.some((q) => q.category === c.slug)) {
+    fail(`interview category ${c.slug}: has no questions`)
+  }
+}
+for (const q of INTERVIEW_QUESTIONS) {
+  const where = `interview question ${q.id ?? '(no id)'}`
+  if (!categorySlugs.has(q.category)) {fail(`${where}: category "${q.category}" does not exist`)}
+  for (const field of ['question', 'checking', 'answer']) {
+    if (typeof q[field] !== 'string' || q[field].trim().length < 20) {fail(`${where}: missing or thin ${field}`)}
+  }
+  for (const field of ['followUps', 'redFlags']) {
+    const list = q[field]
+    if (!Array.isArray(list) || list.length < 2 || list.some((x) => typeof x !== 'string' || !x.trim())) {
+      fail(`${where}: ${field} needs at least 2 non-empty items`)
+    }
+  }
+}
+if (new Set(INTERVIEW_QUESTIONS.map((q) => q.id)).size !== INTERVIEW_QUESTIONS.length) {
+  fail('interview questions: duplicate ids')
+}
+
 if (errors.length) {
   console.error(`✗ Content validation failed (${errors.length}):\n  - ${errors.join('\n  - ')}`)
   process.exit(1)
 }
 console.log(
   `✓ Reference content valid: ${CONTROLS.length} controls, ${CLAUSES.length} clauses, ` +
-  `${TEMPLATES.length} toolkit templates`,
+  `${TEMPLATES.length} toolkit templates, ${PRACTICE_QUESTIONS.length} practice questions ` +
+  `(correct-is-longest ${pct(longest)}), ${INTERVIEW_QUESTIONS.length} interview questions`,
 )
