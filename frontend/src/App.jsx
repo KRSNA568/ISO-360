@@ -38,6 +38,7 @@ import AdminAuditLog from '@/pages/admin/AdminAuditLog'
 import AdminCertificates from '@/pages/admin/AdminCertificates'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import AdminFlags from '@/pages/admin/AdminFlags'
+import AdminIntegrity from '@/pages/admin/AdminIntegrity'
 import AdminLayout from '@/pages/admin/AdminLayout'
 import AdminQuestions from '@/pages/admin/AdminQuestions'
 import AdminSessions from '@/pages/admin/AdminSessions'
@@ -102,6 +103,7 @@ export default function App() {
             <Route path="/admin/users" element={<><NoIndex /><AdminUsers /></>} />
             <Route path="/admin/sessions" element={<><NoIndex /><AdminSessions /></>} />
             <Route path="/admin/certificates" element={<><NoIndex /><AdminCertificates /></>} />
+            <Route path="/admin/integrity" element={<><NoIndex /><AdminIntegrity /></>} />
             <Route path="/admin/questions" element={<><NoIndex /><AdminQuestions /></>} />
             <Route path="/admin/flags" element={<><NoIndex /><AdminFlags /></>} />
             <Route path="/admin/audit-log" element={<><NoIndex /><AdminAuditLog /></>} />

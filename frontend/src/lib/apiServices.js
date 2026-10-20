@@ -53,6 +53,8 @@ export const adminApi = {
   // Certificates
   getCertificates:   (params) => api.get('/admin/certificates', { params }),
   revokeCertificate: (id, d)  => api.post(`/admin/certificates/${id}/revoke`, d),
+  getIntegrityAudit: (params) => api.get('/admin/certificates/integrity-audit', { params }),
+  bulkRevokeCertificates: (d) => api.post('/admin/certificates/bulk-revoke', d),
 
   // Flags
   getFlags:          (params) => api.get('/admin/flags', { params }),

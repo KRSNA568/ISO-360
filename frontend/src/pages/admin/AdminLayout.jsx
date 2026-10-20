@@ -11,6 +11,7 @@ const NAV = [
   { to: '/admin/users',        label: 'Users',        icon: Users },
   { to: '/admin/sessions',     label: 'Sessions',     icon: ClipboardList },
   { to: '/admin/certificates', label: 'Certificates', icon: Award },
+  { to: '/admin/integrity',    label: 'Integrity Audit', icon: ShieldAlert },
   { to: '/admin/questions',    label: 'Questions',    icon: BookOpen },
   { to: '/admin/flags',        label: 'Flags',        icon: Flag },
   { to: '/admin/audit-log',    label: 'Audit Log',    icon: ScrollText },
