@@ -47,8 +47,10 @@ backend/node_modules/.cache/
 *.md 
 *.txt
 
-# ...except the generated toolkit downloads, which are served from public/
+# ...except the generated toolkit downloads, which are served from public/,
+# and the project guide, which contributors and AI sessions are expected to read.
 !frontend/public/toolkit/*.md
+!CLAUDE.md
 PRD
 PRD-ADMIN
 PRD-v2
