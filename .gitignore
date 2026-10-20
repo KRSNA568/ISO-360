@@ -46,6 +46,9 @@ backend/node_modules/.cache/
 # Documentation
 *.md 
 *.txt
+
+# ...except the generated toolkit downloads, which are served from public/
+!frontend/public/toolkit/*.md
 PRD
 PRD-ADMIN
 PRD-v2

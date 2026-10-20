@@ -1,0 +1,24 @@
+﻿Risk ID,Date raised,Asset or process,Risk description,Threat,Vulnerability,Risk owner,Inherent likelihood,Inherent impact,Inherent score,Treatment option,Annex A controls,Treatment plan,Target date,Residual likelihood,Residual impact,Residual score,Risk accepted by,Status,Last reviewed
+R-001,2026-01-14,Customer data in the production database,"An attacker phishes a support agent, reuses the credential and exports customer records, exposing personal data and triggering breach notification.",External attacker running a credential-phishing campaign,Support console reachable from the internet with password-only sign-in,Head of Support,4,5,20,Treat,"A.5.17, A.8.5, A.6.3","Enforce phishing-resistant MFA on the support console, restrict export to a named role, and add an alert on bulk exports.",2026-03-31,2,5,10,Head of Support,Treatment in progress,2026-02-18
+R-002,2026-01-14,Production deployment pipeline,"Only one engineer can deploy or roll back production, so an outage during their absence extends well beyond the recovery objective.","Key-person unavailability — illness, leave or resignation","Deployment knowledge and credentials held by a single person, undocumented",Engineering Manager,3,4,12,Treat,"A.5.2, A.8.9, A.5.30","Document the deployment runbook, give a second engineer the access and have them perform a supervised release each month.",2026-04-30,2,3,6,Engineering Manager,Treatment in progress,2026-02-18
+R-003,2026-02-02,Email and document hosting,"Email, documents and identity all sit with one provider, so a prolonged outage or account compromise there halts the business.",Supplier outage or compromise at the hosting provider,No tested alternative for communications and no independent copy of key documents,Chief Operating Officer,2,4,8,Tolerate,"A.5.19, A.5.21, A.5.30",Accept the concentration risk for now; keep an independent encrypted export of critical documents and review at each management review.,2026-06-30,2,3,6,Chief Operating Officer,Accepted,2026-02-18
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,

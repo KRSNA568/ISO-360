@@ -1,0 +1,23 @@
+﻿NC ID,Date raised,Source,Raised by,Clause or control,Nonconformity description,Grading,Immediate action,Root cause,Root cause method,Corrective action,Action owner,Target date,Completed date,Effectiveness check due,Effectiveness result,Status,Evidence reference
+NC-2026-001,2026-02-11,Internal audit,J. Okafor (internal auditor),A.5.15,"Quarterly access reviews were required for the finance system but no review was recorded for Q3 or Q4 2025. Sampled 4 quarters, found 2 missing.",Minor NC,Ran the overdue review immediately; removed 3 accounts belonging to leavers.,"The review existed as a calendar reminder owned by one person with no backstop, so it silently lapsed while they were on extended leave.",5 Whys,"Move the review to a ticket raised automatically each quarter, assigned to the role rather than the person, with escalation to the manager if it is still open after 14 days.",Finance Systems Owner,2026-03-31,2026-03-20,2026-09-30,Effective — Q1 and Q2 2026 reviews both completed within 10 days of the ticket opening.,Closed,"Audit report IA-2026-01; tickets ACC-4412, ACC-4703"
+NC-2026-002,2026-03-04,External audit,Certification body (stage 2),5.21,"Two of five sampled supplier contracts contained no information security requirements, although both suppliers process customer data.",Major NC,Notified both suppliers in writing and obtained interim confidentiality undertakings while contracts are amended.,Procurement had no trigger to involve security: the contract template contained no security schedule and nothing in the purchasing workflow asked whether the supplier would handle customer data.,Fishbone,Add a security schedule to the standard contract template and a mandatory data-handling question in the purchase request form that routes to the ISMS manager when answered yes.,Head of Procurement,2026-04-30,,2026-10-31,,Action in progress,External audit report EA-2026-S2; procurement workflow change request PR-118
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
