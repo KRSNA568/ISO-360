@@ -2,6 +2,7 @@ import {
   LayoutDashboard, Users, ClipboardList, Award,
   BookOpen, Flag, ScrollText, ArrowLeft, ShieldAlert,
 } from 'lucide-react'
+import { Suspense } from 'react'
 import { NavLink, Outlet, Navigate, Link } from 'react-router-dom'
 
 import { useAuth } from '@/context/AuthContext'
@@ -79,7 +80,10 @@ export default function AdminLayout() {
 
       {/* ── Main content ── */}
       <main className="ml-56 flex-1 min-h-screen">
-        <Outlet />
+        {/* Keep the sidebar visible while an admin page chunk loads */}
+        <Suspense fallback={<div className="p-8 text-sm text-ink-muted animate-pulse">Loading…</div>}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useEffect, Component } from 'react'
+import { useEffect, Component, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 class ErrorBoundary extends Component {
@@ -34,29 +34,40 @@ class ErrorBoundary extends Component {
 }
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
-import AdminAuditLog from '@/pages/admin/AdminAuditLog'
-import AdminCertificates from '@/pages/admin/AdminCertificates'
-import AdminDashboard from '@/pages/admin/AdminDashboard'
-import AdminFlags from '@/pages/admin/AdminFlags'
-import AdminIntegrity from '@/pages/admin/AdminIntegrity'
-import AdminLayout from '@/pages/admin/AdminLayout'
-import AdminQuestions from '@/pages/admin/AdminQuestions'
-import AdminSessions from '@/pages/admin/AdminSessions'
-import AdminUsers from '@/pages/admin/AdminUsers'
-import BlogPage from '@/pages/BlogPage'
-import BlogPostPage from '@/pages/BlogPostPage'
-import Dashboard from '@/pages/Dashboard'
-import ExamPage from '@/pages/ExamPage'
-import GenerationPage from '@/pages/GenerationPage'
 import LandingPage from '@/pages/LandingPage'
-import LoginPage from '@/pages/LoginPage'
-import NotFoundPage from '@/pages/NotFoundPage'
-import PrivacyPage from '@/pages/PrivacyPage'
-import ProfilePage from '@/pages/ProfilePage'
-import ResultsPage from '@/pages/ResultsPage'
-import TermsPage from '@/pages/TermsPage'
-import VerifyLandingPage from '@/pages/VerifyLandingPage'
-import VerifyPage from '@/pages/VerifyPage'
+
+// Every route except the landing page is loaded on demand, so first visits
+// only download what the landing page needs.
+const AdminAuditLog = lazy(() => import('@/pages/admin/AdminAuditLog'))
+const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'))
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
+const AdminFlags = lazy(() => import('@/pages/admin/AdminFlags'))
+const AdminIntegrity = lazy(() => import('@/pages/admin/AdminIntegrity'))
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'))
+const AdminQuestions = lazy(() => import('@/pages/admin/AdminQuestions'))
+const AdminSessions = lazy(() => import('@/pages/admin/AdminSessions'))
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'))
+const BlogPage = lazy(() => import('@/pages/BlogPage'))
+const BlogPostPage = lazy(() => import('@/pages/BlogPostPage'))
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const ExamPage = lazy(() => import('@/pages/ExamPage'))
+const GenerationPage = lazy(() => import('@/pages/GenerationPage'))
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
+const ResultsPage = lazy(() => import('@/pages/ResultsPage'))
+const TermsPage = lazy(() => import('@/pages/TermsPage'))
+const VerifyLandingPage = lazy(() => import('@/pages/VerifyLandingPage'))
+const VerifyPage = lazy(() => import('@/pages/VerifyPage'))
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen bg-ink flex items-center justify-center" role="status" aria-label="Loading">
+      <div className="w-8 h-8 rounded-full border-2 border-gold/30 border-t-gold animate-spin" />
+    </div>
+  )
+}
 
 /** Injects <meta name="robots" content="noindex"> while the component is mounted.
  *  Prevents search engines from indexing private app pages. */
@@ -76,6 +87,7 @@ export default function App() {
     <ErrorBoundary>
       <AuthProvider>
       <BrowserRouter>
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Navigate to="/iso-27001" replace />} />
@@ -111,6 +123,7 @@ export default function App() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>
