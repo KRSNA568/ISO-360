@@ -150,6 +150,43 @@ describe('Session — State Machine Enforcement', () => {
     expect(res.body.error).toMatch(/cannot start/i)
   })
 
+  it('should not leak correct_option, explanation or clause_ref when starting', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id:           SESSION_B_ID,
+          track:        'associate',
+          status:       'ready',
+          questions:    [{
+            id:             'A-T1-001',
+            thread:         1,
+            stem:           'Which clause requires determining internal and external issues?',
+            options:        ['Clause 6.1', 'Clause 4.1', 'Clause 5.1', 'Clause 7.1'],
+            correct_option: 'B',
+            explanation:    'Clause 4.1 covers context of the organisation.',
+            clause_ref:     'Clause 4.1',
+            difficulty:     'easy',
+          }],
+          answers:      [],
+          tab_violations: 0,
+          device_fingerprint: null,
+        }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 }) // UPDATE → active
+
+    const res = await request(app)
+      .post(`/api/session/${SESSION_B_ID}/start`)
+      .set('Authorization', `Bearer ${makeToken(USER_B_ID)}`)
+      .send({})
+
+    expect(res.status).toBe(200)
+    expect(res.body.questions).toHaveLength(1)
+    expect(res.body.questions[0]).not.toHaveProperty('correct_option')
+    expect(res.body.questions[0]).not.toHaveProperty('explanation')
+    expect(res.body.questions[0]).not.toHaveProperty('clause_ref')
+    expect(res.body.questions[0].options).toHaveLength(4)
+  })
+
   it('should return 400 when trying to submit an already-completed session', async () => {
     // Submit uses a pg transaction — mock the client returned by pool.connect()
     const mockClient = {
@@ -180,6 +217,33 @@ describe('Session — State Machine Enforcement', () => {
     expect(res.status).toBe(200)
     expect(res.body.alreadyScored).toBe(true)
     expect(mockClient.release).toHaveBeenCalled()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Session — Create avoids recently seen questions', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('passes question ids from recent attempts to drawQuestions as excludeIds', async () => {
+    const { drawQuestions } = require('../../src/services/questionBankService')
+
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })                                      // no generating/ready session
+      .mockResolvedValueOnce({ rows: [{ cnt: '1' }] })                          // retake count
+      .mockResolvedValueOnce({ rows: [{ cnt: '1' }] })                          // same-IP users
+      .mockResolvedValueOnce({ rows: [{ id: 'A-T1-001' }, { id: 'A-T2-004' }] }) // recently seen ids
+      .mockResolvedValueOnce({ rows: [{ id: 'sess-new-0001' }] })               // INSERT
+      .mockResolvedValueOnce({ rowCount: 0 })                                   // wipe old questions
+
+    const res = await request(app)
+      .post('/api/session/create')
+      .set('Authorization', `Bearer ${TOKEN_A}`)
+      .send({ track: 'associate' })
+
+    expect(res.status).toBe(202)
+    expect(pool.query.mock.calls[3][1]).toEqual([USER_A_ID, 'associate'])
+    expect(drawQuestions).toHaveBeenCalledWith('associate', { excludeIds: ['A-T1-001', 'A-T2-004'] })
   })
 })
 

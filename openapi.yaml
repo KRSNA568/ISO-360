@@ -813,9 +813,10 @@ paths:
                   valid:        { type: boolean }
                   certificate:
                     type: object
-                    description: Public fields only — full_name and score are omitted to protect candidate privacy
+                    description: Public fields only — holder name is shown so verifiers can match the certificate to a person; score and email are omitted
                     properties:
                       certificate_id: { type: string }
+                      full_name:      { type: string }
                       track:          { type: string, enum: [associate, professional] }
                       issued_at:      { type: string, format: date-time }
                       valid_until:    { type: string, format: date-time, nullable: true }

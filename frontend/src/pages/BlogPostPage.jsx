@@ -1,37 +1,34 @@
 import DOMPurify from 'dompurify'
 import { ArrowLeft, Calendar, User, Clock, Share2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 
+import { ContentNavbar } from '@/components/layout/ContentNavbar'
 import { blogPosts } from '@/data/blogs'
-import { BlogNavbar } from '@/pages/BlogPage'
+import { blogSeo } from '@/lib/blogSeo'
+import { useSeo } from '@/lib/seo'
+
+// Blog content is our own static data; DOMPurify needs a DOM, so during
+// build-time prerendering (no window) the trusted HTML is used as-is.
+const sanitize = (html) => (typeof window === 'undefined' ? html : DOMPurify.sanitize(html))
 
 export default function BlogPostPage() {
   const { slug } = useParams()
-  const [post, setPost] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Simulate a slight network delay for premium feel or actual fetch later
-    window.scrollTo(0, 0)
-    const found = blogPosts.find(p => p.slug === slug)
-    setPost(found)
-    setLoading(false)
-  }, [slug])
-
-  if (loading) {
-    return <div className="min-h-screen bg-ink flex items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" />
-    </div>
-  }
+  const post = blogPosts.find(p => p.slug === slug)
 
   if (!post) {
     return <Navigate to="/blog" replace />
   }
+  return <BlogArticle key={post.slug} post={post} />
+}
+
+function BlogArticle({ post }) {
+  useSeo(blogSeo(post))
+  useEffect(() => { window.scrollTo(0, 0) }, [])
 
   return (
     <div className="min-h-screen bg-ink">
-      <BlogNavbar />
+      <ContentNavbar />
       
       <article className="pt-24 pb-20 px-6 max-w-4xl mx-auto">
         
@@ -77,9 +74,20 @@ export default function BlogPostPage() {
           prose-ol:list-decimal prose-ol:pl-6
           prose-li:mb-2
           "
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+          dangerouslySetInnerHTML={{ __html: sanitize(post.content) }}
         />
         
+        {/* Reference library cross-link */}
+        <aside className="mt-16 rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <p className="text-white/70 text-sm flex-1">
+            Want the detail behind this article? Browse plain-English guides to every ISO 27001:2022 requirement.
+          </p>
+          <div className="flex gap-3 shrink-0">
+            <Link to="/iso-27001/clauses" className="btn btn-outline btn-sm border-white/20 text-white hover:bg-white/5">Clauses 4–10</Link>
+            <Link to="/iso-27001/annex-a" className="btn btn-outline btn-sm border-white/20 text-white hover:bg-white/5">Annex A controls</Link>
+          </div>
+        </aside>
+
         {/* Footer actions */}
         <div className="mt-16 pt-8 border-t border-white/10 flex justify-between items-center">
           <Link to="/blog" className="btn btn-outline border-white/20 text-white hover:bg-white/5">

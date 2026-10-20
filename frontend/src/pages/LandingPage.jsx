@@ -209,6 +209,7 @@ function Navbar() {
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-5 text-sm">
+          <Link to="/iso-27001/annex-a" className="text-white/70 hover:text-white transition-colors">Annex A</Link>
           <Link to="/blog"   className="text-white/70 hover:text-white transition-colors">Blog</Link>
           <Link to="/verify" className="text-white/70 hover:text-white transition-colors">Verify Certificate</Link>
           <Link to="/login"  className="text-white/70 hover:text-white transition-colors">Sign In</Link>
@@ -236,6 +237,7 @@ function Navbar() {
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-1 bg-ink/95 backdrop-blur-sm">
+          <Link to="/iso-27001/annex-a" className="py-3 text-white/80 hover:text-white border-b border-white/5">Annex A controls</Link>
           <Link to="/blog" className="py-3 text-white/80 hover:text-white border-b border-white/5">Blog</Link>
           <Link to="/verify" className="py-3 text-white/80 hover:text-white border-b border-white/5">Verify Certificate</Link>
           <Link to="/login" className="py-3 text-white/80 hover:text-white border-b border-white/5">Sign In</Link>
@@ -604,6 +606,8 @@ function Footer() {
           <Link to="/terms"    className="hover:text-white/70 transition-colors">Terms of Service</Link>
           <Link to="/verify"   className="hover:text-white/70 transition-colors">Verify Certificate</Link>
           <Link to="/blog"     className="hover:text-white/70 transition-colors">Blog</Link>
+          <Link to="/iso-27001/annex-a" className="hover:text-white/70 transition-colors">Annex A Controls</Link>
+          <Link to="/iso-27001/clauses" className="hover:text-white/70 transition-colors">ISO 27001 Clauses</Link>
           <a href="mailto:support@27001certified.in" className="hover:text-white/70 transition-colors">Support</a>
         </div>
       </div>

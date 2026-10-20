@@ -26,6 +26,7 @@ export default function PrivacyPage() {
               <li><strong className="text-white">Browser / device information</strong> — session integrity checks.</li>
             </ul>
             <p className="mt-3">We do <strong className="text-white">not</strong> collect payment card data — no paid features exist at launch.</p>
+            <p className="mt-3">If you earn a certificate, your <strong className="text-white">full name, exam track and award date</strong> are shown on its public verification page, so anyone you share the certificate ID or QR code with can confirm it. Your score and email address are never shown publicly.</p>
           </section>
 
           <section>

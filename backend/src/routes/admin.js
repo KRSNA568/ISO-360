@@ -5,6 +5,7 @@
  */
 const router = require('express').Router()
 const crypto = require('crypto')
+const { z }  = require('zod')
 const { authenticate } = require('../middlewares/authenticate')
 const { requireAdmin }  = require('../middlewares/requireAdmin')
 const { adminWriteLimiter } = require('../middlewares/rateLimiter')
@@ -264,6 +265,102 @@ router.patch('/flags/:id', async (req, res, next) => {
     if (!rows.length) {return res.status(404).json({ error: 'Flag not found.' })}
     await auditLog(req.user.sub, `flag_${status}`, 'question_flag', id, { admin_note }, req.ip)
     res.json({ message: 'Flag updated.', flag: rows[0] })
+  } catch (err) { next(err) }
+})
+
+// ─── Certificates: integrity audit ────────────────────────────────────────────
+// Before answer options were shuffled, every question's correct answer was "A",
+// so picking A throughout passed the exam. Sessions from that period are
+// recognisable because every review entry has correctOption = 'A'. Genuine
+// passes from then are also all-A, so this only surfaces evidence (speed, share
+// of A answers, tab violations) for an admin to judge — it does not decide.
+
+// GET /api/admin/certificates/integrity-audit?track=&page=&limit=
+router.get('/certificates/integrity-audit', async (req, res, next) => {
+  try {
+    const { track } = req.query
+    const { size, offset } = pageParams(req.query)
+    const params = []
+    let trackCond = ''
+    if (track) { params.push(track); trackCond = `AND c.track = $${params.length}` }
+    params.push(size, offset)
+    const pL = params.length - 1, pO = params.length
+
+    const { rows } = await pool.query(`
+      WITH audited AS (
+        SELECT c.id, c.certificate_id, c.track, c.full_name, c.score, c.awarded_on,
+               u.email,
+               s.tab_violations, s.suspicious, s.suspicious_reason,
+               EXTRACT(EPOCH FROM (s.completed_at - s.started_at))::int AS duration_secs,
+               jsonb_array_length(s.answers) AS total_questions,
+               (SELECT COUNT(*) FROM jsonb_array_elements(s.answers) e
+                 WHERE e->>'userAnswer' IS NOT NULL)::int AS answered,
+               (SELECT COUNT(*) FROM jsonb_array_elements(s.answers) e
+                 WHERE e->>'userAnswer' = 'A')::int AS a_answers
+        FROM certificates c
+        JOIN exam_sessions s ON s.id = c.exam_session_id
+        JOIN users         u ON u.id = c.user_id
+        WHERE c.revoked = FALSE
+          AND jsonb_array_length(s.answers) > 0
+          AND NOT EXISTS (
+            SELECT 1 FROM jsonb_array_elements(s.answers) e
+            WHERE e->>'correctOption' IS DISTINCT FROM 'A'
+          )
+          ${trackCond}
+      )
+      SELECT *, COUNT(*) OVER () AS total_count
+      FROM audited
+      ORDER BY a_answers::float / NULLIF(answered, 0) DESC NULLS LAST,
+               duration_secs::float / NULLIF(total_questions, 0) ASC NULLS LAST
+      LIMIT $${pL} OFFSET $${pO}
+    `, params)
+
+    const certificates = rows.map(({ total_count: _totalCount, ...r }) => ({
+      ...r,
+      secs_per_question: Number.isFinite(r.duration_secs) && r.total_questions
+        ? Math.round((r.duration_secs / r.total_questions) * 10) / 10
+        : null,
+      a_answer_pct: r.answered ? Math.round((r.a_answers / r.answered) * 100) : null,
+    }))
+    res.json({ certificates, total: rows.length ? parseInt(rows[0].total_count) : 0 })
+  } catch (err) { next(err) }
+})
+
+// POST /api/admin/certificates/bulk-revoke   { ids: uuid[], reason }
+const bulkRevokeSchema = z.object({
+  ids:    z.array(z.string().uuid()).min(1).max(100),
+  reason: z.string().trim().min(1).max(500),
+})
+
+router.post('/certificates/bulk-revoke', async (req, res, next) => {
+  try {
+    const parsed = bulkRevokeSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'ids (1–100 certificate UUIDs) and a reason are required.' })
+    }
+    const { ids, reason } = parsed.data
+    const adminId = req.user.sub
+    const { revokeCertificate }   = require('../services/certificateService')
+    const { sendRevocationEmail } = require('../services/emailService')
+
+    const revoked = []
+    const failed  = []
+    for (const id of [...new Set(ids)]) {
+      try {
+        const cert = await revokeCertificate(id, adminId, reason)
+        await auditLog(adminId, 'revoke_certificate', 'certificate', id, { reason, bulk: true }, req.ip)
+        revoked.push({ id, certificateId: cert.certificate_id })
+        pool.query('SELECT email FROM users WHERE id = $1', [cert.user_id])
+          .then(({ rows }) => {
+            if (rows.length) {return sendRevocationEmail(rows[0].email, cert.full_name, cert.certificate_id, reason)}
+          })
+          .catch(err => console.error('[Admin] revocation email failed:', err.message))
+      } catch (err) {
+        failed.push({ id, error: err.status ? err.message : 'Revocation failed' })
+      }
+    }
+
+    res.json({ revoked, failed })
   } catch (err) { next(err) }
 })
 

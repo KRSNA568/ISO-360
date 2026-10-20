@@ -19,6 +19,8 @@ Free. No paid tiers exist at launch. No credit card required.
 
 - [Landing page](https://27001certified.in/iso-27001): overview of tracks, format, and certificate details
 - [Public certificate verification](https://27001certified.in/verify): look up any issued certificate by ID
+- [ISO 27001 clauses 4–10](https://27001certified.in/iso-27001/clauses): plain-English guide to the management-system requirements, sub-clause by sub-clause, with audit evidence and common nonconformities
+- [Annex A control library](https://27001certified.in/iso-27001/annex-a): plain-English guide to each ISO 27001:2022 Annex A control — purpose, implementation steps, audit evidence and common nonconformities
 - [Blog](https://27001certified.in/blog): practical ISO 27001 implementation and audit guides
 - [Privacy Policy](https://27001certified.in/privacy)
 - [Terms of Service](https://27001certified.in/terms)
@@ -32,4 +34,4 @@ Free. No paid tiers exist at launch. No credit card required.
 
 - Not an accredited certification body. The certificate validates practical knowledge of ISO 27001:2022 but does not substitute for ISO 27001 organisational certification (which only accredited bodies like BSI, DNV, or TÜV can issue).
 - Not affiliated with ISO, IAF, or any national accreditation forum.
-- Not a training course — there are no video lectures or study modules; the platform tests existing knowledge.
+- Not a training course — there are no video lectures or study modules; the platform tests existing knowledge. Free reference material (the clause guide, Annex A control library and blog) is written in our own words and does not reproduce the ISO standards' text.

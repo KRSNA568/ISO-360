@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, startTransition } from 'react'
 
 import api from '@/lib/api'
 
@@ -11,19 +11,21 @@ export function AuthProvider({ children }) {
   const [user, setUser]     = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Auth state updates are transitions so they never force a prerendered page
+  // (hydrated in main.jsx) to abandon hydration and re-render on the client.
   const fetchProfile = useCallback(async () => {
     try {
       const res = await api.get('/user/me')
-      setUser(res.data)
+      startTransition(() => setUser(res.data))
     } catch (err) {
       _clearStorage()
-      setUser(null)
+      startTransition(() => setUser(null))
       if (err?.response?.status === 401) {
         window.location.href = '/login'
         return
       }
     } finally {
-      setLoading(false)
+      startTransition(() => setLoading(false))
     }
   }, [])
 
@@ -31,7 +33,7 @@ export function AuthProvider({ children }) {
     if (localStorage.getItem(AT_KEY)) {
       fetchProfile()
     } else {
-      setLoading(false)
+      startTransition(() => setLoading(false))
     }
   }, [fetchProfile])
 
