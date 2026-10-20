@@ -28,7 +28,7 @@ export function ContentNavbar() {
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-5 text-sm">
+        <div className="hidden lg:flex items-center gap-5 text-sm">
           <NavLink to="/iso-27001/clauses" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Clauses</NavLink>
           <NavLink to="/iso-27001/annex-a" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Annex A</NavLink>
           <NavLink to="/blog" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Blog</NavLink>
@@ -44,7 +44,7 @@ export function ContentNavbar() {
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
           aria-controls="blog-mobile-menu"
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/80 hover:text-gold hover:bg-white/5 transition-colors"
+          className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/80 hover:text-gold hover:bg-white/5 transition-colors"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -53,8 +53,8 @@ export function ContentNavbar() {
       {/* Mobile menu panel */}
       <div
         id="blog-mobile-menu"
-        className={`md:hidden overflow-hidden border-t border-white/10 transition-[max-height,opacity] duration-300 ease-out ${
-          open ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        className={`lg:hidden overflow-x-hidden border-t border-white/10 transition-[max-height,opacity] duration-300 ease-out ${
+          open ? 'max-h-[calc(100vh-4rem)] overflow-y-auto opacity-100' : 'max-h-0 overflow-y-hidden opacity-0'
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-1 bg-ink/95 backdrop-blur-sm">
