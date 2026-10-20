@@ -36,7 +36,8 @@ export default function AnnexAIndexPage() {
           <p className="text-white/60 text-lg leading-relaxed mb-8">
             What each control is for, how to implement it, the evidence an auditor will ask for, and the
             nonconformities we see most often. {CONTROLS.length} controls covered
-            {newCount > 0 && <>, including {newCount} new in the 2022 revision</>}.
+            {newCount > 0 && <>, including {newCount} new in the 2022 revision</>}. Looking for the
+            management-system requirements? See <Link to="/iso-27001/clauses" className="text-gold hover:underline">Clauses 4–10</Link>.
           </p>
           <label className="relative block max-w-md mx-auto">
             <span className="sr-only">Search controls</span>

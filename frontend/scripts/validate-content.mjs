@@ -1,13 +1,17 @@
 /**
- * Build-time checks for the Annex A content library (src/data/annexA.js).
+ * Build-time checks for the ISO 27001 reference library (src/data/annexA.js,
+ * src/data/clauses.js).
  * Fails the build (exit 1) on any problem so bad content never ships.
  *
  *   - every control id is a real ISO/IEC 27001:2022 Annex A id
  *   - all 93 controls are present across the four themes, and nothing is duplicated
  *   - every required field is present and non-empty
  *   - related ids are real Annex A ids and not self-references
+ *   - clauses 4–10 are all present, sub-clauses belong to their clause, fields
+ *     are non-empty and related control ids exist
  */
 import { CONTROLS, THEMES } from '../src/data/annexA.js'
+import { CLAUSES } from '../src/data/clauses.js'
 
 const errors = []
 const fail = (msg) => errors.push(msg)
@@ -54,8 +58,30 @@ for (const [key, theme] of Object.entries(THEMES)) {
   }
 }
 
+const clauseNumbers = CLAUSES.map((c) => c.number).join(',')
+if (clauseNumbers !== '4,5,6,7,8,9,10') {fail(`clauses must be 4–10 in order, got ${clauseNumbers}`)}
+for (const c of CLAUSES) {
+  const where = `clause ${c.number}`
+  for (const field of ['title', 'intro']) {
+    if (typeof c[field] !== 'string' || c[field].trim().length < 3) {fail(`${where}: missing ${field}`)}
+  }
+  if (!Array.isArray(c.subclauses) || c.subclauses.length === 0) {fail(`${where}: no sub-clauses`)}
+  for (const sub of c.subclauses || []) {
+    if (!sub.id?.startsWith(`${c.number}.`)) {fail(`${where}: sub-clause ${sub.id} does not belong to it`)}
+    if (!sub.title?.trim() || !sub.summary?.trim()) {fail(`${where}: sub-clause ${sub.id} is missing title or summary`)}
+  }
+  for (const field of ['evidence', 'ncs']) {
+    if (!Array.isArray(c[field]) || c[field].length < 2 || c[field].some((x) => !x?.trim())) {
+      fail(`${where}: ${field} needs at least 2 non-empty items`)
+    }
+  }
+  for (const id of c.controls || []) {
+    if (!validIds.has(id)) {fail(`${where}: related control ${id} is not an Annex A id`)}
+  }
+}
+
 if (errors.length) {
   console.error(`✗ Annex A content validation failed (${errors.length}):\n  - ${errors.join('\n  - ')}`)
   process.exit(1)
 }
-console.log(`✓ Annex A content valid: ${CONTROLS.length} controls`)
+console.log(`✓ Reference content valid: ${CONTROLS.length} controls, ${CLAUSES.length} clauses`)

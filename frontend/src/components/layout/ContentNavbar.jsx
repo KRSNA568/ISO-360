@@ -29,6 +29,7 @@ export function ContentNavbar() {
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-5 text-sm">
+          <NavLink to="/iso-27001/clauses" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Clauses</NavLink>
           <NavLink to="/iso-27001/annex-a" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Annex A</NavLink>
           <NavLink to="/blog" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Blog</NavLink>
           <Link to="/verify" className="text-white/70 hover:text-white transition-colors">Verify Certificate</Link>
@@ -57,6 +58,7 @@ export function ContentNavbar() {
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-1 bg-ink/95 backdrop-blur-sm">
+          <Link to="/iso-27001/clauses" className="py-3 text-white/80 hover:text-white border-b border-white/5">ISO 27001 clauses</Link>
           <Link to="/iso-27001/annex-a" className="py-3 text-white/80 hover:text-white border-b border-white/5">Annex A controls</Link>
           <Link to="/blog" className="py-3 text-white/80 hover:text-white border-b border-white/5">Blog</Link>
           <Link to="/verify" className="py-3 text-white/80 hover:text-white border-b border-white/5">Verify Certificate</Link>

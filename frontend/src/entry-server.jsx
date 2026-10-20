@@ -12,13 +12,15 @@ import { StaticRouter } from 'react-router-dom/server'
 import { AppRoutes, ErrorBoundary } from '@/App'
 import { AuthProvider } from '@/context/AuthContext'
 import AnnexAIndexPage from '@/pages/annexa/AnnexAIndexPage'
+import ClauseIndexPage from '@/pages/annexa/ClauseIndexPage'
+import ClausePage from '@/pages/annexa/ClausePage'
 import ControlPage from '@/pages/annexa/ControlPage'
 import BlogPage from '@/pages/BlogPage'
 import BlogPostPage from '@/pages/BlogPostPage'
 
 export { contentRoutes } from '@/lib/contentRoutes'
 
-const EAGER_PAGES = { AnnexAIndexPage, ControlPage, BlogPage, BlogPostPage }
+const EAGER_PAGES = { AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage }
 
 export function render(url) {
   return renderToString(

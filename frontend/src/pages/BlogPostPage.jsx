@@ -77,6 +77,17 @@ function BlogArticle({ post }) {
           dangerouslySetInnerHTML={{ __html: sanitize(post.content) }}
         />
         
+        {/* Reference library cross-link */}
+        <aside className="mt-16 rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <p className="text-white/70 text-sm flex-1">
+            Want the detail behind this article? Browse plain-English guides to every ISO 27001:2022 requirement.
+          </p>
+          <div className="flex gap-3 shrink-0">
+            <Link to="/iso-27001/clauses" className="btn btn-outline btn-sm border-white/20 text-white hover:bg-white/5">Clauses 4–10</Link>
+            <Link to="/iso-27001/annex-a" className="btn btn-outline btn-sm border-white/20 text-white hover:bg-white/5">Annex A controls</Link>
+          </div>
+        </aside>
+
         {/* Footer actions */}
         <div className="mt-16 pt-8 border-t border-white/10 flex justify-between items-center">
           <Link to="/blog" className="btn btn-outline border-white/20 text-white hover:bg-white/5">

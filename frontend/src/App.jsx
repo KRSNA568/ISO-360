@@ -40,6 +40,8 @@ import LandingPage from '@/pages/LandingPage'
 // only download what the landing page needs.
 const AnnexAIndexPage = lazy(() => import('@/pages/annexa/AnnexAIndexPage'))
 const ControlPage = lazy(() => import('@/pages/annexa/ControlPage'))
+const ClauseIndexPage = lazy(() => import('@/pages/annexa/ClauseIndexPage'))
+const ClausePage = lazy(() => import('@/pages/annexa/ClausePage'))
 const AdminAuditLog = lazy(() => import('@/pages/admin/AdminAuditLog'))
 const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
@@ -86,7 +88,7 @@ function NoIndex() {
 
 /** Pages that are prerendered at build time; src/entry-server.jsx passes
  *  eager versions so the server can render them without Suspense. */
-const CONTENT_PAGES = { AnnexAIndexPage, ControlPage, BlogPage, BlogPostPage }
+const CONTENT_PAGES = { AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage }
 
 /**
  * The route tree, shared by the browser app and the build-time prerenderer.
@@ -105,6 +107,8 @@ export function AppRoutes({ pages = {} }) {
       <Route path="/verify/:certificateId" element={<VerifyPage />} />
       <Route path="/iso-27001/annex-a" element={<P.AnnexAIndexPage />} />
       <Route path="/iso-27001/annex-a/:slug" element={<P.ControlPage />} />
+      <Route path="/iso-27001/clauses" element={<P.ClauseIndexPage />} />
+      <Route path="/iso-27001/clauses/:slug" element={<P.ClausePage />} />
       <Route path="/blog" element={<P.BlogPage />} />
       <Route path="/blog/:slug" element={<P.BlogPostPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />

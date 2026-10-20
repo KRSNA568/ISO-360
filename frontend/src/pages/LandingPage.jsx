@@ -607,6 +607,7 @@ function Footer() {
           <Link to="/verify"   className="hover:text-white/70 transition-colors">Verify Certificate</Link>
           <Link to="/blog"     className="hover:text-white/70 transition-colors">Blog</Link>
           <Link to="/iso-27001/annex-a" className="hover:text-white/70 transition-colors">Annex A Controls</Link>
+          <Link to="/iso-27001/clauses" className="hover:text-white/70 transition-colors">ISO 27001 Clauses</Link>
           <a href="mailto:support@27001certified.in" className="hover:text-white/70 transition-colors">Support</a>
         </div>
       </div>
