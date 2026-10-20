@@ -806,6 +806,474 @@ const ORGANIZATIONAL = [
   },
 ]
 
+const PEOPLE = [
+  {
+    id: '6.1', title: 'Screening',
+    purpose: 'Checks the background of people before they join, proportionate to the role, the information they will access and the law — so trust is earned before access is granted.',
+    implement: [
+      'Define screening levels by role risk: identity and right-to-work for everyone, deeper checks for privileged or sensitive roles.',
+      'Cover contractors and agency staff, either directly or through contractual requirements on the supplier.',
+      'Follow local employment and privacy law on what may be checked and how results are stored.',
+      'Re-screen when people move into higher-risk roles, and periodically where the law allows.',
+    ],
+    evidence: [
+      'Screening policy with checks per role category',
+      'Completed screening records for a sample of recent joiners (held securely by HR)',
+      'Contract clauses requiring suppliers to screen their staff',
+    ],
+    ncs: [
+      'A privileged administrator started work before checks were completed.',
+      'Contractors with access to customer data were never screened.',
+      'Screening records cannot be found for several recent joiners.',
+    ],
+    related: ['6.2', '5.19', '8.2'],
+  },
+  {
+    id: '6.2', title: 'Terms and conditions of employment',
+    purpose: 'Puts each person\'s information security responsibilities into their employment or engagement contract, so obligations are agreed and enforceable from day one.',
+    implement: [
+      'Include security, confidentiality and acceptable use obligations in employment contracts and contractor agreements.',
+      'Reference the relevant policies and state that they form part of the terms.',
+      'Make clear which responsibilities continue after the person leaves.',
+      'Obtain signed agreement before access is granted.',
+    ],
+    evidence: [
+      'Contract templates with security clauses',
+      'Signed contracts for a sample of staff and contractors',
+      'Policy acknowledgement records linked to onboarding',
+    ],
+    ncs: [
+      'Contractor agreements contain no security or confidentiality obligations.',
+      'Contracts reference policies that no longer exist.',
+      'Staff were granted access before signing their contract.',
+    ],
+    related: ['6.1', '6.5', '6.6', '5.10'],
+  },
+  {
+    id: '6.3', title: 'Information security awareness, education and training',
+    purpose: 'Gives people the knowledge they need to protect information in their role — not one induction slide deck, but ongoing awareness plus deeper training where roles need it.',
+    implement: [
+      'Run awareness for everyone at induction and at regular intervals afterwards.',
+      'Add role-based training for higher-risk roles: developers, administrators, finance, HR.',
+      'Use varied, current content — phishing simulations, short modules, incident lessons.',
+      'Measure effectiveness (quiz results, simulation click rates) and adjust the programme.',
+    ],
+    evidence: [
+      'Awareness and training plan with audiences and frequency',
+      'Completion records, with overdue training followed up',
+      'Effectiveness measures such as phishing simulation results over time',
+    ],
+    ncs: [
+      'Training happens only at induction; long-serving staff have had none for years.',
+      'Developers get the same generic training as everyone else.',
+      'Completion is tracked but effectiveness is never measured.',
+    ],
+    related: ['5.1', '5.4', '6.8', '7.7'],
+  },
+  {
+    id: '6.4', title: 'Disciplinary process',
+    purpose: 'Provides a fair, known process for dealing with people who breach security policy, which both deters breaches and makes the response consistent.',
+    implement: [
+      'Make sure the disciplinary process explicitly covers information security breaches.',
+      'Communicate the process so people know the consequences.',
+      'Apply it proportionately and consistently, considering intent and impact.',
+      'Coordinate with HR and legal, and preserve evidence where needed.',
+    ],
+    evidence: [
+      'HR disciplinary policy referencing security breaches',
+      'Communication of the process (handbook, training)',
+      'Anonymised records of cases handled under it',
+    ],
+    ncs: [
+      'Repeated deliberate policy breaches have had no consequences.',
+      'The disciplinary policy does not mention information security.',
+      'Similar breaches were treated very differently with no rationale.',
+    ],
+    related: ['5.4', '6.2', '5.28'],
+  },
+  {
+    id: '6.5', title: 'Responsibilities after termination or change of employment',
+    purpose: 'Makes sure security obligations that outlast employment — such as confidentiality — are communicated and enforced when someone leaves or changes role.',
+    implement: [
+      'Remind leavers of continuing obligations at exit, in writing.',
+      'Coordinate leaver steps across HR, IT, facilities and line management (access removal, asset return).',
+      'Treat role changes as both a leave and a join: remove old access, grant new.',
+      'Cover contractors and suppliers\' staff when engagements end.',
+    ],
+    evidence: [
+      'Exit checklist and leaver letters referencing ongoing obligations',
+      'Access removal and asset return records for recent leavers',
+      'Mover process records showing old access removed',
+    ],
+    ncs: [
+      'Leavers are not reminded of their confidentiality obligations.',
+      'Staff who changed departments still hold their previous access.',
+      'Contractor departures are not communicated to IT.',
+    ],
+    related: ['5.11', '5.18', '6.2', '6.6'],
+  },
+  {
+    id: '6.6', title: 'Confidentiality or non-disclosure agreements',
+    purpose: 'Uses confidentiality or non-disclosure agreements to protect information shared with staff, contractors and third parties, reflecting what actually needs protecting.',
+    implement: [
+      'Identify where NDAs are needed: staff, contractors, consultants, partners, visitors to sensitive areas.',
+      'Make sure terms cover what is confidential, permitted use, duration and return or destruction.',
+      'Get NDAs signed before confidential information is shared.',
+      'Review templates periodically and when requirements change.',
+    ],
+    evidence: [
+      'NDA templates reviewed by legal',
+      'Signed NDAs for a sample of contractors and partners',
+      'A register or record of NDAs in place',
+    ],
+    ncs: [
+      'Confidential designs were shared with a contractor before any NDA was signed.',
+      'The NDA template has not been reviewed in many years.',
+      'No one can find the NDAs for a key outsourced team.',
+    ],
+    related: ['6.2', '5.14', '5.20'],
+  },
+  {
+    id: '6.7', title: 'Remote working',
+    purpose: 'Protects information accessed, processed or stored outside the organisation\'s premises — at home, while travelling or in shared spaces.',
+    implement: [
+      'Set remote working rules: approved devices, secure connections, screen privacy, home network basics.',
+      'Provide secure access (VPN or zero-trust access, MFA) and managed devices.',
+      'Address printing, storage and disposal of information at home.',
+      'Include remote working risks in awareness training.',
+    ],
+    evidence: [
+      'Remote working policy',
+      'Device management and secure access configurations',
+      'Training content covering remote working',
+    ],
+    ncs: [
+      'Staff access sensitive systems from unmanaged personal devices with no controls.',
+      'Remote access does not require MFA.',
+      'There are no rules for confidential paperwork printed at home.',
+    ],
+    related: ['7.9', '8.1', '8.5', '6.3'],
+  },
+  {
+    id: '6.8', title: 'Information security event reporting',
+    purpose: 'Gives everyone a quick, easy way to report suspected security events, so problems are found early by the people who see them first.',
+    implement: [
+      'Provide simple reporting channels — a phish-report button, service desk category, email address or phone line.',
+      'Tell staff what to report and reassure them that reporting in good faith is welcome.',
+      'Make sure reports reach the people who triage events promptly.',
+      'Give reporters feedback so reporting feels worthwhile.',
+    ],
+    evidence: [
+      'Published reporting channels and guidance',
+      'Records of reported events and their handling',
+      'Awareness content encouraging reporting',
+    ],
+    ncs: [
+      'Staff interviewed do not know how to report a suspected incident.',
+      'Reports to the shared mailbox sat unread for days.',
+      'Contractors have no way to report events.',
+    ],
+    related: ['5.24', '5.25', '6.3'],
+  },
+]
+
+const PHYSICAL = [
+  {
+    id: '7.1', title: 'Physical security perimeters',
+    purpose: 'Defines and protects the physical boundaries around areas that hold information and processing facilities, so unauthorised people cannot simply walk in.',
+    implement: [
+      'Identify the perimeters to protect: buildings, floors, server rooms, records stores.',
+      'Make perimeters physically sound — walls, doors, windows and roof access without obvious gaps.',
+      'Match the strength of the perimeter to the sensitivity of what is inside.',
+      'Consider shared buildings and the controls owned by landlords or co-tenants.',
+    ],
+    evidence: [
+      'Site plans showing defined secure areas',
+      'Physical inspection of doors, windows and access points',
+      'Agreements with landlords covering shared perimeter controls',
+    ],
+    ncs: [
+      'A fire exit to the server room is propped open for ventilation.',
+      'Secure areas are not defined, so controls are applied inconsistently.',
+      'Ground-floor windows into the records room are not secured.',
+    ],
+    related: ['7.2', '7.3', '7.4'],
+  },
+  {
+    id: '7.2', title: 'Physical entry',
+    purpose: 'Controls who can enter secure areas through entry points — staff, visitors and deliveries — so only authorised people get in.',
+    implement: [
+      'Use access control (badges, keys, biometrics) at entry points, with rights based on need.',
+      'Manage visitors: sign-in, identification, visitor badges, escorts in sensitive areas.',
+      'Handle deliveries in controlled areas away from sensitive facilities.',
+      'Review physical access rights periodically and remove them for leavers.',
+    ],
+    evidence: [
+      'Access control system configuration and access lists',
+      'Visitor logs and visitor badge process',
+      'Physical access reviews and leaver removals',
+    ],
+    ncs: [
+      'Leavers\' badges remain active in the access system.',
+      'Visitors enter the server room without signing in.',
+      'Tailgating through secure doors is common and unchallenged.',
+    ],
+    related: ['7.1', '7.3', '7.4', '5.18'],
+  },
+  {
+    id: '7.3', title: 'Securing offices, rooms and facilities',
+    purpose: 'Applies physical security to the offices, rooms and facilities inside the perimeter, especially those that hold sensitive information or equipment.',
+    implement: [
+      'Lock rooms that hold sensitive equipment or records when unattended.',
+      'Avoid signs that advertise what sensitive rooms contain.',
+      'Position sensitive work so it cannot be seen or overheard from public areas.',
+      'Control keys and access codes to these rooms.',
+    ],
+    evidence: [
+      'Inspection of locks and room security',
+      'Key and access code registers',
+      'Observation of sensitive work areas',
+    ],
+    ncs: [
+      'The comms room is unlocked and used for storing cleaning supplies.',
+      'Keys to the records store are kept in an unlocked drawer.',
+      'HR interviews are held where conversations can be overheard.',
+    ],
+    related: ['7.1', '7.2', '7.6'],
+  },
+  {
+    id: '7.4', title: 'Physical security monitoring', isNew: true,
+    purpose: 'Continuously monitors premises for unauthorised physical access, so intrusions are detected and responded to rather than discovered later.',
+    implement: [
+      'Use monitoring proportionate to risk: CCTV, intruder alarms, guards, door-held-open alerts.',
+      'Make sure alarms and footage are actually watched or reviewed, with a defined response.',
+      'Protect monitoring systems and footage from tampering and unauthorised access.',
+      'Respect privacy law on CCTV placement and retention.',
+    ],
+    evidence: [
+      'Monitoring system coverage and maintenance records',
+      'Alarm response procedures and logs',
+      'CCTV retention settings and access controls',
+    ],
+    ncs: [
+      'CCTV records but no one reviews footage or alerts.',
+      'Intruder alarms are routinely left unset.',
+      'The CCTV recorder sits in an unlocked cupboard.',
+    ],
+    related: ['7.1', '7.2', '5.28'],
+  },
+  {
+    id: '7.5', title: 'Protecting against physical and environmental threats',
+    purpose: 'Protects facilities against natural and man-made threats — fire, flood, heat, power surges, storms, civil unrest — based on a realistic assessment of the site.',
+    implement: [
+      'Assess site-specific threats when choosing and designing facilities.',
+      'Install appropriate protection: fire detection and suppression, leak detection, temperature monitoring.',
+      'Keep sensitive equipment away from water pipes and flood-prone areas.',
+      'Test and maintain protective systems.',
+    ],
+    evidence: [
+      'Site risk assessment covering environmental threats',
+      'Fire suppression and detection test records',
+      'Environmental monitoring alerts and responses',
+    ],
+    ncs: [
+      'The server room sits beneath washrooms with no leak detection.',
+      'Fire suppression has not been inspected within its required interval.',
+      'Temperature alarms go to a mailbox nobody monitors.',
+    ],
+    related: ['7.8', '7.11', '5.29'],
+  },
+  {
+    id: '7.6', title: 'Working in secure areas',
+    purpose: 'Sets rules for behaviour inside secure areas, so the controls that protect them are not undermined by the people working there.',
+    implement: [
+      'Tell people working in secure areas only what they need to know about the area.',
+      'Supervise unsupervised work, especially by third parties.',
+      'Restrict photography, recording devices and removable media where appropriate.',
+      'Lock and check vacant secure areas.',
+    ],
+    evidence: [
+      'Secure area working rules',
+      'Supervision records for third-party work',
+      'Signage or rules on recording devices',
+    ],
+    ncs: [
+      'Contractors work alone in the data centre without supervision.',
+      'Staff photograph secure area equipment for social media.',
+      'Rules for secure areas exist but no one working there knows them.',
+    ],
+    related: ['7.3', '7.2'],
+  },
+  {
+    id: '7.7', title: 'Clear desk and clear screen',
+    purpose: 'Reduces exposure of information left on desks and screens, including printed material, removable media and unlocked sessions.',
+    implement: [
+      'Require sensitive papers and media to be locked away when not in use.',
+      'Enforce automatic screen locking and teach people to lock screens when they step away.',
+      'Clear printers and meeting rooms of sensitive material promptly.',
+      'Spot-check compliance and give feedback.',
+    ],
+    evidence: [
+      'Clear desk and clear screen policy',
+      'Screen lock configuration in device management',
+      'Spot-check records and results',
+    ],
+    ncs: [
+      'Printed customer data was left on desks overnight.',
+      'Screen locking is not enforced on laptops.',
+      'Whiteboards in meeting rooms show sensitive information after meetings.',
+    ],
+    related: ['6.3', '7.3', '8.1'],
+  },
+  {
+    id: '7.8', title: 'Equipment siting and protection',
+    purpose: 'Places and protects equipment to reduce risks from environmental threats and unauthorised access or viewing.',
+    implement: [
+      'Site equipment away from hazards such as water, heat and dust.',
+      'Position screens that show sensitive information so they cannot be overlooked.',
+      'Secure equipment in racks or enclosures in shared spaces.',
+      'Control eating, drinking and smoking near critical equipment.',
+    ],
+    evidence: [
+      'Inspection of equipment placement and racks',
+      'Positioning of screens in public or shared areas',
+      'Facility rules near critical equipment',
+    ],
+    ncs: [
+      'A reception screen showing customer records faces the waiting area.',
+      'Network equipment sits on the floor in an open office corridor.',
+      'Servers are located under a known roof leak.',
+    ],
+    related: ['7.5', '7.3', '7.9'],
+  },
+  {
+    id: '7.9', title: 'Security of assets off-premises',
+    purpose: 'Protects equipment and information taken outside the organisation\'s premises, where theft, loss and overlooking are more likely.',
+    implement: [
+      'Set rules for taking equipment and information off-site, including approval where needed.',
+      'Encrypt laptops and mobile devices and enable remote wipe.',
+      'Advise people on safe travel practice — not leaving devices unattended, privacy screens.',
+      'Track off-site equipment in the asset inventory.',
+    ],
+    evidence: [
+      'Off-site equipment rules',
+      'Device encryption and remote wipe status from device management',
+      'Lost or stolen device reports and their handling',
+    ],
+    ncs: [
+      'Laptops used off-site are not encrypted.',
+      'A lost phone could not be wiped because it was not enrolled.',
+      'Equipment at a permanent off-site location is not in the inventory.',
+    ],
+    related: ['6.7', '8.1', '5.9'],
+  },
+  {
+    id: '7.10', title: 'Storage media',
+    purpose: 'Manages removable and other storage media through its life — acquisition, use, transport, re-use and disposal — so information on it is not lost or exposed.',
+    implement: [
+      'Decide whether removable media is allowed and enforce the decision technically.',
+      'Encrypt sensitive information on media and keep a register of media holding it.',
+      'Protect media in transit with approved couriers and packaging.',
+      'Securely erase or destroy media before re-use or disposal.',
+    ],
+    evidence: [
+      'Removable media policy and technical enforcement settings',
+      'Media register for sensitive media',
+      'Destruction certificates or erasure records',
+    ],
+    ncs: [
+      'USB storage is allowed on all devices with no encryption or logging.',
+      'Backup tapes are shipped without tracking.',
+      'Old hard drives were reused without secure erasure.',
+    ],
+    related: ['7.14', '8.10', '8.12'],
+  },
+  {
+    id: '7.11', title: 'Supporting utilities',
+    purpose: 'Protects information processing facilities from failures of supporting utilities such as power, cooling and telecommunications.',
+    implement: [
+      'Identify the utilities critical facilities depend on.',
+      'Provide resilience where justified: UPS, generators, redundant cooling, diverse network links.',
+      'Monitor utilities and alert on faults.',
+      'Test failover equipment and maintain it on schedule.',
+    ],
+    evidence: [
+      'UPS and generator test and maintenance records',
+      'Utility monitoring alerts',
+      'Diverse supply or link documentation',
+    ],
+    ncs: [
+      'The UPS battery has not been tested and fails on load.',
+      'The generator has never been started under load.',
+      'All network links share a single physical route into the building.',
+    ],
+    related: ['7.5', '7.12', '8.14'],
+  },
+  {
+    id: '7.12', title: 'Cabling security',
+    purpose: 'Protects power and data cabling from interception, interference and damage.',
+    implement: [
+      'Route cables through protected paths — conduits, ceilings, floors — not public areas.',
+      'Separate power and data cables to avoid interference.',
+      'Label and document cabling, and lock patch panels and cabinets.',
+      'Inspect periodically for unauthorised devices or damage.',
+    ],
+    evidence: [
+      'Cabling documentation and labelling',
+      'Locked patch panels and cabinets',
+      'Inspection records',
+    ],
+    ncs: [
+      'Network ports in public reception areas are live.',
+      'Patch cabinets are unlocked in open areas.',
+      'No documentation shows where critical links run.',
+    ],
+    related: ['7.11', '7.8', '8.20'],
+  },
+  {
+    id: '7.13', title: 'Equipment maintenance',
+    purpose: 'Keeps equipment correctly maintained so it stays available and secure, and makes sure maintenance itself does not expose information.',
+    implement: [
+      'Maintain equipment according to supplier recommendations and schedules.',
+      'Use authorised maintenance personnel and record all maintenance.',
+      'Supervise on-site maintenance and control what leaves the site.',
+      'Check equipment after maintenance before returning it to service.',
+    ],
+    evidence: [
+      'Maintenance schedules and service records',
+      'Approved maintenance supplier list',
+      'Records of equipment sent off-site for repair and how data was protected',
+    ],
+    ncs: [
+      'A failed drive was sent for repair with unencrypted customer data on it.',
+      'Maintenance is reactive only, with no schedule.',
+      'Unvetted engineers maintain equipment unsupervised.',
+    ],
+    related: ['7.14', '7.11', '8.10'],
+  },
+  {
+    id: '7.14', title: 'Secure disposal or re-use of equipment',
+    purpose: 'Makes sure information and licensed software are removed from equipment before it is disposed of or re-used.',
+    implement: [
+      'Erase storage with verified methods or physically destroy it before disposal or re-use.',
+      'Use certified disposal providers and obtain destruction certificates.',
+      'Track equipment from decommissioning to final disposal.',
+      'Verify that erasure actually succeeded on a sample basis.',
+    ],
+    evidence: [
+      'Disposal procedure and approved providers',
+      'Destruction or erasure certificates matched to asset records',
+      'Verification checks on wiped devices',
+    ],
+    ncs: [
+      'Old laptops were donated without verified wiping.',
+      'Destruction certificates cannot be matched to specific assets.',
+      'Drives removed from servers are stored in an unlocked box awaiting disposal.',
+    ],
+    related: ['7.10', '8.10', '5.9'],
+  },
+]
+
 function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
@@ -821,6 +1289,8 @@ function withMeta(theme, list) {
 
 export const CONTROLS = [
   ...withMeta('organizational', ORGANIZATIONAL),
+  ...withMeta('people', PEOPLE),
+  ...withMeta('physical', PHYSICAL),
 ]
 
 export const CONTROLS_BY_ID = Object.fromEntries(CONTROLS.map((c) => [c.id, c]))
