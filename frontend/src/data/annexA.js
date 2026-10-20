@@ -1274,6 +1274,723 @@ const PHYSICAL = [
   },
 ]
 
+const TECHNOLOGICAL = [
+  {
+    id: '8.1', title: 'User end point devices',
+    purpose: 'Protects information stored on, processed by or accessible through laptops, desktops, phones and tablets — the devices most exposed to loss, theft and malware.',
+    implement: [
+      'Manage devices centrally (MDM or endpoint management) with a secure baseline.',
+      'Encrypt storage, enforce screen lock and keep operating systems and apps patched.',
+      'Decide the rules for personal devices (BYOD) and separate work data where they are allowed.',
+      'Be able to locate, lock and wipe lost or stolen devices.',
+    ],
+    evidence: [
+      'Endpoint policy and device baseline',
+      'Management console reports: encryption, patch level, compliance status',
+      'BYOD rules and enrolment records',
+    ],
+    ncs: [
+      'A fifth of laptops are not enrolled in device management.',
+      'Personal phones access email with no device controls.',
+      'Devices report as non-compliant for months with no follow-up.',
+    ],
+    related: ['6.7', '7.9', '8.7', '8.9'],
+  },
+  {
+    id: '8.2', title: 'Privileged access rights',
+    purpose: 'Restricts and closely manages privileged access — administrator and other powerful rights — because misuse or compromise of these accounts does the most damage.',
+    implement: [
+      'Grant privileged rights only with justification and approval, for the minimum scope and time needed.',
+      'Use separate admin accounts from everyday accounts, protected with strong MFA.',
+      'Consider just-in-time access or a privileged access management tool for critical systems.',
+      'Log privileged activity and review privileged accounts more frequently than others.',
+    ],
+    evidence: [
+      'Privileged account inventory with owners and approvals',
+      'MFA enforcement on privileged accounts',
+      'Privileged access reviews and activity logs',
+    ],
+    ncs: [
+      'Administrators use their everyday accounts with permanent admin rights.',
+      'A dozen domain admin accounts exist with no documented justification.',
+      'Privileged activity is not logged or reviewed.',
+    ],
+    related: ['5.15', '5.18', '8.5', '8.15', '8.18'],
+  },
+  {
+    id: '8.3', title: 'Information access restriction',
+    purpose: 'Restricts access to information and application functions in line with the access control policy, so people see and do only what their role requires.',
+    implement: [
+      'Configure applications and data stores to enforce role-based permissions.',
+      'Restrict access to sensitive data sets and functions (exports, bulk actions, admin screens).',
+      'Avoid broad default permissions such as "everyone" access on file shares.',
+      'Test that restrictions work as intended, including for APIs.',
+    ],
+    evidence: [
+      'Permission configurations for key applications and file shares',
+      'Access matrices compared with actual settings',
+      'Test results for authorisation checks',
+    ],
+    ncs: [
+      'Any authenticated user can view all customer records.',
+      'File shares holding HR data are open to the whole company.',
+      'The API returns other customers\' data when IDs are changed.',
+    ],
+    related: ['5.15', '5.18', '8.26'],
+  },
+  {
+    id: '8.4', title: 'Access to source code',
+    purpose: 'Protects source code, development tools and software libraries from unauthorised access and change, preventing tampering and leakage of intellectual property.',
+    implement: [
+      'Hold code in a managed repository with access based on need.',
+      'Protect main branches: required reviews, signed commits where practical, no direct pushes.',
+      'Keep secrets out of code and scan repositories for leaked credentials.',
+      'Review repository access and remove leavers promptly.',
+    ],
+    evidence: [
+      'Repository access lists and branch protection settings',
+      'Secret scanning configuration and alerts',
+      'Access review records for repositories',
+    ],
+    ncs: [
+      'Every employee has write access to all repositories.',
+      'Production credentials were found committed in a repository.',
+      'Former contractors still have repository access.',
+    ],
+    related: ['8.25', '8.28', '8.32', '5.17'],
+  },
+  {
+    id: '8.5', title: 'Secure authentication',
+    purpose: 'Implements authentication strong enough for the risk of what is being accessed — with multi-factor authentication for remote, privileged and sensitive access.',
+    implement: [
+      'Require MFA for remote access, cloud services, privileged accounts and sensitive systems.',
+      'Prefer phishing-resistant methods (FIDO2 keys, platform authenticators) for high-risk access.',
+      'Protect logins against brute force: lockouts, rate limits, monitoring of failed attempts.',
+      'Centralise authentication (single sign-on) where possible so policy is applied consistently.',
+    ],
+    evidence: [
+      'Identity provider MFA policies and coverage reports',
+      'Login protection settings',
+      'List of applications not yet behind SSO/MFA with a plan',
+    ],
+    ncs: [
+      'Cloud email accounts are not protected by MFA.',
+      'An internet-facing admin portal accepts passwords only.',
+      'Exceptions to MFA are granted informally and never reviewed.',
+    ],
+    related: ['5.17', '8.2', '6.7'],
+  },
+  {
+    id: '8.6', title: 'Capacity management',
+    purpose: 'Monitors and plans the capacity of systems, networks and people so services do not fail from running out of resources.',
+    implement: [
+      'Monitor utilisation of key resources: storage, compute, bandwidth, licences.',
+      'Set thresholds and alerts before limits are reached.',
+      'Forecast needs from business plans and growth trends.',
+      'Include capacity in change and project planning.',
+    ],
+    evidence: [
+      'Capacity monitoring dashboards and alerts',
+      'Capacity plans or forecasts',
+      'Records of actions taken on capacity alerts',
+    ],
+    ncs: [
+      'A log server ran out of disk and stopped recording for a week.',
+      'No one monitors database storage growth.',
+      'Capacity alerts go to a former employee.',
+    ],
+    related: ['8.14', '8.16', '5.30'],
+  },
+  {
+    id: '8.7', title: 'Protection against malware',
+    purpose: 'Protects against malware with technical controls supported by user awareness — prevention, detection and response together.',
+    implement: [
+      'Deploy endpoint protection or EDR on all supported devices and servers, centrally managed.',
+      'Keep protection and signatures current and alert on failures.',
+      'Reduce exposure: block risky attachments, restrict macros, control software installation.',
+      'Train users to recognise malware delivery such as phishing.',
+    ],
+    evidence: [
+      'Endpoint protection coverage and health reports',
+      'Email and web filtering configurations',
+      'Malware detection alerts and response records',
+    ],
+    ncs: [
+      'Several servers have no malware protection installed.',
+      'Endpoint agents have been offline for weeks without alerting anyone.',
+      'Macros from the internet run freely in Office documents.',
+    ],
+    related: ['8.1', '8.23', '6.3', '8.19'],
+  },
+  {
+    id: '8.8', title: 'Management of technical vulnerabilities',
+    purpose: 'Finds technical vulnerabilities in a timely way, assesses the exposure they create and fixes them based on risk.',
+    implement: [
+      'Scan systems and applications regularly and subscribe to vendor advisories.',
+      'Prioritise by severity, exploitability and asset criticality.',
+      'Set remediation timelines (for example critical within days) and track them.',
+      'Handle exceptions formally with compensating controls and an expiry.',
+    ],
+    evidence: [
+      'Vulnerability scan coverage and results',
+      'Remediation SLAs and tracking against them',
+      'Approved exceptions with expiry dates',
+    ],
+    ncs: [
+      'Critical vulnerabilities are open well past the defined deadline.',
+      'Scans cover the internal network but not cloud or internet-facing assets.',
+      'No owner is assigned to fix findings.',
+    ],
+    related: ['5.7', '8.9', '8.32', '8.19'],
+  },
+  {
+    id: '8.9', title: 'Configuration management', isNew: true,
+    purpose: 'Establishes, documents and enforces secure configurations for hardware, software, services and networks — and detects when systems drift from them.',
+    implement: [
+      'Define secure baselines for each platform, based on vendor or industry hardening guidance.',
+      'Build systems from approved templates or infrastructure-as-code.',
+      'Monitor for configuration drift and correct unauthorised changes.',
+      'Review baselines periodically and after major updates.',
+    ],
+    evidence: [
+      'Documented baselines and hardening standards',
+      'Configuration compliance or posture reports',
+      'Records of drift detected and corrected',
+    ],
+    ncs: [
+      'Servers are built manually with no baseline, so each one differs.',
+      'Default admin passwords remain on network devices.',
+      'Drift is never checked after go-live.',
+    ],
+    related: ['8.8', '8.32', '5.36', '8.1'],
+  },
+  {
+    id: '8.10', title: 'Information deletion', isNew: true,
+    purpose: 'Deletes information when it is no longer needed, so the organisation does not keep data — and risk — longer than necessary.',
+    implement: [
+      'Link deletion to the retention schedule and legal obligations.',
+      'Use deletion methods appropriate to the media and sensitivity.',
+      'Make sure deletion covers copies: backups, replicas, suppliers and cloud services.',
+      'Keep evidence of deletion for sensitive information.',
+    ],
+    evidence: [
+      'Deletion procedures tied to retention rules',
+      'Deletion logs or supplier deletion confirmations',
+      'Automated retention or deletion settings in key systems',
+    ],
+    ncs: [
+      'Customer data is kept indefinitely despite a stated retention limit.',
+      'A supplier was never asked to confirm deletion after contract end.',
+      'Deleted records remain fully recoverable in shared drives.',
+    ],
+    related: ['5.33', '7.14', '7.10', '5.34'],
+  },
+  {
+    id: '8.11', title: 'Data masking', isNew: true,
+    purpose: 'Masks, pseudonymises or anonymises sensitive data where full values are not needed — especially in testing, analytics and support.',
+    implement: [
+      'Identify where sensitive data is exposed without need (test environments, reports, support screens).',
+      'Apply masking techniques suited to the use: redaction, tokenisation, pseudonymisation.',
+      'Restrict who can see unmasked values and log that access.',
+      'Align masking with privacy requirements.',
+    ],
+    evidence: [
+      'Masking rules or standards',
+      'Configuration showing masked fields in applications and test data',
+      'Access controls on unmasked data',
+    ],
+    ncs: [
+      'Full production customer data is copied to test environments.',
+      'Support staff see full card numbers they never need.',
+      'Masking is applied in one system but bypassed in exported reports.',
+    ],
+    related: ['8.33', '5.34', '8.12'],
+  },
+  {
+    id: '8.12', title: 'Data leakage prevention', isNew: true,
+    purpose: 'Detects and prevents unauthorised disclosure of sensitive information through email, web uploads, removable media, printing and other channels.',
+    implement: [
+      'Identify sensitive data and the channels it could leak through.',
+      'Deploy DLP controls proportionate to risk on email, endpoints and cloud services.',
+      'Start in monitoring mode, tune rules, then block where appropriate.',
+      'Investigate alerts and feed lessons into training and rules.',
+    ],
+    evidence: [
+      'DLP policy and rule configurations',
+      'DLP alert records and investigations',
+      'Coverage of key channels (email, cloud, endpoints)',
+    ],
+    ncs: [
+      'Staff can upload customer data to personal cloud storage with nothing detecting it.',
+      'DLP alerts are generated but never reviewed.',
+      'DLP covers email but not the file-sharing tool most used for exports.',
+    ],
+    related: ['5.12', '5.14', '7.10', '8.11'],
+  },
+  {
+    id: '8.13', title: 'Information backup',
+    purpose: 'Keeps backup copies of information, software and systems, and proves they can be restored — so data loss is recoverable.',
+    implement: [
+      'Back up according to recovery point objectives and the importance of each system.',
+      'Store backups separately from production, including an offline or immutable copy to resist ransomware.',
+      'Protect backups with encryption and access control.',
+      'Test restores regularly and record the results.',
+    ],
+    evidence: [
+      'Backup policy and schedules per system',
+      'Backup job success reports',
+      'Restore test records with outcomes',
+    ],
+    ncs: [
+      'Backups succeed every night but no restore has ever been tested.',
+      'Backups sit on the same storage as production and were encrypted by ransomware.',
+      'A critical SaaS system has no backup at all.',
+    ],
+    related: ['5.30', '8.14', '5.33', '5.29'],
+  },
+  {
+    id: '8.14', title: 'Redundancy of information processing facilities',
+    purpose: 'Builds enough redundancy into systems and facilities to meet availability requirements, removing single points of failure that matter.',
+    implement: [
+      'Identify availability requirements and single points of failure for critical services.',
+      'Add redundancy where justified: clustering, multiple zones, redundant network paths.',
+      'Test failover so redundancy is proven, not assumed.',
+      'Make sure redundant components are secured to the same standard.',
+    ],
+    evidence: [
+      'Architecture diagrams showing redundancy',
+      'Failover test results',
+      'Availability requirements per service',
+    ],
+    ncs: [
+      'A critical application runs on a single server with no failover.',
+      'Failover has never been tested.',
+      'The standby site lacks security controls applied in production.',
+    ],
+    related: ['5.30', '8.13', '7.11', '8.6'],
+  },
+  {
+    id: '8.15', title: 'Logging',
+    purpose: 'Produces, protects and keeps logs of activity, exceptions and events — the raw material for detecting incidents and investigating them afterwards.',
+    implement: [
+      'Decide what to log on key systems: authentication, privileged actions, access to sensitive data, security events.',
+      'Send logs to a central, protected store where users cannot alter or delete them.',
+      'Retain logs long enough for investigation and legal needs.',
+      'Protect logs that contain personal data.',
+    ],
+    evidence: [
+      'Logging standard listing events per system type',
+      'Central log platform configuration and retention settings',
+      'Access controls on log storage',
+    ],
+    ncs: [
+      'Logs are kept only on the servers that generate them and were deleted by an attacker.',
+      'Administrator actions are not logged on critical systems.',
+      'Retention is a few days, too short for investigation.',
+    ],
+    related: ['8.16', '8.17', '5.28', '8.2'],
+  },
+  {
+    id: '8.16', title: 'Monitoring activities', isNew: true,
+    purpose: 'Watches networks, systems and applications for anomalous behaviour and acts on it, so potential incidents are detected while they can still be contained.',
+    implement: [
+      'Define what normal looks like and what should raise an alert.',
+      'Use monitoring tools (SIEM, EDR, cloud security monitoring) fed by relevant logs.',
+      'Make sure alerts are reviewed in a timely way, including outside business hours where risk demands.',
+      'Tune detections using threat intelligence and incident lessons.',
+    ],
+    evidence: [
+      'Monitoring scope and use cases',
+      'Alert handling records and response times',
+      'Coverage of out-of-hours monitoring',
+    ],
+    ncs: [
+      'Alerts are generated but reviewed only once a week.',
+      'Attacks occurring overnight go unnoticed until morning.',
+      'Monitoring does not cover cloud services that hold sensitive data.',
+    ],
+    related: ['8.15', '5.7', '5.25', '8.12'],
+  },
+  {
+    id: '8.17', title: 'Clock synchronization',
+    purpose: 'Synchronises system clocks to an approved time source, so logs from different systems can be correlated reliably during investigations.',
+    implement: [
+      'Point all systems at approved internal or external time sources.',
+      'Use the same reference time and time zone conventions in logs (ideally UTC).',
+      'Monitor for clock drift and synchronisation failures.',
+      'Cover cloud services, network devices and security tools.',
+    ],
+    evidence: [
+      'Time synchronisation configuration on key systems',
+      'Drift monitoring results',
+      'Logging standard specifying time format',
+    ],
+    ncs: [
+      'Firewall and server logs are several minutes apart, breaking investigation timelines.',
+      'Some systems log in local time and others in UTC with no record of which.',
+      'Network devices have no time source configured.',
+    ],
+    related: ['8.15', '8.16', '5.28'],
+  },
+  {
+    id: '8.18', title: 'Use of privileged utility programs',
+    purpose: 'Restricts and controls utility programs that can override system and application controls, because they can bypass security entirely.',
+    implement: [
+      'Identify powerful utilities (system tools, debuggers, database admin tools) on systems.',
+      'Restrict their use to authorised people and remove unnecessary ones.',
+      'Log and review their use.',
+      'Separate utilities from application software where possible.',
+    ],
+    evidence: [
+      'List of approved privileged utilities and who may use them',
+      'Logs of utility use',
+      'Hardening records showing unnecessary tools removed',
+    ],
+    ncs: [
+      'Database admin tools are installed on every user\'s workstation.',
+      'Use of system-level utilities is not logged.',
+      'Remote administration tools are installed without approval.',
+    ],
+    related: ['8.2', '8.19', '8.9'],
+  },
+  {
+    id: '8.19', title: 'Installation of software on operational systems',
+    purpose: 'Controls software installation on operational systems so only approved, tested software runs in production.',
+    implement: [
+      'Restrict who can install software on production systems and end points.',
+      'Install only approved software from trusted sources, through change management.',
+      'Use application allow-listing where risk justifies it.',
+      'Keep rollback options and track installed software.',
+    ],
+    evidence: [
+      'Software installation rules and approved software list',
+      'Change records for production installations',
+      'Endpoint or server software inventory reports',
+    ],
+    ncs: [
+      'Engineers install unapproved tools directly on production servers.',
+      'Users have local admin rights and install whatever they like.',
+      'No inventory shows what software runs in production.',
+    ],
+    related: ['8.32', '8.7', '5.32', '8.18'],
+  },
+  {
+    id: '8.20', title: 'Networks security',
+    purpose: 'Secures and manages networks and network devices to protect the information passing through them and the systems connected to them.',
+    implement: [
+      'Document the network and its trust boundaries.',
+      'Harden and patch network devices, and restrict their management interfaces.',
+      'Control traffic with firewalls and secure remote access.',
+      'Monitor network traffic for anomalies.',
+    ],
+    evidence: [
+      'Network diagrams and firewall rule sets',
+      'Network device configuration and patch status',
+      'Firewall rule reviews',
+    ],
+    ncs: [
+      'Firewall rules include "any to any" entries with no justification.',
+      'Network device management interfaces are reachable from the internet.',
+      'The network diagram is years out of date.',
+    ],
+    related: ['8.21', '8.22', '8.16', '7.12'],
+  },
+  {
+    id: '8.21', title: 'Security of network services',
+    purpose: 'Identifies the security mechanisms, service levels and requirements for network services — internal or provided by suppliers — and makes sure they are delivered.',
+    implement: [
+      'Define security requirements for network services: ISPs, DNS, CDNs, SD-WAN, managed firewalls.',
+      'Include those requirements in agreements with providers.',
+      'Monitor providers\' delivery against the agreed levels.',
+      'Use secure protocols and configurations for services you run yourself.',
+    ],
+    evidence: [
+      'Network service agreements with security requirements',
+      'Provider performance and security reports',
+      'Configuration of internally run network services',
+    ],
+    ncs: [
+      'The managed DNS provider contract contains no security terms.',
+      'No one monitors whether the managed firewall service is patched.',
+      'Internal services still use unencrypted management protocols.',
+    ],
+    related: ['8.20', '5.20', '5.22'],
+  },
+  {
+    id: '8.22', title: 'Segregation of networks',
+    purpose: 'Separates groups of services, users and systems into different network segments, limiting how far an attacker or fault can spread.',
+    implement: [
+      'Segment by trust and function: production, development, user, guest, management, OT.',
+      'Control traffic between segments with firewalls or access rules on a need basis.',
+      'Keep guest and visitor networks fully separate from internal networks.',
+      'Review segmentation as the environment changes.',
+    ],
+    evidence: [
+      'Network segmentation design',
+      'Inter-segment firewall rules',
+      'Test results confirming segments are isolated',
+    ],
+    ncs: [
+      'Guest Wi-Fi can reach internal file servers.',
+      'Development and production share a flat network.',
+      'Segmentation exists on paper but rules allow all traffic between segments.',
+    ],
+    related: ['8.20', '8.31', '8.21'],
+  },
+  {
+    id: '8.23', title: 'Web filtering', isNew: true,
+    purpose: 'Manages access to external websites to reduce exposure to malicious content and enforce acceptable use.',
+    implement: [
+      'Block known-malicious and high-risk website categories.',
+      'Apply filtering to users wherever they work, not only on the office network.',
+      'Provide a way to request exceptions, with approval and logging.',
+      'Review filtering rules and logs periodically.',
+    ],
+    evidence: [
+      'Web filtering policy and category settings',
+      'Coverage for remote users',
+      'Exception requests and approvals',
+    ],
+    ncs: [
+      'Filtering applies only in the office; remote workers are unfiltered.',
+      'Known-malicious categories are not blocked.',
+      'Exceptions are granted permanently with no review.',
+    ],
+    related: ['8.7', '5.10', '8.12'],
+  },
+  {
+    id: '8.24', title: 'Use of cryptography',
+    purpose: 'Defines and applies rules for using cryptography effectively — including key management — to protect confidentiality, integrity and authenticity.',
+    implement: [
+      'Write rules on where encryption is required: data at rest, in transit, backups, devices.',
+      'Specify approved algorithms, key lengths and protocols, and retire weak ones.',
+      'Manage keys across their life cycle: generation, storage, rotation, revocation, destruction.',
+      'Consider legal restrictions on cryptography in the countries you operate in.',
+    ],
+    evidence: [
+      'Cryptography policy and approved algorithms list',
+      'Key management procedures and key inventory',
+      'Configuration evidence (TLS settings, disk and database encryption)',
+    ],
+    ncs: [
+      'Sensitive data in cloud storage is unencrypted despite policy requiring it.',
+      'Outdated TLS versions are still enabled on public services.',
+      'Encryption keys are stored alongside the data they protect.',
+    ],
+    related: ['5.17', '5.14', '8.13', '8.10'],
+  },
+  {
+    id: '8.25', title: 'Secure development life cycle',
+    purpose: 'Builds security into every stage of software and system development, rather than testing it in at the end.',
+    implement: [
+      'Define a secure development process covering requirements, design, coding, testing and release.',
+      'Train developers in secure development for the languages and frameworks they use.',
+      'Include security checkpoints such as design review, code review and security testing.',
+      'Protect the development environment and pipeline itself.',
+    ],
+    evidence: [
+      'Secure development policy or SDLC description',
+      'Developer training records',
+      'Evidence of security activities in recent releases',
+    ],
+    ncs: [
+      'Security is only considered when a penetration test happens before launch.',
+      'Developers have no secure coding training.',
+      'The CI/CD pipeline can be changed by anyone with repository access.',
+    ],
+    related: ['8.26', '8.27', '8.28', '8.29', '5.8'],
+  },
+  {
+    id: '8.26', title: 'Application security requirements',
+    purpose: 'Identifies, specifies and approves security requirements when developing or acquiring applications, so security is part of what "done" means.',
+    implement: [
+      'Derive requirements from classification, risk, legal needs and threat modelling.',
+      'Cover authentication, authorisation, input validation, logging, data protection and transactions.',
+      'Include requirements in specifications and procurement for bought software.',
+      'Verify requirements are met before acceptance.',
+    ],
+    evidence: [
+      'Security requirements in specifications or user stories',
+      'Procurement criteria for third-party applications',
+      'Verification evidence before release',
+    ],
+    ncs: [
+      'A payment application was built with no defined security requirements.',
+      'SaaS applications are bought without any security criteria.',
+      'Requirements were defined but never tested.',
+    ],
+    related: ['8.25', '8.29', '5.8', '8.3'],
+  },
+  {
+    id: '8.27', title: 'Secure system architecture and engineering principles',
+    purpose: 'Defines and applies principles for engineering secure systems — such as defence in depth and least privilege — across development and integration work.',
+    implement: [
+      'Document engineering principles: defence in depth, least privilege, secure defaults, zero trust where appropriate.',
+      'Apply them in architecture design and review.',
+      'Include them in supplier and outsourced development requirements.',
+      'Review principles as technology and threats change.',
+    ],
+    evidence: [
+      'Documented security architecture principles',
+      'Architecture review records referencing them',
+      'Outsourcing requirements including the principles',
+    ],
+    ncs: [
+      'New systems are designed with no architecture review.',
+      'Principles exist but recent designs plainly ignore them.',
+      'Outsourced developers were never given the principles.',
+    ],
+    related: ['8.25', '8.26', '5.8'],
+  },
+  {
+    id: '8.28', title: 'Secure coding', isNew: true,
+    purpose: 'Applies secure coding practices so software is written without common vulnerabilities in the first place.',
+    implement: [
+      'Adopt secure coding standards for the languages in use (for example based on OWASP guidance).',
+      'Use automated checks: static analysis, dependency scanning, secret scanning.',
+      'Require peer code review with security in scope.',
+      'Manage third-party and open-source components and keep them updated.',
+    ],
+    evidence: [
+      'Secure coding standards',
+      'Static analysis and dependency scan results in the pipeline',
+      'Code review records',
+    ],
+    ncs: [
+      'Known-vulnerable libraries remain in production code for months.',
+      'Code is merged without review.',
+      'Static analysis runs but findings are ignored.',
+    ],
+    related: ['8.25', '8.4', '8.29', '5.21'],
+  },
+  {
+    id: '8.29', title: 'Security testing in development and acceptance',
+    purpose: 'Tests security during development and before acceptance, so vulnerabilities are found and fixed before systems go live.',
+    implement: [
+      'Plan security tests proportionate to risk: automated scanning, manual review, penetration testing.',
+      'Test against the defined security requirements.',
+      'Include security in acceptance criteria for new and changed systems, including bought software.',
+      'Fix findings or formally accept residual risk before release.',
+    ],
+    evidence: [
+      'Security test plans and results',
+      'Acceptance sign-offs including security',
+      'Tracking of findings to closure',
+    ],
+    ncs: [
+      'A major release went live with open critical findings and no risk acceptance.',
+      'Security testing covers web apps but not APIs.',
+      'Purchased software is accepted without any security testing.',
+    ],
+    related: ['8.26', '8.25', '8.33', '8.34'],
+  },
+  {
+    id: '8.30', title: 'Outsourced development',
+    purpose: 'Directs, monitors and reviews outsourced development so the code delivered meets your security requirements.',
+    implement: [
+      'Put security requirements, standards and testing obligations in outsourcing contracts.',
+      'Retain rights to review code and test results.',
+      'Test deliverables for security before acceptance.',
+      'Manage the supplier\'s access to your environments and code.',
+    ],
+    evidence: [
+      'Outsourcing contracts with security clauses',
+      'Supplier security test results and code review records',
+      'Acceptance testing records',
+    ],
+    ncs: [
+      'An outsourced app was accepted without any security testing.',
+      'The development contract has no security requirements.',
+      'The supplier has permanent production access no one reviews.',
+    ],
+    related: ['5.20', '8.25', '8.29', '5.21'],
+  },
+  {
+    id: '8.31', title: 'Separation of development, test and production environments',
+    purpose: 'Separates development, test and production environments to reduce the risk of unauthorised or accidental changes to production systems and data.',
+    implement: [
+      'Run development, test and production in separate environments with separate access.',
+      'Prevent developers from changing production directly; deploy through controlled pipelines.',
+      'Use different credentials and visual cues for each environment.',
+      'Keep production data out of non-production environments unless protected.',
+    ],
+    evidence: [
+      'Environment architecture showing separation',
+      'Access lists per environment',
+      'Deployment pipeline configuration',
+    ],
+    ncs: [
+      'Developers have direct write access to production databases.',
+      'Testing is done in production.',
+      'The same admin credentials work in every environment.',
+    ],
+    related: ['8.32', '8.33', '5.3', '8.22'],
+  },
+  {
+    id: '8.32', title: 'Change management',
+    purpose: 'Controls changes to systems and information processing facilities so they are assessed, approved, tested and reversible — and do not quietly weaken security.',
+    implement: [
+      'Define a change process with risk assessment, approval, testing and rollback planning.',
+      'Scale the process: lightweight for standard changes, stricter for significant ones.',
+      'Handle emergency changes with retrospective review.',
+      'Record changes and link them to deployments.',
+    ],
+    evidence: [
+      'Change management procedure',
+      'Change records with approvals, tests and rollback plans',
+      'Emergency change reviews',
+    ],
+    ncs: [
+      'Production changes are made without any change record.',
+      'Emergency changes are never reviewed afterwards.',
+      'Approvals are given by the person making the change.',
+    ],
+    related: ['8.9', '8.19', '8.31', '5.37'],
+  },
+  {
+    id: '8.33', title: 'Test information',
+    purpose: 'Selects, protects and manages the information used for testing, so test environments do not become an easy route to sensitive data.',
+    implement: [
+      'Use synthetic or masked data for testing wherever possible.',
+      'Where production data must be used, get approval and apply production-level controls.',
+      'Delete test copies of sensitive data when testing ends.',
+      'Log the copying of production data into test environments.',
+    ],
+    evidence: [
+      'Test data rules and approvals for production data use',
+      'Masking or synthetic data tooling',
+      'Deletion records for test copies',
+    ],
+    ncs: [
+      'Unmasked production data is used in test with weaker access controls.',
+      'Test copies of customer data are never deleted.',
+      'No approval is required to copy production data into test.',
+    ],
+    related: ['8.11', '8.31', '8.29'],
+  },
+  {
+    id: '8.34', title: 'Protection of information systems during audit testing',
+    purpose: 'Plans and agrees audit tests and other assurance activities on operational systems so they do not disrupt services or expose information.',
+    implement: [
+      'Agree scope, timing and methods of audit and penetration tests with system owners in advance.',
+      'Prefer read-only access for auditors and remove it when the audit ends.',
+      'Schedule disruptive tests outside business hours, with rollback plans.',
+      'Monitor and log auditor access.',
+    ],
+    evidence: [
+      'Audit and test plans agreed with management',
+      'Auditor access records and removal',
+      'Change or coordination records for intrusive tests',
+    ],
+    ncs: [
+      'A penetration test caused an outage because operations were not told.',
+      'Auditor accounts remain active after the audit.',
+      'Auditors were given write access they did not need.',
+    ],
+    related: ['5.35', '8.29', '8.2'],
+  },
+]
+
 function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
@@ -1291,6 +2008,7 @@ export const CONTROLS = [
   ...withMeta('organizational', ORGANIZATIONAL),
   ...withMeta('people', PEOPLE),
   ...withMeta('physical', PHYSICAL),
+  ...withMeta('technological', TECHNOLOGICAL),
 ]
 
 export const CONTROLS_BY_ID = Object.fromEntries(CONTROLS.map((c) => [c.id, c]))

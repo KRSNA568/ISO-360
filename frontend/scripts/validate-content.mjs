@@ -3,7 +3,7 @@
  * Fails the build (exit 1) on any problem so bad content never ships.
  *
  *   - every control id is a real ISO/IEC 27001:2022 Annex A id
- *   - any theme that has entries is complete (no gaps), and nothing is duplicated
+ *   - all 93 controls are present across the four themes, and nothing is duplicated
  *   - every required field is present and non-empty
  *   - related ids are real Annex A ids and not self-references
  */
@@ -49,8 +49,8 @@ for (const c of CONTROLS) {
 for (const [key, theme] of Object.entries(THEMES)) {
   const present = CONTROLS.filter((c) => c.theme === key).length
   const expected = theme.range[1] - theme.range[0] + 1
-  if (present > 0 && present !== expected) {
-    fail(`theme ${key}: ${present}/${expected} controls — a published theme must be complete`)
+  if (present !== expected) {
+    fail(`theme ${key}: ${present}/${expected} controls — every theme must be complete`)
   }
 }
 

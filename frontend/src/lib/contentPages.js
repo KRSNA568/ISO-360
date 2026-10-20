@@ -10,7 +10,7 @@ export function controlPath(control) {
 export function annexIndexSeo() {
   return {
     path: ANNEX_A_PATH,
-    title: 'ISO 27001:2022 Annex A Controls Explained — Implementation & Audit Guide',
+    title: 'ISO 27001:2022 Annex A Controls — All 93 Explained',
     description:
       'Plain-English guide to every ISO 27001:2022 Annex A control: what each is for, how to implement it, ' +
       'the audit evidence auditors ask for, and common nonconformities.',
