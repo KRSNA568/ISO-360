@@ -17,10 +17,19 @@ import ClausePage from '@/pages/annexa/ClausePage'
 import ControlPage from '@/pages/annexa/ControlPage'
 import BlogPage from '@/pages/BlogPage'
 import BlogPostPage from '@/pages/BlogPostPage'
+import InterviewPrepPage from '@/pages/practice/InterviewPrepPage'
+import PracticeIndexPage from '@/pages/practice/PracticeIndexPage'
+import PracticeSectionPage from '@/pages/practice/PracticeSectionPage'
+import ToolkitIndexPage from '@/pages/toolkit/ToolkitIndexPage'
+import ToolkitTemplatePage from '@/pages/toolkit/ToolkitTemplatePage'
 
 export { contentRoutes } from '@/lib/contentRoutes'
 
-const EAGER_PAGES = { AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage }
+const EAGER_PAGES = {
+  AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage,
+  ToolkitIndexPage, ToolkitTemplatePage,
+  PracticeIndexPage, PracticeSectionPage, InterviewPrepPage,
+}
 
 export function render(url) {
   return renderToString(

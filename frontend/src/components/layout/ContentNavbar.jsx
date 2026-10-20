@@ -28,9 +28,11 @@ export function ContentNavbar() {
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-5 text-sm">
+        <div className="hidden lg:flex items-center gap-5 text-sm">
           <NavLink to="/iso-27001/clauses" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Clauses</NavLink>
           <NavLink to="/iso-27001/annex-a" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Annex A</NavLink>
+          <NavLink to="/iso-27001/toolkit" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Free toolkit</NavLink>
+          <NavLink to="/iso-27001/practice" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Practice</NavLink>
           <NavLink to="/blog" className={({ isActive }) => (isActive ? 'text-gold' : 'text-white/70 hover:text-white') + ' transition-colors'}>Blog</NavLink>
           <Link to="/verify" className="text-white/70 hover:text-white transition-colors">Verify Certificate</Link>
           <Link to="/login" className="text-white/70 hover:text-white transition-colors">Sign In</Link>
@@ -44,7 +46,7 @@ export function ContentNavbar() {
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
           aria-controls="blog-mobile-menu"
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/80 hover:text-gold hover:bg-white/5 transition-colors"
+          className="lg:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/80 hover:text-gold hover:bg-white/5 transition-colors"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -53,13 +55,16 @@ export function ContentNavbar() {
       {/* Mobile menu panel */}
       <div
         id="blog-mobile-menu"
-        className={`md:hidden overflow-hidden border-t border-white/10 transition-[max-height,opacity] duration-300 ease-out ${
-          open ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        className={`lg:hidden overflow-x-hidden border-t border-white/10 transition-[max-height,opacity] duration-300 ease-out ${
+          open ? 'max-h-[calc(100vh-4rem)] overflow-y-auto opacity-100' : 'max-h-0 overflow-y-hidden opacity-0'
         }`}
       >
         <div className="px-6 py-4 flex flex-col gap-1 bg-ink/95 backdrop-blur-sm">
           <Link to="/iso-27001/clauses" className="py-3 text-white/80 hover:text-white border-b border-white/5">ISO 27001 clauses</Link>
           <Link to="/iso-27001/annex-a" className="py-3 text-white/80 hover:text-white border-b border-white/5">Annex A controls</Link>
+          <Link to="/iso-27001/toolkit" className="py-3 text-white/80 hover:text-white border-b border-white/5">Free toolkit</Link>
+          <Link to="/iso-27001/practice" className="py-3 text-white/80 hover:text-white border-b border-white/5">Practice questions</Link>
+          <Link to="/iso-27001/lead-auditor-interview-questions" className="py-3 text-white/80 hover:text-white border-b border-white/5">Lead auditor interview prep</Link>
           <Link to="/blog" className="py-3 text-white/80 hover:text-white border-b border-white/5">Blog</Link>
           <Link to="/verify" className="py-3 text-white/80 hover:text-white border-b border-white/5">Verify Certificate</Link>
           <Link to="/login" className="py-3 text-white/80 hover:text-white border-b border-white/5">Sign In</Link>

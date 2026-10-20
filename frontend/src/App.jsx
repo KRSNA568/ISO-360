@@ -62,6 +62,11 @@ const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'))
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const ResultsPage = lazy(() => import('@/pages/ResultsPage'))
 const TermsPage = lazy(() => import('@/pages/TermsPage'))
+const ToolkitIndexPage = lazy(() => import('@/pages/toolkit/ToolkitIndexPage'))
+const ToolkitTemplatePage = lazy(() => import('@/pages/toolkit/ToolkitTemplatePage'))
+const PracticeIndexPage = lazy(() => import('@/pages/practice/PracticeIndexPage'))
+const PracticeSectionPage = lazy(() => import('@/pages/practice/PracticeSectionPage'))
+const InterviewPrepPage = lazy(() => import('@/pages/practice/InterviewPrepPage'))
 const VerifyLandingPage = lazy(() => import('@/pages/VerifyLandingPage'))
 const VerifyPage = lazy(() => import('@/pages/VerifyPage'))
 
@@ -88,7 +93,11 @@ function NoIndex() {
 
 /** Pages that are prerendered at build time; src/entry-server.jsx passes
  *  eager versions so the server can render them without Suspense. */
-const CONTENT_PAGES = { AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage }
+const CONTENT_PAGES = {
+  AnnexAIndexPage, ControlPage, ClauseIndexPage, ClausePage, BlogPage, BlogPostPage,
+  ToolkitIndexPage, ToolkitTemplatePage,
+  PracticeIndexPage, PracticeSectionPage, InterviewPrepPage,
+}
 
 /**
  * The route tree, shared by the browser app and the build-time prerenderer.
@@ -109,6 +118,11 @@ export function AppRoutes({ pages = {} }) {
       <Route path="/iso-27001/annex-a/:slug" element={<P.ControlPage />} />
       <Route path="/iso-27001/clauses" element={<P.ClauseIndexPage />} />
       <Route path="/iso-27001/clauses/:slug" element={<P.ClausePage />} />
+      <Route path="/iso-27001/toolkit" element={<P.ToolkitIndexPage />} />
+      <Route path="/iso-27001/toolkit/:slug" element={<P.ToolkitTemplatePage />} />
+      <Route path="/iso-27001/practice" element={<P.PracticeIndexPage />} />
+      <Route path="/iso-27001/practice/:section" element={<P.PracticeSectionPage />} />
+      <Route path="/iso-27001/lead-auditor-interview-questions" element={<P.InterviewPrepPage />} />
       <Route path="/blog" element={<P.BlogPage />} />
       <Route path="/blog/:slug" element={<P.BlogPostPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
