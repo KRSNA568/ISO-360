@@ -1,5 +1,7 @@
-# Cloudflare Pages — SPA fallback routing
-# Redirects all non-asset 404s to index.html so React Router handles them
+# Cloudflare Pages redirects
 # https://developers.cloudflare.com/pages/configuration/redirects/
-
-/*    /index.html   200
+#
+# No SPA catch-all here: without a top-level 404.html, Cloudflare Pages already
+# serves index.html for any path that has no file, so React Router handles it.
+# A "/* /index.html 200" rule would also override the prerendered content pages
+# (e.g. /iso-27001/annex-a/*.html) that scripts/prerender.mjs writes at build time.

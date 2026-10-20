@@ -1,7 +1,7 @@
 import { useEffect, Component, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-class ErrorBoundary extends Component {
+export class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false }
@@ -38,6 +38,8 @@ import LandingPage from '@/pages/LandingPage'
 
 // Every route except the landing page is loaded on demand, so first visits
 // only download what the landing page needs.
+const AnnexAIndexPage = lazy(() => import('@/pages/annexa/AnnexAIndexPage'))
+const ControlPage = lazy(() => import('@/pages/annexa/ControlPage'))
 const AdminAuditLog = lazy(() => import('@/pages/admin/AdminAuditLog'))
 const AdminCertificates = lazy(() => import('@/pages/admin/AdminCertificates'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
@@ -82,51 +84,67 @@ function NoIndex() {
   return null
 }
 
+/** Pages that are prerendered at build time; src/entry-server.jsx passes
+ *  eager versions so the server can render them without Suspense. */
+const CONTENT_PAGES = { AnnexAIndexPage, ControlPage, BlogPage, BlogPostPage }
+
+/**
+ * The route tree, shared by the browser app and the build-time prerenderer.
+ * @param {{ pages?: Partial<typeof CONTENT_PAGES> }} props  eager overrides for SSR
+ */
+export function AppRoutes({ pages = {} }) {
+  const P = { ...CONTENT_PAGES, ...pages }
+  return (
+    <Suspense fallback={<RouteFallback />}>
+    <Routes>
+      {/* Public */}
+      <Route path="/" element={<Navigate to="/iso-27001" replace />} />
+      <Route path="/iso-27001" element={<LandingPage />} />
+      <Route path="/login" element={<><NoIndex /><LoginPage /></>} />
+      <Route path="/verify" element={<VerifyLandingPage />} />
+      <Route path="/verify/:certificateId" element={<VerifyPage />} />
+      <Route path="/iso-27001/annex-a" element={<P.AnnexAIndexPage />} />
+      <Route path="/iso-27001/annex-a/:slug" element={<P.ControlPage />} />
+      <Route path="/blog" element={<P.BlogPage />} />
+      <Route path="/blog/:slug" element={<P.BlogPostPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+
+      {/* Protected */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<><NoIndex /><Dashboard /></>} />
+        <Route path="/profile" element={<><NoIndex /><ProfilePage /></>} />
+        <Route path="/generate/:track" element={<><NoIndex /><GenerationPage /></>} />
+        <Route path="/exam/:sessionId" element={<><NoIndex /><ExamPage /></>} />
+        <Route path="/results/:sessionId" element={<><NoIndex /><ResultsPage /></>} />
+      </Route>
+
+      {/* Admin */}
+      <Route element={<AdminLayout />}>
+        <Route path="/admin" element={<><NoIndex /><AdminDashboard /></>} />
+        <Route path="/admin/users" element={<><NoIndex /><AdminUsers /></>} />
+        <Route path="/admin/sessions" element={<><NoIndex /><AdminSessions /></>} />
+        <Route path="/admin/certificates" element={<><NoIndex /><AdminCertificates /></>} />
+        <Route path="/admin/integrity" element={<><NoIndex /><AdminIntegrity /></>} />
+        <Route path="/admin/questions" element={<><NoIndex /><AdminQuestions /></>} />
+        <Route path="/admin/flags" element={<><NoIndex /><AdminFlags /></>} />
+        <Route path="/admin/audit-log" element={<><NoIndex /><AdminAuditLog /></>} />
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+    </Suspense>
+  )
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
       <BrowserRouter>
-        <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Navigate to="/iso-27001" replace />} />
-          <Route path="/iso-27001" element={<LandingPage />} />
-          <Route path="/login" element={<><NoIndex /><LoginPage /></>} />
-          <Route path="/verify" element={<VerifyLandingPage />} />
-          <Route path="/verify/:certificateId" element={<VerifyPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:slug" element={<BlogPostPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-
-          {/* Protected */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<><NoIndex /><Dashboard /></>} />
-            <Route path="/profile" element={<><NoIndex /><ProfilePage /></>} />
-            <Route path="/generate/:track" element={<><NoIndex /><GenerationPage /></>} />
-            <Route path="/exam/:sessionId" element={<><NoIndex /><ExamPage /></>} />
-            <Route path="/results/:sessionId" element={<><NoIndex /><ResultsPage /></>} />
-          </Route>
-
-          {/* Admin */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<><NoIndex /><AdminDashboard /></>} />
-            <Route path="/admin/users" element={<><NoIndex /><AdminUsers /></>} />
-            <Route path="/admin/sessions" element={<><NoIndex /><AdminSessions /></>} />
-            <Route path="/admin/certificates" element={<><NoIndex /><AdminCertificates /></>} />
-            <Route path="/admin/integrity" element={<><NoIndex /><AdminIntegrity /></>} />
-            <Route path="/admin/questions" element={<><NoIndex /><AdminQuestions /></>} />
-            <Route path="/admin/flags" element={<><NoIndex /><AdminFlags /></>} />
-            <Route path="/admin/audit-log" element={<><NoIndex /><AdminAuditLog /></>} />
-          </Route>
-
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-        </Suspense>
+        <AppRoutes />
       </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>
   )
 }
-
