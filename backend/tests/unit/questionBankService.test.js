@@ -16,6 +16,11 @@ const LETTERS = ['A', 'B', 'C', 'D']
 const BANKS   = { associate: associateBank, professional: professionalBank }
 const SIZES   = { associate: 50, professional: 100 }
 
+/** How deep each thread of a bank is, read from the bank rather than hard-coded. */
+function bankPerThread(track) {
+  return BANKS[track].filter((q) => q.thread === 1).length
+}
+
 function correctText(q) {
   return q.options[LETTERS.indexOf(q.correct_option)]
 }
@@ -57,10 +62,12 @@ describe.each(Object.keys(BANKS))('drawQuestions(%s)', (track) => {
     const firstIds = new Set(first.map((q) => q.id))
     const overlap  = second.filter((q) => firstIds.has(q.id)).length
 
-    // 30 per thread. Associate draws 10 → 20 unseen left, so no overlap.
-    // Professional draws 20 → only 10 unseen left, so 10 per thread repeat.
+    // A thread can supply `bankPerThread` questions. After the first draw takes
+    // `perThread` of them, that many fewer are unseen; a thread only repeats once
+    // the unseen remainder runs short of the next draw.
     const perThread = SIZES[track] / 5
-    const expected  = 5 * Math.max(0, perThread - (30 - perThread))
+    const unseen    = bankPerThread(track) - perThread
+    const expected  = 5 * Math.max(0, perThread - unseen)
     expect(overlap).toBe(expected)
     expect(second).toHaveLength(SIZES[track])
   })

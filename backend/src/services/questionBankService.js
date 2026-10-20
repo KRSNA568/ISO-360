@@ -2,7 +2,7 @@
  * @file questionBankService.js
  * Draws a randomised set of exam questions from the static question bank.
  *
- * Bank sizes (each): 150 questions / 5 threads = 30 per thread
+ * Bank sizes: associate 150 (30 per thread), professional 300 (60 per thread)
  *
  * Draw counts per exam:
  *   Associate    → 10 questions per thread × 5 threads =  50 total

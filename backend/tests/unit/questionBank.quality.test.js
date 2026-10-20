@@ -10,7 +10,7 @@
  *     and ≤ 50% of any one thread
  *   - Correct option > 1.5× the average distractor length in ≤ 15% of a track
  *   - Structural: 4 distinct non-empty options, valid key, unique ids/stems,
- *     30 questions per thread
+ *     the track's full complement of questions in every thread
  */
 
 const associateBank    = require('../../src/data/associate-questions')
@@ -18,6 +18,10 @@ const professionalBank = require('../../src/data/professional-questions')
 
 const LETTERS = ['A', 'B', 'C', 'D']
 const BANKS   = { associate: associateBank, professional: professionalBank }
+
+// Threads must stay balanced: drawQuestions takes a fixed number from each,
+// so a short thread silently narrows the pool every candidate is drawn from.
+const PER_THREAD = { associate: 30, professional: 60 }
 
 const MAX_LONGEST_SHARE_TRACK  = 0.35
 const MAX_LONGEST_SHARE_THREAD = 0.5
@@ -60,9 +64,9 @@ describe.each(Object.keys(BANKS))('%s question bank', (track) => {
     expect(new Set(bank.map((q) => q.stem.trim().toLowerCase())).size).toBe(bank.length)
   })
 
-  it('has 30 questions in each of the 5 threads', () => {
+  it(`has ${PER_THREAD[track]} questions in each of the 5 threads`, () => {
     for (let t = 1; t <= 5; t++) {
-      expect(bank.filter((q) => q.thread === t)).toHaveLength(30)
+      expect(bank.filter((q) => q.thread === t)).toHaveLength(PER_THREAD[track])
     }
   })
 
